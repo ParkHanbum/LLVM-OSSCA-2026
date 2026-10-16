@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="LLVM 멘티의 이슈 분석, 구현 과정, 검증 기록을 정리한 한국어 기술 문서입니다."><meta name="theme-color" content="#fbfaf7"><title>libdeflate · PR 228359 코드 생성 · LLVM 멘티 기술 문서</title><link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../../assets/site.css?v=41429de5fd03"><script defer src="../../assets/site.js?v=28009b539b2a"></script></head><body id="top" class="benchmarks-view"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../../index.html" class="nav-articles">문서</a><a href="../../results.html" class="nav-results">기여 결과</a><a href="../../benchmarks.html" class="nav-benchmarks active" aria-current="page">벤치마크</a><a href="../../sources/index.html" class="nav-sources">자료</a><a href="../../glossary.html" class="nav-glossary">용어</a><a href="../../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details><summary>라민우<span class="count">02</span></summary><ul><li><a href="../../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details><summary>이하동<span class="count">03</span></summary><ul><li><a href="../../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main archive-main"><article class="article archive-article"><header class="article-header"><div class="eyebrow">OUR BENCHMARK ARCHIVE / LLVM</div><h1>libdeflate · 전체 모듈 비교</h1><p class="article-lead">프로젝트의 모든 모듈·프로파일 결과입니다. 동일 출력과 실패를 함께 보여 줍니다.</p><div class="article-meta"><span>10개 모듈</span><span>20개 비교</span><span>PR #228359</span></div><div class="article-tools"><a href="../../benchmarks.html">벤치마크 전체 결과</a><a href="../../results.html">멘티들의 기여 결과</a></div></header><p><a href="../backend.html">← 코퍼스 전체 결과</a></p><p class="small-note">A는 패치 이전, B는 패치 이후입니다. 해시 열은 출력 assembly의 SHA256 앞 16자리이며, 전체 64자리와 소스·정규화 IR 해시는 CSV에 있습니다. 실패한 출력의 빈 해시는 일치로 취급하지 않습니다. 함수 목록이 비어 있고 성공한 출력이 같으면 동일로 분류합니다.</p><div class="table-wrap"><table><thead><tr><th scope="col">모듈</th><th scope="col">프로파일</th><th scope="col">결과 / 진단</th><th scope="col">A/B 반환 코드</th><th scope="col">A/B 출력 SHA256</th></tr></thead><tbody><tr><td>adler32.ll</td><td>avx2-v3</td><td><span class="archive-status regressed">실패</span><details class="archive-diagnostic"><summary>A 진단 전문</summary><pre>SplitVectorResult #0: t86: v16i32 = llvm.x86.avx512.vpdpbusd.512 TargetConstant:i64&lt;15837&gt;, t20, t5, t85
+
+LLVM ERROR: Do not know how to split the result of this operator!
+
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v3 -o /private/tmp/pr228359-xor6e20w/before.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@adler32_x86_avx512_vl512_vnni&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x000000010667126c llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x000000010666e674 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x0000000106671b9c SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001065c99f0 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x00000001065c9820 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 0
+8  llc                      0x0000000106416b30 llvm::DAGTypeLegalizer::SplitVecRes_LOOP_DEPENDENCE_MASK(llvm::SDNode*, llvm::SDValue&amp;, llvm::SDValue&amp;) + 0
+9  llc                      0x00000001063fadd0 llvm::DAGTypeLegalizer::run() + 2244
+10 llc                      0x00000001063fedc0 llvm::SelectionDAG::LegalizeTypes() + 232
+11 llc                      0x000000010650b43c llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 1500
+12 llc                      0x000000010650a9d4 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000106508074 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000106506554 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x00000001057267e4 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x0000000105bcde5c llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000105bd4f30 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x0000000105bce684 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x0000000106aee730 llcMain + 9904
+20 llc                      0x0000000104d2dda4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details><details class="archive-diagnostic"><summary>B 진단 전문</summary><pre>SplitVectorResult #0: t86: v16i32 = llvm.x86.avx512.vpdpbusd.512 TargetConstant:i64&lt;15837&gt;, t20, t5, t85
+
+LLVM ERROR: Do not know how to split the result of this operator!
+
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v3 -o /private/tmp/pr228359-xor6e20w/after.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@adler32_x86_avx512_vl512_vnni&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x000000010409da70 llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x000000010409ae78 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x000000010409e3a0 SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x0000000103ff61f4 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000103ff6024 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 0
+8  llc                      0x0000000103e43334 llvm::DAGTypeLegalizer::SplitVecRes_LOOP_DEPENDENCE_MASK(llvm::SDNode*, llvm::SDValue&amp;, llvm::SDValue&amp;) + 0
+9  llc                      0x0000000103e275d4 llvm::DAGTypeLegalizer::run() + 2244
+10 llc                      0x0000000103e2b5c4 llvm::SelectionDAG::LegalizeTypes() + 232
+11 llc                      0x0000000103f37c40 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 1500
+12 llc                      0x0000000103f371d8 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000103f34878 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000103f32d58 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x0000000103152fe8 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x00000001035fa660 llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000103601734 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x00000001035fae88 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x000000010451af34 llcMain + 9904
+20 llc                      0x0000000102759da4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details></td><td>-6 / -6</td><td><code title="">—</code><br><code title="">—</code></td></tr><tr><td>adler32.ll</td><td>avx512-v4</td><td><span class="archive-status regressed">실패</span><details class="archive-diagnostic"><summary>A 진단 전문</summary><pre>LLVM ERROR: Cannot select: t166: v16i32 = X86ISD::VPDPBUSD t87, t8, t175
+  t87: v16i32,ch = CopyFromReg t0, Register:v16i32 %48
+  t8: v64i8,ch = load&lt;(load (s512) from %ir.66, align 1, !tbaa !30)&gt; t0, t7, poison:i64
+    t7: i64 = add t2, Constant:i64&lt;64&gt;
+      t2: i64,ch = CopyFromReg t0, Register:i64 %60
+  t175: v64i8,ch = load&lt;(load (s512) from constant-pool)&gt; t0, t181, poison:i64
+    t181: i64 = X86ISD::Wrapper TargetConstantPool:i64&lt;&lt;64 x i8&gt; &lt;i8 64, i8 63, i8 62, i8 61, i8 60, i8 59, i8 58, i8 57, i8 56, i8 55, i8 54, i8 53, i8 52, i8 51, i8 50, i8 49, i8 48, i8 47, i8 46, i8 45, i8 44, i8 43, i8 42, i8 41, i8 40, i8 39, i8 38, i8 37, i8 36, i8 35, i8 34, i8 33, i8 32, i8 31, i8 30, i8 29, i8 28, i8 27, i8 26, i8 25, i8 24, i8 23, i8 22, i8 21, i8 20, i8 19, i8 18, i8 17, i8 16, i8 15, i8 14, i8 13, i8 12, i8 11, i8 10, i8 9, i8 8, i8 7, i8 6, i8 5, i8 4, i8 3, i8 2, i8 1&gt;&gt; 0
+In function: adler32_x86_avx512_vl512_vnni
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v4 -o /private/tmp/pr228359-11gqkcnm/before.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@adler32_x86_avx512_vl512_vnni&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001059fd26c llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001059fa674 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001059fdb9c SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001059559f0 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x00000001058a3638 llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x00000001058a2a04 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x00000001041aab20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x0000000105899354 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x0000000105898414 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x00000001058969d4 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000105894074 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000105892554 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x0000000104ab27e4 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x0000000104f59e5c llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000104f60f30 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x0000000104f5a684 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x0000000105e7a730 llcMain + 9904
+20 llc                      0x00000001040b9da4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details><details class="archive-diagnostic"><summary>B 진단 전문</summary><pre>LLVM ERROR: Cannot select: t166: v16i32 = X86ISD::VPDPBUSD t87, t8, t175
+  t87: v16i32,ch = CopyFromReg t0, Register:v16i32 %48
+  t8: v64i8,ch = load&lt;(load (s512) from %ir.66, align 1, !tbaa !30)&gt; t0, t7, poison:i64
+    t7: i64 = add t2, Constant:i64&lt;64&gt;
+      t2: i64,ch = CopyFromReg t0, Register:i64 %60
+  t175: v64i8,ch = load&lt;(load (s512) from constant-pool)&gt; t0, t181, poison:i64
+    t181: i64 = X86ISD::Wrapper TargetConstantPool:i64&lt;&lt;64 x i8&gt; &lt;i8 64, i8 63, i8 62, i8 61, i8 60, i8 59, i8 58, i8 57, i8 56, i8 55, i8 54, i8 53, i8 52, i8 51, i8 50, i8 49, i8 48, i8 47, i8 46, i8 45, i8 44, i8 43, i8 42, i8 41, i8 40, i8 39, i8 38, i8 37, i8 36, i8 35, i8 34, i8 33, i8 32, i8 31, i8 30, i8 29, i8 28, i8 27, i8 26, i8 25, i8 24, i8 23, i8 22, i8 21, i8 20, i8 19, i8 18, i8 17, i8 16, i8 15, i8 14, i8 13, i8 12, i8 11, i8 10, i8 9, i8 8, i8 7, i8 6, i8 5, i8 4, i8 3, i8 2, i8 1&gt;&gt; 0
+In function: adler32_x86_avx512_vl512_vnni
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v4 -o /private/tmp/pr228359-11gqkcnm/after.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@adler32_x86_avx512_vl512_vnni&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001043bda70 llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001043bae78 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001043be3a0 SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001043161f4 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000104263e3c llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x0000000104263208 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000102b6ab20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x0000000104259b58 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x0000000104258c18 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x00000001042571d8 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000104254878 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000104252d58 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x0000000103472fe8 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x000000010391a660 llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000103921734 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x000000010391ae88 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x000000010483af34 llcMain + 9904
+20 llc                      0x0000000102a79da4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details></td><td>-6 / -6</td><td><code title="">—</code><br><code title="">—</code></td></tr><tr><td>cpu_features.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="12d948a5121374995c02febf3b422a26c47787c8bbdf65bc87c623f6aea575b3">12d948a512137499</code><br><code title="12d948a5121374995c02febf3b422a26c47787c8bbdf65bc87c623f6aea575b3">12d948a512137499</code></td></tr><tr><td>cpu_features.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="12d948a5121374995c02febf3b422a26c47787c8bbdf65bc87c623f6aea575b3">12d948a512137499</code><br><code title="12d948a5121374995c02febf3b422a26c47787c8bbdf65bc87c623f6aea575b3">12d948a512137499</code></td></tr><tr><td>crc32.ll</td><td>avx2-v3</td><td><span class="archive-status regressed">실패</span><details class="archive-diagnostic"><summary>A 진단 전문</summary><pre>LLVM ERROR: Cannot select: t53: v2i64 = X86ISD::PCLMULQDQ t18, t60, TargetConstant:i8&lt;0&gt;
+  t18: v2i64 = bitcast t56
+    t56: v16i8 = X86ISD::PSHUFB t15, t9
+      t15: v16i8 = bitcast t14
+        t14: v2i64,ch = CopyFromReg t0, Register:v2i64 %60
+      t9: v16i8,ch = load&lt;(invariant load (s128) from %ir.187, align 1, !tbaa !21)&gt; t0, t6, poison:i64
+        t6: i64 = add nuw t5, t64
+          t5: i64 = AssertZext t3, ValueType:ch:i4
+            t3: i64,ch = CopyFromReg t0, Register:i64 %62
+          t64: i64 = X86ISD::Wrapper TargetGlobalAddress:i64&lt;ptr @shift_tab&gt; 0
+  t60: v2i64 = scalar_to_vector Constant:i64&lt;2926088593&gt;
+In function: crc32_x86_vpclmulqdq_avx512_vl512
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v3 -o /private/tmp/pr228359-t2p9wykz/before.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@crc32_x86_vpclmulqdq_avx512_vl512&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001019c126c llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001019be674 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001019c1b9c SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001019199f0 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000101867638 llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x0000000101866a04 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x000000010016eb20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x000000010185d354 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x000000010185c414 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x000000010185a9d4 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000101858074 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000101856554 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x0000000100a767e4 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x0000000100f1de5c llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000100f24f30 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x0000000100f1e684 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x0000000101e3e730 llcMain + 9904
+20 llc                      0x000000010007dda4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details><details class="archive-diagnostic"><summary>B 진단 전문</summary><pre>LLVM ERROR: Cannot select: t53: v2i64 = X86ISD::PCLMULQDQ t18, t60, TargetConstant:i8&lt;0&gt;
+  t18: v2i64 = bitcast t56
+    t56: v16i8 = X86ISD::PSHUFB t15, t9
+      t15: v16i8 = bitcast t14
+        t14: v2i64,ch = CopyFromReg t0, Register:v2i64 %60
+      t9: v16i8,ch = load&lt;(invariant load (s128) from %ir.187, align 1, !tbaa !21)&gt; t0, t6, poison:i64
+        t6: i64 = add nuw t5, t64
+          t5: i64 = AssertZext t3, ValueType:ch:i4
+            t3: i64,ch = CopyFromReg t0, Register:i64 %62
+          t64: i64 = X86ISD::Wrapper TargetGlobalAddress:i64&lt;ptr @shift_tab&gt; 0
+  t60: v2i64 = scalar_to_vector Constant:i64&lt;2926088593&gt;
+In function: crc32_x86_vpclmulqdq_avx512_vl512
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v3 -o /private/tmp/pr228359-t2p9wykz/after.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@crc32_x86_vpclmulqdq_avx512_vl512&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x0000000102701a70 llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001026fee78 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001027023a0 SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x000000010265a1f4 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x00000001025a7e3c llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x00000001025a7208 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000100eaeb20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x000000010259db58 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x000000010259cc18 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x000000010259b1d8 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000102598878 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000102596d58 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x00000001017b6fe8 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x0000000101c5e660 llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000101c65734 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x0000000101c5ee88 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x0000000102b7ef34 llcMain + 9904
+20 llc                      0x0000000100dbdda4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details></td><td>-6 / -6</td><td><code title="">—</code><br><code title="">—</code></td></tr><tr><td>crc32.ll</td><td>avx512-v4</td><td><span class="archive-status regressed">실패</span><details class="archive-diagnostic"><summary>A 진단 전문</summary><pre>LLVM ERROR: Cannot select: t53: v2i64 = X86ISD::PCLMULQDQ t18, t60, TargetConstant:i8&lt;0&gt;
+  t18: v2i64 = bitcast t56
+    t56: v16i8 = X86ISD::PSHUFB t15, t9
+      t15: v16i8 = bitcast t14
+        t14: v2i64,ch = CopyFromReg t0, Register:v2i64 %22
+      t9: v16i8,ch = load&lt;(invariant load (s128) from %ir.108, align 1, !tbaa !21)&gt; t0, t6, poison:i64
+        t6: i64 = add nuw t5, t64
+          t5: i64 = AssertZext t3, ValueType:ch:i4
+            t3: i64,ch = CopyFromReg t0, Register:i64 %24
+          t64: i64 = X86ISD::Wrapper TargetGlobalAddress:i64&lt;ptr @shift_tab&gt; 0
+  t60: v2i64 = scalar_to_vector Constant:i64&lt;2926088593&gt;
+In function: crc32_x86_vpclmulqdq_avx512_vl512
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v4 -o /private/tmp/pr228359-o459khph/before.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@crc32_x86_vpclmulqdq_avx512_vl512&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x0000000101e6926c llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x0000000101e66674 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x0000000101e69b9c SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x0000000101dc19f0 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000101d0f638 llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x0000000101d0ea04 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000100616b20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x0000000101d05354 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x0000000101d04414 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x0000000101d029d4 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000101d00074 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000101cfe554 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x0000000100f1e7e4 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x00000001013c5e5c llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x00000001013ccf30 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x00000001013c6684 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x00000001022e6730 llcMain + 9904
+20 llc                      0x0000000100525da4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details><details class="archive-diagnostic"><summary>B 진단 전문</summary><pre>LLVM ERROR: Cannot select: t53: v2i64 = X86ISD::PCLMULQDQ t18, t60, TargetConstant:i8&lt;0&gt;
+  t18: v2i64 = bitcast t56
+    t56: v16i8 = X86ISD::PSHUFB t15, t9
+      t15: v16i8 = bitcast t14
+        t14: v2i64,ch = CopyFromReg t0, Register:v2i64 %22
+      t9: v16i8,ch = load&lt;(invariant load (s128) from %ir.108, align 1, !tbaa !21)&gt; t0, t6, poison:i64
+        t6: i64 = add nuw t5, t64
+          t5: i64 = AssertZext t3, ValueType:ch:i4
+            t3: i64,ch = CopyFromReg t0, Register:i64 %24
+          t64: i64 = X86ISD::Wrapper TargetGlobalAddress:i64&lt;ptr @shift_tab&gt; 0
+  t60: v2i64 = scalar_to_vector Constant:i64&lt;2926088593&gt;
+In function: crc32_x86_vpclmulqdq_avx512_vl512
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v4 -o /private/tmp/pr228359-o459khph/after.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@crc32_x86_vpclmulqdq_avx512_vl512&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001022c5a70 llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001022c2e78 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001022c63a0 SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x000000010221e1f4 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x000000010216be3c llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x000000010216b208 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000100a72b20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x0000000102161b58 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x0000000102160c18 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x000000010215f1d8 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x000000010215c878 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x000000010215ad58 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x000000010137afe8 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x0000000101822660 llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000101829734 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x0000000101822e88 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x0000000102742f34 llcMain + 9904
+20 llc                      0x0000000100981da4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details></td><td>-6 / -6</td><td><code title="">—</code><br><code title="">—</code></td></tr><tr><td>deflate_compress.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="8c86b7b2e5e79c8efb113f99d630317f81951eb9843ae5a44656d7f0c56afa48">8c86b7b2e5e79c8e</code><br><code title="8c86b7b2e5e79c8efb113f99d630317f81951eb9843ae5a44656d7f0c56afa48">8c86b7b2e5e79c8e</code></td></tr><tr><td>deflate_compress.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="9e39f220bee7ab77a248548fc04fbaf23689959e5903461a583442b439611b0b">9e39f220bee7ab77</code><br><code title="9e39f220bee7ab77a248548fc04fbaf23689959e5903461a583442b439611b0b">9e39f220bee7ab77</code></td></tr><tr><td>deflate_decompress.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="c21b977c129ac573470017c979d681afeb0ebf81a15b5eba37e1abdf1282aebd">c21b977c129ac573</code><br><code title="c21b977c129ac573470017c979d681afeb0ebf81a15b5eba37e1abdf1282aebd">c21b977c129ac573</code></td></tr><tr><td>deflate_decompress.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3e078eaf65f7d9f831dd1348c764a3ab803196e15673e5122ceaa292ad0df4bc">3e078eaf65f7d9f8</code><br><code title="3e078eaf65f7d9f831dd1348c764a3ab803196e15673e5122ceaa292ad0df4bc">3e078eaf65f7d9f8</code></td></tr><tr><td>gzip.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="ac98601fa4976afec71f1326af093738fc02b6be8ca4dc601625d2a028141dc8">ac98601fa4976afe</code><br><code title="ac98601fa4976afec71f1326af093738fc02b6be8ca4dc601625d2a028141dc8">ac98601fa4976afe</code></td></tr><tr><td>gzip.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="ac98601fa4976afec71f1326af093738fc02b6be8ca4dc601625d2a028141dc8">ac98601fa4976afe</code><br><code title="ac98601fa4976afec71f1326af093738fc02b6be8ca4dc601625d2a028141dc8">ac98601fa4976afe</code></td></tr><tr><td>prog_util.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="ef9f35309beee56c705dff00561ec5e14c568166e2f7d15ab6d13d4c3cd28852">ef9f35309beee56c</code><br><code title="ef9f35309beee56c705dff00561ec5e14c568166e2f7d15ab6d13d4c3cd28852">ef9f35309beee56c</code></td></tr><tr><td>prog_util.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="ef9f35309beee56c705dff00561ec5e14c568166e2f7d15ab6d13d4c3cd28852">ef9f35309beee56c</code><br><code title="ef9f35309beee56c705dff00561ec5e14c568166e2f7d15ab6d13d4c3cd28852">ef9f35309beee56c</code></td></tr><tr><td>tgetopt.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="cb6ca4ddd11787a6be982d5ae0307ff8b63dd49d18e4fffea16a6320915d4278">cb6ca4ddd11787a6</code><br><code title="cb6ca4ddd11787a6be982d5ae0307ff8b63dd49d18e4fffea16a6320915d4278">cb6ca4ddd11787a6</code></td></tr><tr><td>tgetopt.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="cb6ca4ddd11787a6be982d5ae0307ff8b63dd49d18e4fffea16a6320915d4278">cb6ca4ddd11787a6</code><br><code title="cb6ca4ddd11787a6be982d5ae0307ff8b63dd49d18e4fffea16a6320915d4278">cb6ca4ddd11787a6</code></td></tr><tr><td>zlib_compress.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6d4a645531f5a3e87a4d81e396688eb4e5018f76fd39565653ca2b59a34db211">6d4a645531f5a3e8</code><br><code title="6d4a645531f5a3e87a4d81e396688eb4e5018f76fd39565653ca2b59a34db211">6d4a645531f5a3e8</code></td></tr><tr><td>zlib_compress.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6d4a645531f5a3e87a4d81e396688eb4e5018f76fd39565653ca2b59a34db211">6d4a645531f5a3e8</code><br><code title="6d4a645531f5a3e87a4d81e396688eb4e5018f76fd39565653ca2b59a34db211">6d4a645531f5a3e8</code></td></tr><tr><td>zlib_decompress.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="23a86853ebc5256817e551529ae3404c609b6b47949862218e7d7de4553ef73a">23a86853ebc52568</code><br><code title="23a86853ebc5256817e551529ae3404c609b6b47949862218e7d7de4553ef73a">23a86853ebc52568</code></td></tr><tr><td>zlib_decompress.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3499c4e4c8e94626e3d0cd954ee63ebcd7b0668eab282d79853195e33e6e3eb8">3499c4e4c8e94626</code><br><code title="3499c4e4c8e94626e3d0cd954ee63ebcd7b0668eab282d79853195e33e6e3eb8">3499c4e4c8e94626</code></td></tr></tbody></table></div></article><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../../about.html">편집 기준과 출처</a><br><a href="../../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

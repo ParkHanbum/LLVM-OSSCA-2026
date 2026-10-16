@@ -1,0 +1,57 @@
+{
+  "as_of": "2026-10-16",
+  "measurement_date": "2026-09-15",
+  "benchmark_source": "s025",
+  "benchmark_pr": 223246,
+  "unit": "ns/회",
+  "series": [
+    {"id":"c-o2","label":"C · O2","rows":[
+      {"label":"리터럴 2개 선택","before":1.233,"after":1.230,"change":0.2,"control":true},
+      {"label":"리터럴 3개 중첩 선택","before":5.086,"after":1.233,"change":75.8},
+      {"label":"상태 코드 switch / PHI","before":7.306,"after":1.233,"change":83.1},
+      {"label":"중첩 wcslen","before":9.681,"after":1.233,"change":87.3},
+      {"label":"64 / 128 / 256바이트 리터럴","before":14.047,"after":1.229,"change":91.2},
+      {"label":"동적 포인터가 포함된 선택","before":7.033,"after":6.992,"change":0.6,"control":true},
+      {"label":"동적 문자열 strlen","before":5.336,"after":5.332,"change":0.1,"control":true},
+      {"label":"로그 길이 + 숫자 자릿수 + 동적 strlen","before":17.976,"after":14.391,"change":19.9}
+    ]},
+    {"id":"c-o3","label":"C · O3","rows":[
+      {"label":"리터럴 2개 선택","before":1.236,"after":1.234,"change":0.1,"control":true},
+      {"label":"리터럴 3개 중첩 선택","before":5.103,"after":1.231,"change":75.9},
+      {"label":"상태 코드 switch / PHI","before":7.165,"after":1.237,"change":82.7},
+      {"label":"중첩 wcslen","before":9.651,"after":1.229,"change":87.3},
+      {"label":"64 / 128 / 256바이트 리터럴","before":14.121,"after":1.233,"change":91.3},
+      {"label":"동적 포인터가 포함된 선택","before":7.077,"after":6.975,"change":1.4,"control":true},
+      {"label":"동적 문자열 strlen","before":5.351,"after":5.329,"change":0.4,"control":true},
+      {"label":"로그 길이 + 숫자 자릿수 + 동적 strlen","before":18.005,"after":14.344,"change":20.3}
+    ]},
+    {"id":"cpp-o2","label":"C++ · O2","rows":[
+      {"label":"std::string_view 생성 후 길이","before":5.478,"after":1.229,"change":77.6},
+      {"label":"std::string 생성·append·전체 해시","before":102.283,"after":93.260,"change":8.8}
+    ]}
+  ],
+  "reproductions": [
+    {"author":"전의정","source":"s022","title":"부동소수점 0 비교 단순화","pr":85673,"metric":"Block RThroughput","before":3.0,"after":1.8,"unit":"모델의 cycles/iteration","detail":"x86-64-v3, llvm-mca 1,000회. 명령어 9,000→5,000, µops 12,000→7,000. 다른 타깃의 예시는 AArch64·RISC-V 모두 ret 포함 6→3개 명령어."},
+    {"author":"이호연","source":"s019","title":"공유 sext 마스크의 select 변환","pr":81409,"metric":"Block RThroughput","before":1.3,"after":1.0,"unit":"모델의 cycles/iteration","detail":"제출 예시의 llvm-mca 정적 추정. 명령어 500→400. 전체 응용 프로그램을 실행한 측정값은 아님."},
+    {"author":"최민우","source":"s033","title":"nneg 정보를 이용한 확장 연산 단순화","pr":88887,"metric":"Block RThroughput","before":1.3,"after":1.0,"unit":"모델의 cycles/iteration","detail":"llvm-mca 100회. 명령어·µops 500→300, 총 cycles 172→104. CPU 모델과 코드가 다른 예시 간 우열 비교에는 사용할 수 없음."}
+  ],
+  "participants": [
+    {"author":"SeokHun","kind":"기존 패치 분석","result":"상수 XOR·보수 관계를 Alive2로 검증하고 타깃별 기계어를 비교했다. llvm-mca 명령어 집계는 x86-64 1,200→700, AArch64·mac arm 1,200→600, RISC-V 1,100→1,100으로 기록했다.","sources":["s001"]},
+    {"author":"김명석","kind":"기존 패치 분석","result":"쌍곡함수의 홀수·짝수 대칭을 intrinsic과 libcall 경로로 나누어 분석했다. 함수 호출, 부호 처리와 errno 조건을 함께 확인했다. 실제 실행 시간 수치는 제출 자료에 없다.","sources":["s002"]},
+    {"author":"김준영","kind":"로컬 구현·실험·제안","result":"NaN fallback clamp의 정규화를 구현·검증하고, 부호 있는 0·poison·범위 전제를 검토했다. aggregate 입력 크래시와 비교 플래그 문제를 추적했다. fract 정수 판정은 제안 단계이며, 버전별 상태는 각각 보존했다.","sources":["s003","s004","s005","s006","s007","s008","s009"]},
+    {"author":"김지환","kind":"기존 패치 분석","result":"bitcast 이후 부호 비트 단순화와 cttz/ctlz 최솟값 변환을 추적했다. endian·마스크 폭과 적용 조건을 설명했다. corpus 탐색의 발견 건수는 실행 속도 개선율과 구분했다.","sources":["s010","s011"]},
+    {"author":"라민우","kind":"기존 패치 분석·확장 제안","result":"반복문의 나머지 연산과 demanded bits를 연결하고, 부동소수점 ord/uno 변환의 refinement·freeze 조건을 분석했다. 초기 해석을 수정한 과정과 후속 확장 아이디어를 남겼다.","sources":["s012","s013"]},
+    {"author":"송효섭","kind":"기존 패치 분석","result":"trunc 플래그와 select의 값 범위를 분석했다. 테스트 10개 통과와 변환 비활성화 시 6개 실패·4개 통과를 기록했다. 단순 타깃 예시에서 명령어 수가 그대로인 경우도 보존했다.","sources":["s014"]},
+    {"author":"오수영","kind":"기존 패치 분석","result":"shift·trunc·비교 연산을 범위 비교로 바꾸는 이유와 적용 조건을 정리했다. 코드와 테스트를 따라 변환이 후속 최적화에 연결되는 과정을 설명했다.","sources":["s015"]},
+    {"author":"이하동","kind":"기여 과정·기존 패치 분석","result":"urem의 값 관계 추론을 ValueTracking으로 보완하고 clang-tidy의 미해석 예외 명세 크래시를 수정했다. lowbit 비교는 리뷰와 회귀 검증을 거쳐 병합한 과정까지 기록했다. 기존 bool 곱셈 패치 분석도 별도로 수록했다.","sources":["s016","s017","s018"]},
+    {"author":"이호연","kind":"기존 패치 분석","result":"공유된 sext 마스크의 여러 사용처 때문에 막히던 변환을 분석했다. select로 바꾸는 조건과 예시의 정적 실행 비용을 비교했다.","sources":["s019"]},
+    {"author":"임승현","kind":"기여 과정","result":"DemandedElts 전달 경로를 복구하는 NFC 변경에서 마스크 폭 문제 3곳을 재현·수정했다. FPclass 28/28, AMDGPU 4,921개 테스트와 27개 파일의 출력 동일성을 보고했다. 성능 최적화는 후속 활용 과제다.","sources":["s020"]},
+    {"author":"임예원","kind":"기존 패치 분석","result":"대칭 select를 XOR로 재구성하는 패치를 분석했다. 잘못 고른 테스트 도구를 바로잡고, 타입·사용 횟수 조건과 9개 테스트로 수익성을 검토했다.","sources":["s021"]},
+    {"author":"전의정","kind":"기존 패치 분석","result":"±0과 fast-math 조건을 포함해 부동소수점 비교 변환을 분석했다. IR·다중 타깃 기계어·llvm-mca 결과를 연결해 명령어와 추정 처리 간격의 감소를 설명했다.","sources":["s022"]},
+    {"author":"정지현","kind":"기여 과정","result":"포화·오버플로 전제 아래 PMADDUBSW 조합을 3개 연산에서 1개로 줄이는 규칙을 개발했다. fmemopen의 용량·위치·경계 동작과 11개 테스트도 구현했다. 두 결과를 실행 시간 개선율로 환산하지 않았다.","sources":["s023","s024"]},
+    {"author":"정하람","kind":"기여 과정·기존 패치 분석","result":"상수 문자열의 중첩 select/PHI에서 길이 호출을 제거하고 실측했다. 기존 테스트 19개 중 8개 회귀의 공통 원인을 수정해 19개 통과, 확장 범위 2,263개 통과·92개 미지원·실패 0을 기록했다. fabs·범위 비교의 기존 패치 분석도 남겼다.","sources":["s025","s026","s027","s028","s029","s030"]},
+    {"author":"조영진","kind":"기여 과정·실험·제안","result":"or disjoint와 zext의 재결합에서 기존 helper와 플래그 보존 조건을 검토했다. ONNX Runtime의 widening·shuffle 패턴은 작은 Alive2 검증과 최적화 제안으로 발전시켰다. 후자는 완성된 성능 패치로 집계하지 않았다.","sources":["s031","s032"]},
+    {"author":"최민우","kind":"기존 패치 분석","result":"zext nneg를 부호 확장과 연결하는 규칙을 분석하고 의미 검증과 정적 비용 추정을 수행했다. 예시의 명령어·µops와 처리 간격이 함께 감소했다.","sources":["s033"]},
+    {"author":"최진범","kind":"기여 과정·기존 패치 분석","result":"vector 증가량이 0이 아님을 추론하는 두 규칙을 27줄로 추가하고 22개 테스트·Alive2 예시를 검증했다. umask 래퍼·공개 진입점·세 아키텍처 등록과 상태 복원 테스트를 구현했다. fneg/select 기존 패치 분석도 별도 수록했다.","sources":["s034","s035","s036"]}
+  ]
+}

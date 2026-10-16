@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="같은 0·all-ones mask를 적용한 두 값의 덧셈을 분석하며 기존 fold의 one-use 제한을 찾는다."><meta name="theme-color" content="#fbfaf7"><title>공유된 boolean mask와 덧셈을 select로 연결하기 · PDF 원자료 · 14쪽 · LLVM 멘티 기술 문서</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css?v=41429de5fd03"><script defer src="../assets/site.js?v=28009b539b2a"></script></head><body id="top"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../index.html" class="nav-articles">문서</a><a href="../results.html" class="nav-results">기여 결과</a><a href="../benchmarks.html" class="nav-benchmarks">벤치마크</a><a href="../sources/index.html" class="nav-sources active" aria-current="page">자료</a><a href="../glossary.html" class="nav-glossary">용어</a><a href="../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details><summary>라민우<span class="count">02</span></summary><ul><li><a href="../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details><summary>이하동<span class="count">03</span></summary><ul><li><a href="../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details open><summary>이호연<span class="count">01</span></summary><ul><li><a href="../articles/shared-sext-mask.html" aria-current="page">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main source-page article-main"><div class="breadcrumb"><a href="../index.html">문서</a><span>/</span>이호연</div><div class="article-layout"><article class="article"><header class="article-header"><div class="eyebrow">COMPLETE DOCUMENT / PDF</div><h1>공유된 boolean mask와 덧셈을 select로 연결하기</h1><p class="article-lead">같은 0·all-ones mask를 적용한 두 값의 덧셈을 분석하며 기존 fold의 one-use 제한을 찾는다.</p><div class="article-meta"><strong>자료 이호연</strong><span>기존 패치 분석</span><span>PDF 원자료 · 14쪽</span><span>전문 수록</span></div><div class="article-tools"><button type="button" data-font aria-pressed="false">글자 크게</button><button type="button" data-print><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V9h18v8h-4M7 14h10v7H7z"/></svg>인쇄 / PDF</button><a href="#source-materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 15 6-6M7 11l-3 3a4 4 0 0 0 6 6l3-3M11 7l3-3a4 4 0 0 1 6 6l-3 3"/></svg>다른 버전 보기</a></div></header><p class="complete-notice">LLVM_Issue_81288.pdf의 전체 내용입니다. 설명·코드·표·검증 기록을 생략하지 않고 옮겼습니다. 그림 안의 문자 인식 결과에는 기호 오류가 있을 수 있어 이미지도 함께 제공합니다.</p><div class="reading-mode" role="group" aria-label="문서 읽기 방식"><span>읽기 방식</span><button type="button" data-reading="text" aria-pressed="true">본문과 그림</button><button type="button" data-reading="layout" aria-pressed="false">원래 페이지 배치</button><small>두 보기 모두 이 페이지에서 확인할 수 있습니다.</small></div><details class="mobile-toc"><summary>이 문서의 목차</summary><nav aria-label="이 문서의 목차"><a href="#page-1">01 · InstCombine 이슈 분석 / Issue #81288 / 이…</a><a href="#page-2">02 · Issue #81288 명세 / SRC / %x = &lt;10, 2&gt;…</a><a href="#page-3">03 · Issue #81288 명세 / %x = &lt;10, 2&gt; %a = …</a><a href="#page-4">04 · Issue #81288 명세 / SRC / %x = &lt;10, 2&gt;…</a><a href="#page-5">05 · Issue #81288 명세 / SRC / %x = &lt;10, 2&gt;…</a><a href="#page-6">06 · Issue #81288 명세 / SRC / %x = &lt;10, 2&gt;…</a><a href="#page-7">07 · Issue #81288 명세 / SRC TGT / define &lt;…</a><a href="#page-8">08 · Issue #81288 Alive2 / SRC TGT / defi…</a><a href="#page-9">09 · Issue #81288 문제? / SRC TGT / define …</a><a href="#page-10">10 · Issue #81288 문제? / SRC TGT / define …</a><a href="#page-11">11 · Issue #81288 문제? / SRC TGT / define …</a><a href="#page-12">12 · Issue #81288 문제? / SRC TGT / define …</a><a href="#page-13">13 · Issue #81288 패치 / godbolt / llvm/llv…</a><a href="#page-14">14 · Issue #81288 패치 / llvm-mca / Regress…</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav></details><section class="doc-section full-source-section" data-source="s019" data-page="1" id="page-1"><div class="page-marker"><span>PDF · 01 / 14</span></div><h2 class="page-title">InstCombine 이슈 분석 / Issue #81288 / 이호연</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>InstCombine 이슈 분석</p></div><div class="pdf-region"><p>Issue #81288 이호연</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/001.webp" aria-label="LLVM_Issue_81288.pdf 1쪽 확대"><img src="../assets/pages/s019/001.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 1쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 1/14</span><a href="../assets/pages/s019/001.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="2" id="page-2"><div class="page-marker"><span>PDF · 02 / 14</span></div><h2 class="page-title">Issue #81288 명세 / SRC / %x = &lt;10, 2&gt; %a = &lt;35, 10&gt;</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p2-heading-1">Issue #81288 명세</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><pre><code>%x = &lt;10,  2&gt;</code></pre></div><div class="pdf-region"><pre><code>%y = &lt; 5,  7&gt;</code></pre></div><div class="pdf-region"><pre><code>%a = &lt;35, 10&gt;</code></pre></div><div class="pdf-region"><pre><code>%b = &lt;25, 12&gt;</code></pre></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/002.webp" aria-label="LLVM_Issue_81288.pdf 2쪽 확대"><img src="../assets/pages/s019/002.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 2쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 2/14</span><a href="../assets/pages/s019/002.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="3" id="page-3"><div class="page-marker"><span>PDF · 03 / 14</span></div><h2 class="page-title">Issue #81288 명세 / %x = &lt;10, 2&gt; %a = &lt;35, 10&gt; / define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt;</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p3-heading-1">Issue #81288 명세</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><p>1    True</p><pre><code>C = (x &gt; y)
+          {</code></pre><p>0    False</p></div><div class="pdf-region"><pre><code>%x = &lt;10,  2&gt;
+   &lt; &lt;
+%y = &lt; 5,  7&gt;</code></pre></div><div class="pdf-region"><pre><code>%cmp = &lt; T,  F&gt;</code></pre></div><div class="pdf-region"><pre><code>%a = &lt;35, 10&gt;</code></pre></div><div class="pdf-region"><pre><code>%b = &lt;25, 12&gt;</code></pre></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/003.webp" aria-label="LLVM_Issue_81288.pdf 3쪽 확대"><img src="../assets/pages/s019/003.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 3쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 3/14</span><a href="../assets/pages/s019/003.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="4" id="page-4"><div class="page-marker"><span>PDF · 04 / 14</span></div><h2 class="page-title">Issue #81288 명세 / SRC / %x = &lt;10, 2&gt; %a = &lt;35, 10&gt;</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p4-heading-1">Issue #81288 명세</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><p>1    True</p><pre><code>C = (x &gt; y)
+          {</code></pre><p>0    False</p></div><div class="pdf-region"><pre><code>%x = &lt;10,  2&gt;</code></pre></div><div class="pdf-region"><pre><code>%y = &lt; 5,  7&gt;</code></pre></div><div class="pdf-region"><pre><code>%cmp = &lt; T,  F&gt;</code></pre></div><div class="pdf-region"><pre><code>%a = &lt;35, 10&gt;</code></pre></div><div class="pdf-region"><pre><code>%b = &lt;25, 12&gt;</code></pre></div><div class="pdf-region"><pre><code>%mask = &lt;111…111,000…000&gt;</code></pre></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/004.webp" aria-label="LLVM_Issue_81288.pdf 4쪽 확대"><img src="../assets/pages/s019/004.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 4쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 4/14</span><a href="../assets/pages/s019/004.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="5" id="page-5"><div class="page-marker"><span>PDF · 05 / 14</span></div><h2 class="page-title">Issue #81288 명세 / SRC / %x = &lt;10, 2&gt; %a = &lt;35, 10&gt;</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p5-heading-1">Issue #81288 명세</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><p>1    True</p><pre><code>C = (x &gt; y)
+          {</code></pre><p>0    False</p></div><div class="pdf-region"><p>a +b  (C=1)</p><pre><code>r = (Ca) + (Cb) {</code></pre><p>0        (C=0)</p></div><div class="pdf-region"><pre><code>%x = &lt;10,  2&gt;</code></pre></div><div class="pdf-region"><pre><code>%y = &lt; 5,  7&gt;</code></pre></div><div class="pdf-region"><pre><code>%cmp = &lt; T,  F&gt;</code></pre></div><div class="pdf-region"><pre><code>%a = &lt;35, 10&gt;</code></pre></div><div class="pdf-region"><pre><code>%b = &lt;25, 12&gt;</code></pre></div><div class="pdf-region"><pre><code>%mask = &lt;111…111,000…000&gt;</code></pre></div><div class="pdf-region"><pre><code>%a0 = &lt;35,  0&gt;</code></pre></div><div class="pdf-region"><pre><code>%b0 = &lt;25,  0&gt;</code></pre></div><div class="pdf-region"><pre><code>%sum = &lt;60,  0&gt;</code></pre></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/005.webp" aria-label="LLVM_Issue_81288.pdf 5쪽 확대"><img src="../assets/pages/s019/005.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 5쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 5/14</span><a href="../assets/pages/s019/005.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="6" id="page-6"><div class="page-marker"><span>PDF · 06 / 14</span></div><h2 class="page-title">Issue #81288 명세 / SRC / %x = &lt;10, 2&gt; %a = &lt;35, 10&gt;</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p6-heading-1">Issue #81288 명세</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><pre><code>%x = &lt;10,  2&gt;</code></pre></div><div class="pdf-region"><pre><code>%y = &lt; 5,  7&gt;</code></pre></div><div class="pdf-region"><pre><code>%cmp = &lt; T,  F&gt;</code></pre></div><div class="pdf-region"><p>1    True</p><pre><code>C = (x &gt; y)
+          {</code></pre><p>0    False</p></div><div class="pdf-region"><p>a +b  (C=1)</p><pre><code>r = (Ca) + (Cb) {</code></pre><p>0        (C=0)</p></div><div class="pdf-region"><p>Condition이 T/F로 분류시</p></div><div class="pdf-region"><pre><code>(Ca) + (Cb) = C(a+b)</code></pre></div><div class="pdf-region"><p>a+b를 미리 하고 C에 따라 select</p></div><div class="pdf-region"><pre><code>%a = &lt;35, 10&gt;</code></pre></div><div class="pdf-region"><pre><code>%b = &lt;25, 12&gt;</code></pre></div><div class="pdf-region"><pre><code>%mask = &lt;111…111,000…000&gt;</code></pre></div><div class="pdf-region"><pre><code>%a0 = &lt;35,  0&gt;</code></pre></div><div class="pdf-region"><pre><code>%b0 = &lt;25,  0&gt;</code></pre></div><div class="pdf-region"><pre><code>%sum = &lt;60,  0&gt;</code></pre></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/006.webp" aria-label="LLVM_Issue_81288.pdf 6쪽 확대"><img src="../assets/pages/s019/006.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 6쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 6/14</span><a href="../assets/pages/s019/006.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="7" id="page-7"><div class="page-marker"><span>PDF · 07 / 14</span></div><h2 class="page-title">Issue #81288 명세 / SRC TGT / define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) { define &lt;2xi6</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p7-heading-1">Issue #81288 명세</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><p>1    True</p><pre><code>C = (x &gt; y)
+          {</code></pre><p>0    False</p></div><div class="pdf-region"><p>a +b  (C=1)</p><pre><code>r = (Ca) + (Cb) {</code></pre><p>0        (C=0)</p></div><div class="pdf-region"><p>TGT</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @dst(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp = icmp sgt &lt;2 x i64&gt; %x, %y
+    %sum = add      &lt;2 x i64&gt; %a, %b
+    %r   = select   &lt;2 x i1&gt; %cmp, &lt;2 x i64&gt; %sum,
+                                &lt;2 x i64&gt; zeroinitializer
+}</code></pre></div><div class="pdf-region"><p>Condition이 T/F로 분류시</p></div><div class="pdf-region"><pre><code>(Ca) + (Cb) = C(a+b)</code></pre></div><div class="pdf-region"><p>a+b를 미리 하고 C에 따라 select</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/007.webp" aria-label="LLVM_Issue_81288.pdf 7쪽 확대"><img src="../assets/pages/s019/007.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 7쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 7/14</span><a href="../assets/pages/s019/007.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="8" id="page-8"><div class="page-marker"><span>PDF · 08 / 14</span></div><h2 class="page-title">Issue #81288 Alive2 / SRC TGT / define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) { define &lt;</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p8-heading-1">Issue #81288 Alive2</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><pre><code>r = (Ca) + (Cb)</code></pre></div><div class="pdf-region"><p>TGT</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @dst(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp = icmp sgt &lt;2 x i64&gt; %x, %y
+    %sum = add      &lt;2 x i64&gt; %a, %b
+    %r   = select   &lt;2 x i1&gt; %cmp, &lt;2 x i64&gt; %sum,
+                                &lt;2 x i64&gt; zeroinitializer
+}</code></pre></div><div class="pdf-region"><pre><code>(Ca) + (Cb) = C(a+b)</code></pre></div></div><figure class="source-figure"><a href="../assets/figures/s019-008-01.webp"><img src="../assets/figures/s019-008-01.webp" width="1920" height="601" alt="이호연 자료 8쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>8쪽 · 그림 1 <a href="../assets/figures/s019-008-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>LLVM IR source #1 X
+alive-tv (Editor ₩1. Compller #1) LLVM IR X
+A- B Save/Load + Add new...• V Vim
+LLVM IR
+alive-tv
+-disable-undef-input
+A~ ☆ output... *
+a Libraries - + Add new... • / Add tool... ~
+Hefine &lt;2 x 164&gt; asrc(C2 x 164&gt; %x, &lt;2 x 164&gt; %y, &lt;2 x 164&gt; %a,
+entry:
+%cmp = icmp sgt &lt;2 x i64&gt; %x, %y
+%sext = sext &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+Nand.i7 = and &lt;2 x 164&gt; %sext, %a
+%and.1 = and &lt;2 x 164&gt; %sext, %b
+%add.1 = add &lt;2 x 164&gt; %and.17, %and.1
+ret &lt;2 x i64&gt; %add.i
+define &lt;2 x 164&gt; @tgt(2 x 164&gt; %x, &lt;2 x 164&gt; %y, &lt;2 x 164&gt; %a, &lt;2xI6
+entry:
+%0 = icmp sgt &lt;2 x 164&gt; %x, %y
+18
+%1 = add &lt;2 x i64&gt; %b, %a
+%add.1 = select &lt;2 x 11&gt; %0, &lt;2 x 164&gt; %1, &lt;2 x 164&gt; zeroinitializer
+20
+ret &lt;2 x h64&gt; %add.i
+?1
+define &lt;2 x 164&gt; gsrc(C2 x 1642 %x, &lt;2 x 164&gt; %y, &lt;2 x 164&gt; %a, &lt;2 x1642 %b)
+entry:
+%cmp = icmp sgt &lt;2 x 164&gt; %x, %y
+%sext = sext &lt;2 x 11&gt; %cmp to &lt;2 x 164&gt;
+wand.i7 = and &lt;2 x 164&gt; %sext, %a
+%and.i = and &lt;2 x 164&gt; %sext, %b
+%add.i = add &lt;2 x 164&gt; %and.17, %and.1
+Tet &lt;2 x 164&gt; %add.i
+define &lt;2 x 164&gt; @tgt(&lt;2 x i64&gt; %x, &lt;2 x 164&gt; %y, &lt;2 x 164&gt; %a, &lt;2 x 1642 %b)
+entry:
+%#Q = icmp sot
+&lt;2× 164&gt; %x, %y
+있¥ㅓ
+add &lt;
+%add.1 = Select &lt;2 x 112 %#0, &lt;2 x 164&gt; %#1, &lt;2 x i64&gt; C 0, 0 7
+18
+ret &lt;2 x i64 %add.
+19
+Transtormation seems to be correct!</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/008.webp" aria-label="LLVM_Issue_81288.pdf 8쪽 확대"><img src="../assets/pages/s019/008.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 8쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 8/14</span><a href="../assets/pages/s019/008.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="9" id="page-9"><div class="page-marker"><span>PDF · 09 / 14</span></div><h2 class="page-title">Issue #81288 문제? / SRC TGT / define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) { define &lt;2xi</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p9-heading-1">Issue #81288 문제?</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><p>TGT</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @dst(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp = icmp sgt &lt;2 x i64&gt; %x, %y
+    %sum = add      &lt;2 x i64&gt; %a, %b
+    %r   = select   &lt;2 x i1&gt; %cmp, &lt;2 x i64&gt; %sum,
+                                &lt;2 x i64&gt; zeroinitializer
+}</code></pre></div><div class="pdf-region"><h3 id="s019-p9-heading-2">관련 규칙이 있는데도</h3><h3 id="s019-p9-heading-3">Fold가 안된다!</h3></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/009.webp" aria-label="LLVM_Issue_81288.pdf 9쪽 확대"><img src="../assets/pages/s019/009.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 9쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 9/14</span><a href="../assets/pages/s019/009.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="10" id="page-10"><div class="page-marker"><span>PDF · 10 / 14</span></div><h2 class="page-title">Issue #81288 문제? / SRC TGT / define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) { define &lt;2xi</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p10-heading-1">Issue #81288 문제?</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><p>TGT</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @dst(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp = icmp sgt &lt;2 x i64&gt; %x, %y
+    %sum = add      &lt;2 x i64&gt; %a, %b
+    %r   = select   &lt;2 x i1&gt; %cmp, &lt;2 x i64&gt; %sum,
+                                &lt;2 x i64&gt; zeroinitializer
+}</code></pre></div><div class="pdf-region"><pre><code># llvm/lib/Transforms/InstCombine/InstCombineAndOrXor.cpp:2822~2830</code></pre></div><div class="pdf-region"><pre><code>Instruction *InstCombinerImpl::visitAnd(BinaryOperator &amp;I) {
+  ...
+  // and(sext(A), B) / and(B, sext(A)) --&gt; A ? B : 0, where A is i1 or &lt;N x i1&gt;. ...
+  Value *A, *B;
+  if (match(&amp;I, m_c_And(m_OneUse(m_SExt(m_Value(A))), m_Value(B)))) &amp;&amp;
+      A-&gt;getType()-&gt;isIntOrIntVectorTy(1))
+    return createSelectInstWithUnknownProfile(A, B, Constant::getNullValue(Ty));</code></pre></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/010.webp" aria-label="LLVM_Issue_81288.pdf 10쪽 확대"><img src="../assets/pages/s019/010.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 10쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 10/14</span><a href="../assets/pages/s019/010.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="11" id="page-11"><div class="page-marker"><span>PDF · 11 / 14</span></div><h2 class="page-title">Issue #81288 문제? / SRC TGT / define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) { define &lt;2xi</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p11-heading-1">Issue #81288 문제?</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><p>TGT</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @dst(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp = icmp sgt &lt;2 x i64&gt; %x, %y
+    %sum = add      &lt;2 x i64&gt; %a, %b
+    %r   = select   &lt;2 x i1&gt; %cmp, &lt;2 x i64&gt; %sum,
+                                &lt;2 x i64&gt; zeroinitializer
+}</code></pre></div><div class="pdf-region"><pre><code># llvm/lib/Transforms/InstCombine/InstCombineAndOrXor.cpp:2822~2830</code></pre></div><div class="pdf-region"><p>1-bit</p><pre><code>Instruction *InstCombinerImpl::visitAnd(BinaryOperator &amp;I) {
+                                and(sext(A), B)
+  ...
+  // ...</code></pre><p>Commutative Operand</p><pre><code>                                and(B, sext(A))
+  Value *A, *B;
+  if (match(&amp;I, m_c_And(m_OneUse(m_SExt(m_Value(A))), m_Value(B)))) &amp;&amp;
+      A-&gt;getType()-&gt;isIntOrIntVectorTy(1))
+    return createSelectInstWithUnknownProfile(A, B, Constant::getNullValue(Ty));</code></pre></div><div class="pdf-region"><pre><code>select sext(A) ? B : NullValue(Type)</code></pre></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/011.webp" aria-label="LLVM_Issue_81288.pdf 11쪽 확대"><img src="../assets/pages/s019/011.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 11쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 11/14</span><a href="../assets/pages/s019/011.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="12" id="page-12"><div class="page-marker"><span>PDF · 12 / 14</span></div><h2 class="page-title">Issue #81288 문제? / SRC TGT / define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) { define &lt;2xi</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p12-heading-1">Issue #81288 문제?</h3></div><div class="pdf-region"><p>SRC</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @src(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp  = icmp sgt &lt;2 x i64&gt; %x, %y
+    %mask = sext     &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+    %a0   = and      %mask, %a
+    %b0   = and      %mask, %b
+    %sum  = add      %a0, %b0
+}</code></pre></div><div class="pdf-region"><p>TGT</p></div><div class="pdf-region"><pre><code>define &lt;2xi64&gt; @dst(&lt;2xi64&gt; %x, &lt;2xi64&gt; %y, &lt;2xi64&gt; %a, &lt;2xi64&gt; %b) {
+    %cmp = icmp sgt &lt;2 x i64&gt; %x, %y
+    %sum = add      &lt;2 x i64&gt; %a, %b
+    %r   = select   &lt;2 x i1&gt; %cmp, &lt;2 x i64&gt; %sum,
+                                &lt;2 x i64&gt; zeroinitializer
+}</code></pre></div><div class="pdf-region"><pre><code># llvm/lib/Transforms/InstCombine/InstCombineAndOrXor.cpp:2822~2830</code></pre></div><div class="pdf-region"><pre><code>Instruction *InstCombinerImpl::visitAnd(BinaryOperator &amp;I) {
+  ...
+  // ...</code></pre><p>1회 사용으로 제한</p><pre><code>  Value *A, *B;
+  if (match(&amp;I, m_c_And(m_OneUse(m_SExt(m_Value(A))), m_Value(B)))) &amp;&amp;
+      A-&gt;getType()-&gt;isIntOrIntVectorTy(1))
+    return createSelectInstWithUnknownProfile(A, B, Constant::getNullValue(Ty));</code></pre></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/012.webp" aria-label="LLVM_Issue_81288.pdf 12쪽 확대"><img src="../assets/pages/s019/012.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 12쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 12/14</span><a href="../assets/pages/s019/012.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="13" id="page-13"><div class="page-marker"><span>PDF · 13 / 14</span></div><h2 class="page-title">Issue #81288 패치 / godbolt / llvm/llvm-project#81409 PR</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p13-heading-1">Issue #81288 패치</h3></div><div class="pdf-region"><pre><code>llvm/llvm-project#81409 PR</code></pre></div><div class="pdf-region"><pre><code>godbolt</code></pre></div><div class="pdf-region"><pre><code>llc</code></pre></div></div><figure class="source-figure"><a href="../assets/figures/s019-013-01.webp"><img src="../assets/figures/s019-013-01.webp" width="954" height="573" alt="이호연 자료 13쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>13쪽 · 그림 1 <a href="../assets/figures/s019-013-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>source #1 &amp;
+a Save/Load
++ Add new...-
+V Vim
+t LLVM IR
+define &lt;2× 164&gt; Osrc(&lt;2X 164&gt; %x, &lt;2 × 164&gt; %y, &lt;2 × 164&gt; %a,
+&lt;2 x 1642
+entry:
+%cmp = icmp sgt &lt;2 × 164&gt; %x, %y
+%sext = sext &lt;2 x i1&gt; %cmp to &lt;2 x i64&gt;
+%a0 = and &lt;2 x 164&gt; %sext, %a
+%b0 =
+and &lt;2 x i64&gt; %sext, %b
+%add = add &lt;2 × 164&gt; %a0, %b0
+ret &lt;2 x i64&gt; %add
+}
+ertions trunk) (Editor #1) ②X
+issertions trunk)
+03
+☆ Output... ~
+Y Filter... •
+E Libraries/ Overrides
++ Add new... -
+• Add tool...
+define &lt;2 x 164&gt; gsrc(&lt;2 x 164&gt; %x, &lt;2 x i64&gt; %y, &lt;2 x 1642 %a,
+&lt;2 x 1642
+entry:
+%cmp = icmp sgt &lt;2 × 164&gt; %x, %y
+%0 = add &lt;2 × 164&gt; %b, %a
+%add = Select &lt;2 x 11&gt; %cmp, &lt;2 X 164&gt; %0, &lt;2 x 164&gt; zeroinitializer
+ret &lt;2 x i64&gt; %add</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s019-013-02.webp"><img src="../assets/figures/s019-013-02.webp" width="917" height="371" alt="이호연 자료 13쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>13쪽 · 그림 2 <a href="../assets/figures/s019-013-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>✓ O ltvm/lib/Transforms/Instcombine/InstcombineAndorxor.cpp cD t
+....
+00 -2637,7 +2637,7 80 Instruction *InstcombinerImpl: :visitAnd(Binaryoperator &amp;I) {
+&quot;
+2637 2637
+arm may not be reversible due to poison semantics. Is that a good
+2638 2638
+/
+canonicalization?
+value *A, *B;
+2639 2639
+2640
+• if (match(&amp;I, m_c_And(m_Oneuse(m_SExt(m_Value(A))), m_Value(B))) &amp;&amp;
+2640 + if (match(&amp;I, m_c_And(m_SExt(m_Value(A)), m_Value(B))) &amp;&amp;
+2641 2641
+A-&gt;getType()-&gt;isIntorintvectorTy(1))
+2642
+2642
+return Selectinst::Create(A, B, Constant::getnultValue(Ty));
+2643
+2643</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s019-013-03.webp"><img src="../assets/figures/s019-013-03.webp" width="619" height="387" alt="이호연 자료 13쪽의 코드·설명 그림 3" loading="lazy" decoding="async"></a><figcaption>13쪽 · 그림 3 <a href="../assets/figures/s019-013-03.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>lIc (assertions trunk) (Editor #1) 2 X
+lIc (assertions trunk)
+-mcpu=X86-64-V2-C
+A™
+후*
+1
+before:
+#아
+pcmpgtq %xmm1,
+%xmmo
+0450789m7
+pand
+%xmm0,
+%xmm2
+pand
+%xmm3,
+%xmmo
+padda
+%xmm2,
+%xmmo
+retq
+after:
+# ⑧=
+pcmpgtq
+%xmm1,
+%xmmo
+paddq
+%xmm3,
+%xmm?
+pand
+%xmm2,
+%xmmo
+reta</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/013.webp" aria-label="LLVM_Issue_81288.pdf 13쪽 확대"><img src="../assets/pages/s019/013.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 13쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 13/14</span><a href="../assets/pages/s019/013.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s019" data-page="14" id="page-14"><div class="page-marker"><span>PDF · 14 / 14</span></div><h2 class="page-title">Issue #81288 패치 / llvm-mca / Regression test</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s019-p14-heading-1">Issue #81288 패치</h3></div><div class="pdf-region"><pre><code>Regression test</code></pre></div><div class="pdf-region"><pre><code>llvm-mca</code></pre></div><div class="pdf-region"><p>Instructions  500 -&gt; 400 Block RThroughput 1.3 -&gt; 1.0</p></div></div><figure class="source-figure"><a href="../assets/figures/s019-014-01.webp"><img src="../assets/figures/s019-014-01.webp" width="999" height="620" alt="이호연 자료 14쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>14쪽 · 그림 1 <a href="../assets/figures/s019-014-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>llc (assertions trunk) (Editor #1) 0X
+IIc (assertions trunk)
+-mcpu=X86-64
+☆.
+src
+pcmpgtq %xmm1,
+%xmmo
+0T5
+pand
+%xmmo,
+%xmm2
+pand
+%xmm3,
+%xmmo
+paddq
+%xmm2,
+%xmmo
+reta
+llc (assertions trunk) (Editor #2)0X
+lIc (assertions trunk)
+-mcpu=x86-64
+Aㅜ
+tat:
+pcmpgtq xmmo,
+xmm1
+paddq
+xmm3
+pand
+xmm0,
+xmm2
+ret
+llvm-mca llc (assertions trunk) (Editor #1, Compiler #1)
+•X
+• Wrap lines
+&gt;- Arguments
+* Stdin
+Iterations:
+100
+Instructlons:
+500
+Total CycLes:
+703
+Total uops:
+500
+Dispatch width:
+uops Per Cycle:
+0.71
+IPC:
+0.71
+Block RThroughput : 1.3
+lIvm-mca llc (assertions trunk) (Editor #2, Compiler #3) ~X
+A-
+ㅁ wrap lines
++ Stdin
+Y Arguments
+Iterations:
+100
+Instructions:
+400
+Total Cycles:
+603
+TotaL uops:
+400
+Dispatch Width:
+uops Per Cycle:
+0.66
+IPC:
+0.66
+Block RThroughput : 1.0</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s019-014-02.webp"><img src="../assets/figures/s019-014-02.webp" width="815" height="487" alt="이호연 자료 14쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>14쪽 · 그림 2 <a href="../assets/figures/s019-014-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>2771
++ define 132 @and_sext_multiuse(132 %x, 132 %y, 132 %a, 132 %b) {
+2772
+2773
++ ； CHECK-LABEL: @and_sext_multiuse(
+2774
++ ; CHECK-NEXT:
+[[CMP:%.*]] = icmp sgt 132 [[X:%.*]], [[Y:%.*]]
+2775
++ ; CHECK-NEXT: [[TMP1:%.*]] = add i32 [[A:%.*]], [[B:%.*]]
+[[ADD:%.*]] = select i1 [[CMP]], i32 [[TMP1]], i32 0
+2776
++ ; CHECK-NEXT:
+2777
++ ; CHECK-NEXT:
+ret i32 [[ADD]]
+2778
+t ;
+2779
+%cmp = icmp sgt 132 %x, %y
+2780
++
+%sext = sext 11 %cmp to 132
+2781
+%and1 = and 132 %sext, %a
+2782
+%and2 = and 132 %sext, %b
+2783
+%add = add 132 %and1, %and2
+2784
+ret 132 %add
+2785</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s019/014.webp" aria-label="LLVM_Issue_81288.pdf 14쪽 확대"><img src="../assets/pages/s019/014.webp" alt="공유된 boolean mask와 덧셈을 select로 연결하기 · 14쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_81288.pdf · 14/14</span><a href="../assets/pages/s019/014.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section" id="editor-notes"><details class="editor-notes"><summary>핵심 원리와 편집 주석</summary><div><h3 id="pattern">문제의 값 흐름</h3><p>비교 결과를 sext한 mask는 각 원소에서 0 또는 all-ones다. 같은 mask를 a와 b에 각각 AND한 뒤 더하는 것이 대상이다.</p><div class="code-wrap"><div class="code-label">TEXT</div><pre><code>mask = sext(condition)
+(a &amp; mask) + (b &amp; mask)
+             ↓
+select condition, (a + b), 0</code></pre></div><p>조건이 참이면 두 입력이 모두 남는다. 거짓이면 두 입력이 모두 0이 된다.</p><h3 id="cause">규칙이 있는데 적용되지 않은 이유</h3><p>기존에는 <code>and(sext C, V)</code>를 <code>select C, V, 0</code>으로 바꾸는 규칙이 있었다. 그러나 sext가 한 번만 사용된다는 조건이 붙었다.</p><p>대상에서는 같은 mask가 두 AND에서 사용된다. 따라서 기존 규칙의 입력 조건을 통과하지 못했다.</p><p>새로운 전체 식 전용 규칙을 늘리는 방법과, 기존 정규화가 이어지도록 경계를 바꾸는 방법을 구분해 분석한다.</p><h3 id="implementation">matcher와 후속 단순화</h3><ul><li>sext의 원본이 scalar 또는 vector i1인지 확인한다.</li><li>AND의 피연산자 순서를 모두 검사한다.</li><li>공유된 mask와 각 사용처의 관계를 확인한다.</li><li>생성한 select가 기존 덧셈 단순화로 이어지는지 확인한다.</li></ul><p>원자료는 PR #81409와 코드 생성 결과를 연결한다. 한 번의 fold와 최종 출력 사이에는 기존 최적화가 여러 번 동작할 수 있다.</p><h3 id="validation">자료의 검증 결과</h3><p>자료에는 Alive2 비교, llc 출력, regression test와 llvm-mca 결과가 포함되어 있다. 예제 블록에서 명령어 집계 500→400, Block RThroughput 1.3→1.0을 기록한다.</p><aside class="note"><strong>읽을 때 확인할 점</strong>위 값은 해당 블록과 모델의 결과다. 실제 프로그램의 실행 시간이나 모든 vector 입력의 개선율로 확대하지 않는다.</aside></div></details></section><section class="doc-section" id="source-materials"><h2>문서 전문과 버전</h2><ul class="source-list"><li><span class="format">PDF</span><div><a href="../sources/s019.html">PDF 원자료 · 14쪽</a><small>LLVM_Issue_81288.pdf</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></section><section class="doc-section" id="references"><h2>관련 이슈와 PR</h2><ul class="reference-list"><li><a href="https://github.com/llvm/llvm-project/issues/81288" rel="noopener noreferrer">Issue #81288</a></li><li><a href="https://github.com/llvm/llvm-project/pull/81409" rel="noopener noreferrer">PR #81409</a></li></ul><p class="small-note">구현·병합 상태와 측정값은 해당 제출 자료의 작성 시점 기준입니다.</p></section></article><aside class="article-toc"><strong>이 문서에서</strong><nav aria-label="이 문서의 목차"><a href="#page-1">01 · InstCombine 이슈 분석 / Issue #81288 / 이…</a><a href="#page-2">02 · Issue #81288 명세 / SRC / %x = &lt;10, 2&gt;…</a><a href="#page-3">03 · Issue #81288 명세 / %x = &lt;10, 2&gt; %a = …</a><a href="#page-4">04 · Issue #81288 명세 / SRC / %x = &lt;10, 2&gt;…</a><a href="#page-5">05 · Issue #81288 명세 / SRC / %x = &lt;10, 2&gt;…</a><a href="#page-6">06 · Issue #81288 명세 / SRC / %x = &lt;10, 2&gt;…</a><a href="#page-7">07 · Issue #81288 명세 / SRC TGT / define &lt;…</a><a href="#page-8">08 · Issue #81288 Alive2 / SRC TGT / defi…</a><a href="#page-9">09 · Issue #81288 문제? / SRC TGT / define …</a><a href="#page-10">10 · Issue #81288 문제? / SRC TGT / define …</a><a href="#page-11">11 · Issue #81288 문제? / SRC TGT / define …</a><a href="#page-12">12 · Issue #81288 문제? / SRC TGT / define …</a><a href="#page-13">13 · Issue #81288 패치 / godbolt / llvm/llv…</a><a href="#page-14">14 · Issue #81288 패치 / llvm-mca / Regress…</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav><p class="small-note"><a href="../glossary.html">기술 용어 확인하기 ↗</a></p></aside></div><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../about.html">편집 기준과 출처</a><br><a href="../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

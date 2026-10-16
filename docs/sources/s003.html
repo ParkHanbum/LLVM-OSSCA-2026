@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="여러 비교와 select로 표현한 clamp를 minnum·maxnum과 명시적인 NaN 선택으로 나눈다."><meta name="theme-color" content="#fbfaf7"><title>NaN 대체값을 보존하며 clamp를 정규화하기 · 로컬 패치 보고서 · LLVM 멘티 기술 문서</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css?v=41429de5fd03"><script defer src="../assets/site.js?v=28009b539b2a"></script></head><body id="top"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../index.html" class="nav-articles">문서</a><a href="../results.html" class="nav-results">기여 결과</a><a href="../benchmarks.html" class="nav-benchmarks">벤치마크</a><a href="../sources/index.html" class="nav-sources active" aria-current="page">자료</a><a href="../glossary.html" class="nav-glossary">용어</a><a href="../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details open><summary>김준영<span class="count">03</span></summary><ul><li><a href="../articles/clamp-nan.html" aria-current="page">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details><summary>라민우<span class="count">02</span></summary><ul><li><a href="../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details><summary>이하동<span class="count">03</span></summary><ul><li><a href="../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main source-page article-main"><div class="breadcrumb"><a href="../index.html">문서</a><span>/</span>김준영</div><div class="article-layout"><article class="article"><header class="article-header"><div class="eyebrow">COMPLETE DOCUMENT / MD</div><h1>NaN 대체값을 보존하며 clamp를 정규화하기</h1><p class="article-lead">여러 비교와 select로 표현한 clamp를 minnum·maxnum과 명시적인 NaN 선택으로 나눈다.</p><div class="article-meta"><strong>자료 김준영</strong><span>기여 과정</span><span>로컬 패치 보고서</span><span>전문 수록</span></div><div class="article-tools"><button type="button" data-font aria-pressed="false">글자 크게</button><button type="button" data-print><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V9h18v8h-4M7 14h10v7H7z"/></svg>인쇄 / PDF</button><a href="#source-materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 15 6-6M7 11l-3 3a4 4 0 0 0 6 6l3-3M11 7l3-3a4 4 0 0 1 6 6l-3 3"/></svg>다른 버전 보기</a></div></header><p class="complete-notice">CLAMP_PATCH_REPORT.md의 전체 내용입니다. 설명·코드·표·검증 기록을 생략하지 않고 옮겼습니다.</p><div class="version-nav"><strong>같은 주제의 문서 5개</strong><ul class="source-list"><li><span class="format">MD</span><div><a href="../sources/s003.html">로컬 패치 보고서</a><small>CLAMP_PATCH_REPORT.md</small></div></li><li><span class="format">PDF</span><div><a href="../sources/s006.html">제안·검증 발표자료 · 16쪽</a><small>llvm_issue_213189_ppt.pdf</small></div></li><li><span class="format">DOCX</span><div><a href="../sources/s007.html">상세 분석 보고서</a><small>llvm_issue_27_analysis.docx</small></div></li><li><span class="format">DOCX</span><div><a href="../sources/s008.html">그림을 추가한 수정 보고서</a><small>llvm_issue_27_analysis_edited.docx</small></div></li><li><span class="format">PDF</span><div><a href="../sources/s009.html">실전 사례·후속 구현 발표자료 · 18쪽</a><small>llvm_issue_27_presentation.pdf</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></div><details class="mobile-toc"><summary>이 문서의 목차</summary><nav aria-label="이 문서의 목차"><a href="#s003-p1-heading-1">InstCombine  foldClampWithNaNFallback  패치 보고서</a><a href="#s003-p1-heading-2">1. 요약</a><a href="#s003-p1-heading-3">2. 무엇을 바꿨나 (배치 / BEFORE → AFTER)</a><a href="#s003-p1-heading-4">2-1. 코드 배치 (어디에 넣었나)</a><a href="#s003-p1-heading-5">2-2. IR 변환 BEFORE → AFTER</a><a href="#s003-p1-heading-6">2-3. 패치 diff (핵심 발췌)</a><a href="#s003-p1-heading-7">3. 왜 이렇게 바꿨나 (근거)</a><a href="#s003-p1-heading-8">3-1. 왜 이 변환을 하나 — 목적</a><a href="#s003-p1-heading-9">3-2. 왜 매 단계마다 조건을 이렇게 깐깐하게 검사하나</a><a href="#s003-p1-heading-10">3-3. 왜  nsz (no-signed-zeros)를 모든 값-생성 연산에서 요구하나</a><a href="#s003-p1-heading-11">3-4. 왜  isa&lt;FPMathOperator&gt;  가드를 넣었나 ★ (회귀 테스트로 발견한 버그)</a><a href="#s003-p1-heading-12">4. 검증 결과</a><a href="#s003-p1-heading-13">4-1. 기능 (POS) — 변환 O</a><a href="#s003-p1-heading-14">4-2. 오탐 방지 대조군 — 전부 변환 X (정상)</a><a href="#s003-p1-heading-15">4-3. 전체 회귀 테스트 — 0 실패</a><a href="#s003-p1-heading-16">5. 남은 한계 / 후속 작업</a><a href="#s003-p1-heading-17">부록: 재현 명령</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav></details><section class="doc-section full-source-section" data-source="s003" data-page="1" id="page-1"><div class="reading-text"><div class="source-body"><h2 id="s003-p1-heading-1">InstCombine <code>foldClampWithNaNFallback</code> 패치 보고서</h2>
+<blockquote>
+<p>clamp-with-NaN-fallback 패턴을 <code>minnum</code>/<code>maxnum</code> 정규 형태로 접는 InstCombine fold 추가
+브랜치: <code>experiment/clamp-nan-fold</code> · 파일: <code>llvm/lib/Transforms/InstCombine/InstCombineSelect.cpp</code> (+80줄)</p>
+</blockquote>
+<hr>
+<h2 id="s003-p1-heading-2">1. 요약</h2>
+<p>여러 개의 <code>fcmp</code> + <code>select</code>로 손으로 쓴 "clamp(값을 [LO, HI]로 자르되 NaN이면 fallback)" 패턴을,
+LLVM의 표준 부동소수점 intrinsic(<code>llvm.minnum</code> / <code>llvm.maxnum</code>) + 단일 <code>select</code>로 <strong>정규화(canonicalize)</strong> 하는
+최적화를 <code>InstCombineSelect.cpp</code>에 추가했다.</p>
+<ul>
+<li><strong>위치:</strong> <code>InstCombinerImpl::visitSelectInst</code> 내부 (마지막 <code>return nullptr;</code> 직전 훅)</li>
+<li><strong>헬퍼 함수:</strong> <code>foldClampWithNaNFallback</code> (InstCombineSelect.cpp:4488)</li>
+<li><strong>검증:</strong> 기능 테스트(POS) + 오탐 대조군 6종(N1~N6) + InstCombine 전체 회귀 1750/1750 통과</li>
+</ul>
+<hr>
+<h2 id="s003-p1-heading-3">2. 무엇을 바꿨나 (배치 / BEFORE → AFTER)</h2>
+<h3 id="s003-p1-heading-4">2-1. 코드 배치 (어디에 넣었나)</h3>
+<pre><code>llvm/lib/Transforms/InstCombine/InstCombineSelect.cpp
+│
+├─ (4488) static Value *foldClampWithNaNFallback(SelectInst &amp;Outer, ...)   ← [추가] 헬퍼 함수
+│         · 패턴을 인식하고 새 IR을 생성하는 순수 함수
+│
+└─ InstCombinerImpl::visitSelectInst(SelectInst &amp;SI)
+      ... 기존 select 최적화들 ...
+      (5361) if (Value *V = foldClampWithNaNFallback(SI, Builder))          ← [추가] 훅 연결
+               return replaceInstUsesWith(SI, V);
+      return nullptr;
+</code></pre>
+<blockquote>
+<p><code>visitSelectInst</code>는 InstCombine이 모든 <code>select</code> 명령을 방문할 때 호출된다.
+기존 fold들이 전부 실패한 맨 끝에 우리 훅을 걸어, 다른 최적화를 방해하지 않도록 했다.</p>
+</blockquote>
+<h3 id="s003-p1-heading-5">2-2. IR 변환 BEFORE → AFTER</h3>
+<p><strong>BEFORE</strong> — 입력 IR (<code>fcmp</code> 3개 + <code>select</code> 3개, 총 6개 연산):</p>
+<pre><code class="language-llvm">%below_lo_or_nan = fcmp nsz ult float %x, 0.0
+%below_hi        = fcmp nsz olt float %x, 1.0
+%upper           = select nsz i1 %below_hi, float %x, float 1.0
+%ordered         = fcmp ord float %x, 0.0
+%lower_or_fb     = select nsz i1 %ordered, float 0.0, float %fallback
+%result          = select nsz i1 %below_lo_or_nan, float %lower_or_fb, float %upper
+</code></pre>
+<p><strong>AFTER</strong> — fold가 생성한 정규 형태:</p>
+<pre><code class="language-llvm">%isnan   = fcmp uno float %x, 0.0
+%1       = call nsz float @llvm.minnum.f32(float %x, float 1.0)   ; 상한 clamp
+%2       = call nsz float @llvm.maxnum.f32(float %1, float 0.0)   ; 하한 clamp
+%result  = select i1 %isnan, float %fallback, float %2
+</code></pre>
+<p>의미: <code>x</code>가 NaN이면 <code>fallback</code>, 아니면 <code>x</code>를 <code>[LO, HI]</code>로 자른 값.</p>
+<h3 id="s003-p1-heading-6">2-3. 패치 diff (핵심 발췌)</h3>
+<pre><code class="language-cpp">// [추가] 헬퍼 함수 — 패턴 매칭 후 정규 형태 생성
+static Value *foldClampWithNaNFallback(SelectInst &amp;Outer,
+                                       InstCombiner::BuilderTy &amp;Builder) {
+  Value *BelowLoOrNan, *LowerOrFallback, *Upper;
+
+  // Outer: select nsz belowLoOrNan, lowerOrFallback, upper
+  // ★ hasNoSignedZeros()는 FP 연산에서만 유효 → 정수 select는 먼저 배제
+  if (!isa&lt;FPMathOperator&gt;(&amp;Outer) || !Outer.hasNoSignedZeros())
+    return nullptr;
+  if (!match(&amp;Outer, m_Select(m_Value(BelowLoOrNan), m_Value(LowerOrFallback),
+                              m_Value(Upper))))
+    return nullptr;
+
+  // belowLoOrNan: fcmp nsz ult %x, LO
+  auto *Cmp1 = dyn_cast&lt;FCmpInst&gt;(BelowLoOrNan);
+  if (!Cmp1 || Cmp1-&gt;getPredicate() != FCmpInst::FCMP_ULT ||
+      !Cmp1-&gt;hasNoSignedZeros())
+    return nullptr;
+  Value *X = Cmp1-&gt;getOperand(0);
+  auto *Lo = dyn_cast&lt;Constant&gt;(Cmp1-&gt;getOperand(1));
+  if (!Lo)
+    return nullptr;
+
+  // upper: select nsz (fcmp nsz olt %x, HI), %x, HI
+  auto *UpperSel = dyn_cast&lt;SelectInst&gt;(Upper);
+  if (!UpperSel || !UpperSel-&gt;hasNoSignedZeros())
+    return nullptr;
+  auto *Cmp2 = dyn_cast&lt;FCmpInst&gt;(UpperSel-&gt;getCondition());
+  if (!Cmp2 || Cmp2-&gt;getPredicate() != FCmpInst::FCMP_OLT ||
+      !Cmp2-&gt;hasNoSignedZeros() || Cmp2-&gt;getOperand(0) != X)
+    return nullptr;
+  auto *Hi = dyn_cast&lt;Constant&gt;(Cmp2-&gt;getOperand(1));
+  if (!Hi || UpperSel-&gt;getTrueValue() != X || UpperSel-&gt;getFalseValue() != Hi)
+    return nullptr;
+
+  // lowerOrFallback: select nsz (fcmp ord %x, *), LO, %fallback
+  auto *LowSel = dyn_cast&lt;SelectInst&gt;(LowerOrFallback);
+  if (!LowSel || !LowSel-&gt;hasNoSignedZeros())
+    return nullptr;
+  auto *Cmp3 = dyn_cast&lt;FCmpInst&gt;(LowSel-&gt;getCondition());
+  if (!Cmp3 || Cmp3-&gt;getPredicate() != FCmpInst::FCMP_ORD ||
+      Cmp3-&gt;getOperand(0) != X)
+    return nullptr;
+  if (LowSel-&gt;getTrueValue() != Lo)
+    return nullptr;
+  Value *Fallback = LowSel-&gt;getFalseValue();
+
+  // 매칭 성공 → 정규 형태 생성
+  Value *IsNaN = Builder.CreateFCmpUNO(X, X, "isnan");
+  Value *UpperV = Builder.CreateBinaryIntrinsic(Intrinsic::minnum, X, Hi);
+  cast&lt;Instruction&gt;(UpperV)-&gt;setHasNoSignedZeros(true);
+  Value *Clamped = Builder.CreateBinaryIntrinsic(Intrinsic::maxnum, UpperV, Lo);
+  cast&lt;Instruction&gt;(Clamped)-&gt;setHasNoSignedZeros(true);
+  return Builder.CreateSelect(IsNaN, Fallback, Clamped, "clamp.or.fallback");
+}
+</code></pre>
+<pre><code class="language-cpp">// [추가] visitSelectInst 끝부분 훅
+  if (Value *V = foldClampWithNaNFallback(SI, Builder))
+    return replaceInstUsesWith(SI, V);
+
+  return nullptr;
+</code></pre>
+<blockquote>
+<p>전체 diff: <code>issue-175552/clamp_patch.diff</code> (1 file changed, 80 insertions)</p>
+</blockquote>
+<hr>
+<h2 id="s003-p1-heading-7">3. 왜 이렇게 바꿨나 (근거)</h2>
+<h3 id="s003-p1-heading-8">3-1. 왜 이 변환을 하나 — 목적</h3>
+<ul>
+<li>손으로 쓴 clamp 패턴은 <strong>연산 6개</strong>(fcmp 3 + select 3)로 길고, 백엔드가 최적화하기 어렵다.</li>
+<li><code>llvm.minnum</code> / <code>llvm.maxnum</code>은 LLVM의 <strong>표준 정규형</strong>이며, 각 타깃 백엔드가 전용 명령
+(예: x86 <code>minss</code>/<code>maxss</code>, AArch64 <code>fminnm</code>/<code>fmaxnm</code>)으로 잘 낮춰준다.</li>
+<li>즉 <strong>정규화 = 후속 최적화·코드 생성 품질 향상.</strong></li>
+</ul>
+<h3 id="s003-p1-heading-9">3-2. 왜 매 단계마다 조건을 이렇게 깐깐하게 검사하나</h3>
+<p>fold는 "값이 100% 동일할 때만" 바꿔야 한다(안 그러면 컴파일러가 프로그램 의미를 바꿈). 그래서
+패턴의 각 부품을 정확히 검사한다:</p>
+<table>
+<thead>
+<tr>
+<th>검사</th>
+<th>이유</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>FCMP_ULT</code> (unordered &lt;)</td>
+<td>첫 비교가 "x &lt; LO <strong>또는 x가 NaN</strong>"을 잡아야 함. ordered(<code>olt</code>)면 NaN 경로가 빠짐</td>
+</tr>
+<tr>
+<td><code>FCMP_OLT</code> (ordered &lt;)</td>
+<td>상한 비교는 NaN을 포함하면 안 됨</td>
+</tr>
+<tr>
+<td><code>FCMP_ORD</code></td>
+<td>하한 분기는 "x가 NaN이 아닐 때"만 LO를 골라야 함</td>
+</tr>
+<tr>
+<td><code>getOperand(0) != X</code></td>
+<td>세 비교가 모두 <strong>같은 <code>%x</code></strong> 를 대상으로 해야 함 (다른 값이면 다른 계산)</td>
+</tr>
+<tr>
+<td><code>LowSel-&gt;getTrueValue() != Lo</code></td>
+<td>하한 상수와 첫 비교의 LO 상수가 <strong>동일</strong> 해야 함</td>
+</tr>
+<tr>
+<td><code>Lo</code>/<code>Hi</code> 가 <code>Constant</code></td>
+<td>상수 경계여야 안전하게 min/max로 접힘</td>
+</tr>
+</tbody></table>
+<h3 id="s003-p1-heading-10">3-3. 왜 <code>nsz</code>(no-signed-zeros)를 모든 값-생성 연산에서 요구하나</h3>
+<ul>
+<li>부호 있는 0(<code>+0.0</code> vs <code>-0.0</code>) 때문에 원본 select와 <code>minnum</code>/<code>maxnum</code>의 결과가 <strong>미세하게 달라질 수 있다.</strong></li>
+<li>이 둘이 값-동치가 되려면 값을 만드는 모든 select/call에 <code>nsz</code>가 있어야 한다.
+(비교(<code>fcmp</code>)에 붙은 <code>nsz</code>는 결과값에 영향 없어 무관.)</li>
+<li>그래서 <code>Outer</code>, <code>UpperSel</code>, <code>LowSel</code>, 그리고 새로 만든 <code>minnum</code>/<code>maxnum</code> 모두 <code>nsz</code>를 확인/설정한다.</li>
+</ul>
+<h3 id="s003-p1-heading-11">3-4. 왜 <code>isa&lt;FPMathOperator&gt;</code> 가드를 넣었나 ★ (회귀 테스트로 발견한 버그)</h3>
+<ul>
+<li>초기 버전은 <code>Outer.hasNoSignedZeros()</code>를 <strong>곧바로</strong> 호출했다.</li>
+<li>그런데 <code>hasNoSignedZeros()</code>는 <strong>부동소수점 연산에서만 유효</strong>하다(내부에 <code>assert(isa&lt;FPMathOperator&gt;(this))</code>).</li>
+<li>LLVM에는 <strong>정수 select</strong>(<code>select i1 %c, i32 %a, i32 %b</code>)가 매우 흔한데, 여기에 호출하면
+assertion이 터지며 <code>opt</code>가 <strong>크래시(SIGABRT)</strong> 한다.</li>
+<li>결과: 첫 회귀 테스트에서 select를 쓰는 무관한 테스트 <strong>336개가 무더기로 실패</strong>.</li>
+<li><strong>수정:</strong> 패턴 매칭 맨 앞에 <code>if (!isa&lt;FPMathOperator&gt;(&amp;Outer) ...)</code> 가드를 추가해
+정수 select는 즉시 <code>return nullptr</code> 하도록 했다. → 336 → 0 실패.</li>
+</ul>
+<hr>
+<h2 id="s003-p1-heading-12">4. 검증 결과</h2>
+<h3 id="s003-p1-heading-13">4-1. 기능 (POS) — 변환 O</h3>
+<p><code>issue-175552/clamp_test.ll</code> → AFTER 형태(<code>fcmp uno</code> + <code>minnum</code> + <code>maxnum</code> + <code>select</code>)로 정확히 변환됨.</p>
+<h3 id="s003-p1-heading-14">4-2. 오탐 방지 대조군 — 전부 변환 X (정상)</h3>
+<p><code>issue-175552/clamp_negative.ll</code>. 패턴을 한 군데씩 어긋내면 fold가 발동하지 않음:</p>
+<table>
+<thead>
+<tr>
+<th>케이스</th>
+<th>어긋낸 부분</th>
+<th>결과</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>N1</td>
+<td>바깥 select <code>nsz</code> 없음</td>
+<td>원본 유지 ✅</td>
+</tr>
+<tr>
+<td>N2</td>
+<td>upper select <code>nsz</code> 없음</td>
+<td>원본 유지 ✅</td>
+</tr>
+<tr>
+<td>N3</td>
+<td><code>ult</code> → <code>olt</code></td>
+<td>원본 유지 ✅</td>
+</tr>
+<tr>
+<td>N4</td>
+<td>LO 상수 불일치 (0.0→2.0)</td>
+<td>원본 유지 ✅</td>
+</tr>
+<tr>
+<td>N5</td>
+<td>비교 대상 <code>%x</code>→<code>%y</code></td>
+<td>원본 유지 ✅</td>
+</tr>
+<tr>
+<td>N6</td>
+<td><code>ord</code> → <code>uno</code></td>
+<td>원본 유지 ✅</td>
+</tr>
+</tbody></table>
+<h3 id="s003-p1-heading-15">4-3. 전체 회귀 테스트 — 0 실패</h3>
+<pre><code>Total Discovered Tests: 1820
+  Passed     : 1750 (96.15%)
+  Unsupported:   70   (미빌드 타깃 요구 — 정상)
+  Failed     :    0
+</code></pre>
+<hr>
+<h2 id="s003-p1-heading-16">5. 남은 한계 / 후속 작업</h2>
+<ul>
+<li>⚠️ <strong>의미 동치(semantic equivalence) 독립 검증 미완</strong>: 변환의 값-동치는 Alive2 같은 도구로
+정식 증명이 필요하다(본 작업은 fold 발동·오탐·기존 테스트 무손상까지 확인).</li>
+<li>정식 upstream 패치로 만들려면:<ol>
+<li><code>llvm/test/Transforms/InstCombine/</code>에 정식 lit 테스트(<code>.ll</code> + <code>CHECK</code>) 작성</li>
+<li>Alive2로 동치 재확인</li>
+<li>벡터 타입 / 다른 상수 경계 / one-use 조건 등 일반화 검토</li>
+</ol>
+</li>
+</ul>
+<hr>
+<h2 id="s003-p1-heading-17">부록: 재현 명령</h2>
+<pre><code class="language-bash"># 빌드 (증분)
+ninja -C build opt
+
+# 기능 테스트
+./build/bin/opt -passes=instcombine -S issue-175552/clamp_test.ll
+
+# 오탐 대조군
+./build/bin/opt -passes=instcombine -S issue-175552/clamp_negative.ll
+
+# 회귀 테스트
+./build/bin/llvm-lit -s build/test/Transforms/InstCombine
+</code></pre>
+</div></div></section><section class="doc-section" id="editor-notes"><details class="editor-notes"><summary>핵심 원리와 편집 주석</summary><div><h3 id="purpose">문제와 목표</h3><p>일반 숫자는 하한과 상한 사이로 제한한다. NaN 입력에는 별도의 fallback 값을 반환한다. 기존 표현은 여러 <code>fcmp</code>와 <code>select</code>가 얽힌 트리다.</p><p>목표는 NaN 선택과 범위 제한을 분리하는 것이다. 범위 제한은 <code>llvm.minnum</code>과 <code>llvm.maxnum</code>으로 표현한다.</p><div class="code-wrap"><div class="code-label">LLVM</div><pre><code>; 구조를 설명하기 위한 요약이다. 실제 적용에는 아래 조건이 필요하다.
+%isnan = fcmp uno float %x, %x
+%upper = call nsz float @llvm.minnum.f32(float %x, float 1.0)
+%clamped = call nsz float @llvm.maxnum.f32(float %upper, float 0.0)
+%result = select i1 %isnan, float %fallback, float %clamped</code></pre></div><h3 id="conditions">변환 조건</h3><ul><li>값을 만드는 select에서 필요한 signed-zero 허용 조건을 확인한다.</li><li>하한과 상한의 순서를 확인한다.</li><li>scalar 또는 부동소수점 vector 타입으로 범위를 제한한다.</li><li>denormal 처리 모드가 변환의 의미를 바꾸는지 확인한다.</li><li>NaN 입력에서는 fallback이 그대로 선택되어야 한다.</li></ul><p><code>fcmp</code>는 +0과 -0을 같은 값으로 비교한다. 비교 명령의 <code>nsz</code> 여부와 값을 만드는 명령의 <code>nsz</code> 요구를 구분해야 한다.</p><h3 id="reasoning">분석과 검증 과정</h3><div class="table-wrap"><table><thead><tr><th scope="col">단계</th><th scope="col">확인한 질문</th></tr></thead><tbody><tr><td>입력 분류</td><td>NaN, 하한 미만, 범위 안, 상한 초과에서 결과가 같은가?</td></tr><tr><td>선례 조사</td><td>기존 min/max fold는 어떤 fast-math 조건을 요구하는가?</td></tr><tr><td>형식 검증</td><td>Alive2가 가정한 FP·poison·undef 의미에서 변환이 성립하는가?</td></tr><tr><td>환경 확인</td><td>FTZ 또는 denormal 설정이 정규화의 의미를 바꾸는가?</td></tr><tr><td>백엔드 확인</td><td>min/max가 타깃의 명령어로 내려가는가, 함수 호출이 되는가?</td></tr></tbody></table></div><p>자료에는 성공한 증명뿐 아니라 실패한 시도와 그 원인도 남아 있다. 형식 검증의 결론은 도구가 모델링한 조건 안에서 읽어야 한다.</p><h3 id="versions">자료별 구현 단계</h3><p>DOCX는 패턴 정의, 선례, 실험, 검증과 로컬 구현 검토를 상세히 다룬다. 수정 DOCX에는 설명 그림과 용어 정리가 추가되었다.</p><p>16장 발표자료는 이슈 제안과 별도 실습 브랜치를 구분한다. 18장 발표자료는 darktable 사례와 이후 브랜치의 구현 상태를 추가한다.</p><p>Markdown 패치 보고서는 로컬 구현과 회귀 테스트 결과를 설명한다. 각 자료의 숫자와 구현 상태는 해당 버전의 기록이다.</p><aside class="note"><strong>읽을 때 확인할 점</strong>로컬 실험, 이슈 등록, 브랜치 구현은 서로 다른 단계다. 이 자료 묶음만으로 최종 업스트림 병합이나 모든 타깃의 성능 개선을 단정하지 않는다.</aside><h3 id="outcome">결과와 남은 문제</h3><p>단순한 수식 치환을 FP 의미론, 실제 사용 사례, 검증 조건으로 확장한 기록이다. 이후 발견한 타입 크래시와 타깃별 비용 문제는 별도 문서에서 설명한다.</p><p>NaN을 별도로 처리해도 minnum·maxnum에 근거 없는 <code>nnan</code>을 붙일 수는 없다. 이 차이가 일부 타깃의 libcall 비용으로 이어질 수 있다.</p></div></details></section><section class="doc-section" id="source-materials"><h2>문서 전문과 버전</h2><ul class="source-list"><li><span class="format">MD</span><div><a href="../sources/s003.html">로컬 패치 보고서</a><small>CLAMP_PATCH_REPORT.md</small></div></li><li><span class="format">PDF</span><div><a href="../sources/s006.html">제안·검증 발표자료 · 16쪽</a><small>llvm_issue_213189_ppt.pdf</small></div></li><li><span class="format">DOCX</span><div><a href="../sources/s007.html">상세 분석 보고서</a><small>llvm_issue_27_analysis.docx</small></div></li><li><span class="format">DOCX</span><div><a href="../sources/s008.html">그림을 추가한 수정 보고서</a><small>llvm_issue_27_analysis_edited.docx</small></div></li><li><span class="format">PDF</span><div><a href="../sources/s009.html">실전 사례·후속 구현 발표자료 · 18쪽</a><small>llvm_issue_27_presentation.pdf</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></section><section class="doc-section" id="references"><h2>관련 이슈와 PR</h2><ul class="reference-list"><li><a href="https://github.com/llvm/llvm-project/issues/213189" rel="noopener noreferrer">Issue #213189</a></li></ul><p class="small-note">구현·병합 상태와 측정값은 해당 제출 자료의 작성 시점 기준입니다.</p></section></article><aside class="article-toc"><strong>이 문서에서</strong><nav aria-label="이 문서의 목차"><a href="#s003-p1-heading-1">InstCombine  foldClampWithNaNFallback  패치 보고서</a><a href="#s003-p1-heading-2">1. 요약</a><a href="#s003-p1-heading-3">2. 무엇을 바꿨나 (배치 / BEFORE → AFTER)</a><a href="#s003-p1-heading-4">2-1. 코드 배치 (어디에 넣었나)</a><a href="#s003-p1-heading-5">2-2. IR 변환 BEFORE → AFTER</a><a href="#s003-p1-heading-6">2-3. 패치 diff (핵심 발췌)</a><a href="#s003-p1-heading-7">3. 왜 이렇게 바꿨나 (근거)</a><a href="#s003-p1-heading-8">3-1. 왜 이 변환을 하나 — 목적</a><a href="#s003-p1-heading-9">3-2. 왜 매 단계마다 조건을 이렇게 깐깐하게 검사하나</a><a href="#s003-p1-heading-10">3-3. 왜  nsz (no-signed-zeros)를 모든 값-생성 연산에서 요구하나</a><a href="#s003-p1-heading-11">3-4. 왜  isa&lt;FPMathOperator&gt;  가드를 넣었나 ★ (회귀 테스트로 발견한 버그)</a><a href="#s003-p1-heading-12">4. 검증 결과</a><a href="#s003-p1-heading-13">4-1. 기능 (POS) — 변환 O</a><a href="#s003-p1-heading-14">4-2. 오탐 방지 대조군 — 전부 변환 X (정상)</a><a href="#s003-p1-heading-15">4-3. 전체 회귀 테스트 — 0 실패</a><a href="#s003-p1-heading-16">5. 남은 한계 / 후속 작업</a><a href="#s003-p1-heading-17">부록: 재현 명령</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav><p class="small-note"><a href="../glossary.html">기술 용어 확인하기 ↗</a></p></aside></div><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../about.html">편집 기준과 출처</a><br><a href="../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

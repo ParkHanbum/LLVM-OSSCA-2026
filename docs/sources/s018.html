@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="벡터의 x * (x == 0)을 직접 처리하는 대신 더 일반적인 곱셈 패턴을 단순한 선택으로 바꾼다."><meta name="theme-color" content="#fbfaf7"><title>boolean sext와 곱셈을 select로 정규화하기 · HTML 원자료 · LLVM 멘티 기술 문서</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css?v=41429de5fd03"><script defer src="../assets/site.js?v=28009b539b2a"></script></head><body id="top"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../index.html" class="nav-articles">문서</a><a href="../results.html" class="nav-results">기여 결과</a><a href="../benchmarks.html" class="nav-benchmarks">벤치마크</a><a href="../sources/index.html" class="nav-sources active" aria-current="page">자료</a><a href="../glossary.html" class="nav-glossary">용어</a><a href="../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details><summary>라민우<span class="count">02</span></summary><ul><li><a href="../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details open><summary>이하동<span class="count">03</span></summary><ul><li><a href="../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../articles/boolean-multiply.html" aria-current="page">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main source-page article-main"><div class="breadcrumb"><a href="../index.html">문서</a><span>/</span>이하동</div><div class="article-layout"><article class="article"><header class="article-header"><div class="eyebrow">COMPLETE DOCUMENT / HTML</div><h1>boolean sext와 곱셈을 select로 정규화하기</h1><p class="article-lead">벡터의 x * (x == 0)을 직접 처리하는 대신 더 일반적인 곱셈 패턴을 단순한 선택으로 바꾼다.</p><div class="article-meta"><strong>자료 이하동</strong><span>기존 패치 분석</span><span>HTML 원자료</span><span>전문 수록</span></div><div class="article-tools"><button type="button" data-font aria-pressed="false">글자 크게</button><button type="button" data-print><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V9h18v8h-4M7 14h10v7H7z"/></svg>인쇄 / PDF</button><a href="#source-materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 15 6-6M7 11l-3 3a4 4 0 0 0 6 6l3-3M11 7l3-3a4 4 0 0 1 6 6l-3 3"/></svg>다른 버전 보기</a></div></header><p class="complete-notice">llvm_issue_84608_study.html의 전체 내용입니다. 설명·코드·표·검증 기록을 생략하지 않고 옮겼습니다.</p><details class="mobile-toc"><summary>이 문서의 목차</summary><nav aria-label="이 문서의 목차"><a href="#s018-p1-heading-1">이슈와 문제 코드</a><a href="#s018-p1-heading-2">sext i1 과 곱셈의 의미</a><a href="#s018-p1-heading-3">원래 이슈 패턴</a><a href="#s018-p1-heading-4">Alive2 검증</a><a href="#s018-p1-heading-5">기존 코드가 놓친 이유</a><a href="#s018-p1-heading-6">PR과 리뷰 과정</a><a href="#s018-p1-heading-7">초기 패치</a><a href="#s018-p1-heading-8">일반화 요청</a><a href="#s018-p1-heading-9">구현과 테스트 정리</a><a href="#s018-p1-heading-10">최종 머지</a><a href="#s018-p1-heading-11">추가된 일반  mul  fold</a><a href="#s018-p1-heading-12">변환식</a><a href="#s018-p1-heading-13">matcher와 후속 fold</a><a href="#s018-p1-heading-14">원래 이슈가 0으로 접히는 경로</a><a href="#s018-p1-heading-15">대표 테스트 3개</a><a href="#s018-p1-heading-16">결론</a><a href="#s018-p1-heading-17">참고 링크</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav></details><section class="doc-section full-source-section" data-source="s018" data-page="1" id="page-1"><div class="reading-text"><div class="source-body"><div>
+      <section id="s018-p1-issue">
+        <p class="eyebrow">01 · Issue</p>
+        <h2 id="s018-p1-heading-1">이슈와 문제 코드</h2>
+        <p>대상 코드는 4개의 <code>int</code> lane을 가진 벡터에 <code>x == 0</code> 비교 mask를 곱한다.</p>
+
+        <div class="panel">
+          <span class="label">C source</span>
+          <pre><span class="kw">typedef</span> <span class="ty">int</span> V
+    __attribute__((vector_size(<span class="num">4</span> * sizeof(<span class="ty">int</span>))));
+
+V <span class="fn">qux</span>(V x) {
+  <span class="kw">return</span> x * (x == <span class="num">0</span>);
+}</pre>
+        </div>
+
+        <p>비교 결과를 sign-extension한 mask는 각 lane에서 <code>0</code> 또는 <code>-1</code>이다. 핵심 IR과 기대 결과는 다음과 같다.</p>
+
+        <div class="grid-2">
+          <div class="panel">
+            <span class="label red">Before</span>
+            <pre><span class="kw">define</span> &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt; <span class="fn">@src</span>(
+    &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt; <span class="val">%x</span>) {
+  <span class="val">%cmp</span> = <span class="kw">icmp eq</span> &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt; <span class="val">%x</span>,
+                   zeroinitializer
+  <span class="val">%mask</span> = <span class="kw">sext</span> &lt;<span class="num">4</span> x <span class="ty">i1</span>&gt; <span class="val">%cmp</span>
+                   <span class="kw">to</span> &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt;
+  <span class="val">%r</span> = <span class="kw">mul</span> &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt; <span class="val">%x</span>, <span class="val">%mask</span>
+  <span class="kw">ret</span> &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt; <span class="val">%r</span>
+}</pre>
+          </div>
+          <div class="panel">
+            <span class="label green">After</span>
+            <pre><span class="kw">define</span> &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt; <span class="fn">@src</span>(
+    &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt; <span class="val">%x</span>) {
+  <span class="kw">ret</span> &lt;<span class="num">4</span> x <span class="ty">i32</span>&gt; zeroinitializer
+}</pre>
+          </div>
+        </div>
+        <p class="code-caption">함수 속성과 데이터 레이아웃을 생략하고 SSA 이름을 정리했다.</p>
+      </section>
+
+      <section id="s018-p1-semantics">
+        <p class="eyebrow">02 · Semantics</p>
+        <h2 id="s018-p1-heading-2"><code>sext i1</code>과 곱셈의 의미</h2>
+        <p><code>i1</code>의 sign-extension은 원래 한 비트를 새 상위 비트에 복제한다. 따라서 <code>false</code>는 0, <code>true</code>는 all-ones인 -1이 된다.</p>
+
+        <table>
+          <thead><tr><th>조건 X</th><th><code>sext X</code></th><th><code>(sext X) * Y</code></th><th>같은 select</th></tr></thead>
+          <tbody>
+            <tr><td><code>false</code></td><td class="yellow">0</td><td class="yellow">0</td><td><code>select X, -Y, 0</code></td></tr>
+            <tr><td><code>true</code></td><td class="red">-1</td><td class="red">-Y</td><td><code>select X, -Y, 0</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="formula">mul (sext i1 X), Y ≡ select X, -Y, 0</div>
+
+        <h3 id="s018-p1-heading-3">원래 이슈 패턴</h3>
+        <table>
+          <thead><tr><th>한 lane의 x</th><th><code>x == 0</code> mask</th><th>곱셈 결과</th></tr></thead>
+          <tbody>
+            <tr><td><code>x == 0</code></td><td class="red">-1</td><td class="green"><code>0 * -1 = 0</code></td></tr>
+            <tr><td><code>x != 0</code></td><td class="yellow">0</td><td class="green"><code>x * 0 = 0</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="s018-p1-heading-4">Alive2 검증</h3>
+        <p>이슈와 PR에는 각각 원래 0 상수 변환과 일반 <code>mul → select</code> 변환의 Alive2 proof가 포함되어 있다.</p>
+        <div class="grid-2">
+          <div class="panel"><span class="label">Issue proof</span><p><code>x * (x == 0) → 0</code></p><p><a href="https://alive2.llvm.org/ce/z/uijB4T" rel="noopener noreferrer">Alive2 전체 보기</a></p></div>
+          <div class="panel"><span class="label">PR proof</span><p><code>mul(sext X), Y → select X, -Y, 0</code></p><p><a href="https://alive2.llvm.org/ce/z/n_ns-W" rel="noopener noreferrer">Alive2 전체 보기</a></p></div>
+        </div>
+      </section>
+
+      <section id="s018-p1-root-cause">
+        <p class="eyebrow">03 · Root Cause</p>
+        <h2 id="s018-p1-heading-5">기존 코드가 놓친 이유</h2>
+        <p><code>visitMul()</code>에는 boolean extension과 곱셈을 다루는 인접 fold가 있었지만, <code>sext i1</code>과 variable <code>Y</code>의 곱셈은 처리하지 않았다.</p>
+
+        <div class="grid-2">
+          <div class="panel">
+            <span class="label green">처리하던 형태</span>
+            <div class="formula">mul Y, zext(i1 X)</div>
+            <p><code>select X, Y, 0</code>으로 변환한다.</p>
+          </div>
+          <div class="panel">
+            <span class="label green">처리하던 형태</span>
+            <div class="formula">mul sext(i1 X), Constant</div>
+            <p><code>select X, -Constant, 0</code>으로 변환한다.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <span class="label red">빠져 있던 형태</span>
+          <div class="formula">mul sext(i1 X), Y</div>
+          <p><code>Y</code>가 상수가 아닌 일반 값일 때 적용할 fold가 없었다.</p>
+        </div>
+
+        <div class="callout">
+          <strong>원인</strong>
+          boolean <code>sext</code>의 값 범위는 0과 -1로 제한되지만, 기존 코드는 상수 곱셈에만 이 성질을 사용했다.
+        </div>
+      </section>
+
+      <section id="s018-p1-review">
+        <p class="eyebrow">04 · Pull Request</p>
+        <h2 id="s018-p1-heading-6">PR과 리뷰 과정</h2>
+        <div class="timeline">
+          <div class="event">2024-03-11<h3 id="s018-p1-heading-7">초기 패치</h3><p>이슈의 <code>x * (x == 0)</code> 전체 식을 직접 0으로 접는 패치로 시작했다.</p></div>
+          <div class="event">2024-03-11<h3 id="s018-p1-heading-8">일반화 요청</h3><p>전체 식 대신 <code>mul(sext X), Y</code>를 <code>select X, -Y, 0</code>으로 변환하라는 리뷰가 제안됐다.</p></div>
+          <div class="event">2024-03-13<h3 id="s018-p1-heading-9">구현과 테스트 정리</h3><p><code>m_c_Mul</code>, one-use 조건, scalar·flag·negative test가 반영됐다.</p></div>
+          <div class="event">2024-03-15<h3 id="s018-p1-heading-10">최종 머지</h3><p>2개 commit, 3개 파일 변경이 merge commit <code>e61e260</code>으로 반영됐다.</p></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel"><span class="label">Initial</span><p><code>a2890b7</code></p><p>원래 이슈를 위한 첫 구현이다.</p></div>
+          <div class="panel"><span class="label">Refactor</span><p><code>0700a98</code></p><p>일반 fold와 확장된 테스트로 정리했다.</p></div>
+        </div>
+
+        <div class="callout warning">
+          <strong>비용 논의</strong>
+          일반형은 <code>mul</code> 하나를 <code>neg + select</code>로 바꾸므로 코드 크기 회귀 가능성이 논의됐다. 리뷰에서는 곱셈 latency와 cmov를 고려해 변환을 유지했다.
+        </div>
+      </section>
+
+      <section id="s018-p1-patch">
+        <p class="eyebrow">05 · Patch</p>
+        <h2 id="s018-p1-heading-11">추가된 일반 <code>mul</code> fold</h2>
+
+        <pre><span class="cm">// mul (sext X), Y -&gt; select X, -Y, 0</span>
+<span class="cm">// mul Y, (sext X) -&gt; select X, -Y, 0</span>
+<span class="kw">if</span> (<span class="fn">match</span>(&amp;I,
+          <span class="fn">m_c_Mul</span>(<span class="fn">m_OneUse</span>(<span class="fn">m_SExt</span>(<span class="fn">m_Value</span>(X))),
+                  <span class="fn">m_Value</span>(Y))) &amp;&amp;
+    X-&gt;<span class="fn">getType</span>()-&gt;<span class="fn">isIntOrIntVectorTy</span>(<span class="num">1</span>))
+  <span class="kw">return</span> SelectInst::<span class="fn">Create</span>(
+      X, Builder.<span class="fn">CreateNeg</span>(
+             Y, <span class="num">""</span>, <span class="cm">/*HasNUW=*/</span><span class="num">false</span>,
+             I.<span class="fn">hasNoSignedWrap</span>()),
+      ConstantInt::<span class="fn">getNullValue</span>(Op0-&gt;<span class="fn">getType</span>()));</pre>
+
+        <h3 id="s018-p1-heading-12">변환식</h3>
+        <div class="formula">X = false: 0 * Y = 0</div>
+        <div class="formula">X = true: -1 * Y = -Y</div>
+        <div class="formula green">→ select X, -Y, 0</div>
+
+        <div class="grid-2">
+          <div class="callout"><strong>one-use</strong><code>sext</code>가 곱셈에서만 사용될 때 적용한다.</div>
+          <div class="callout"><strong>type check</strong><code>X</code>를 scalar/vector <code>i1</code>로 제한한다.</div>
+          <div class="callout"><strong>NSW</strong>원래 <code>mul</code>의 <code>nsw</code>를 새 <code>neg</code>에 전달한다.</div>
+          <div class="callout warning"><strong>NUW</strong><code>neg</code>에는 <code>nuw</code>를 전달하지 않는다.</div>
+        </div>
+      </section>
+
+      <section id="s018-p1-matcher">
+        <p class="eyebrow">06 · Pattern Match</p>
+        <h2 id="s018-p1-heading-13">matcher와 후속 fold</h2>
+        <p>최종 구현은 곱셈의 교환법칙과 사용 횟수 조건을 matcher 안에 표현한다.</p>
+
+        <table>
+          <thead><tr><th>matcher</th><th>역할</th></tr></thead>
+          <tbody>
+            <tr><td><code>m_c_Mul</code></td><td><code>sext</code>가 어느 피연산자에 있어도 매치한다.</td></tr>
+            <tr><td><code>m_OneUse</code></td><td><code>sext</code>의 사용자가 현재 곱셈 하나인지 확인한다.</td></tr>
+            <tr><td><code>m_SExt</code></td><td>sign-extension의 원본 값 <code>X</code>를 얻는다.</td></tr>
+            <tr><td><code>m_Value(Y)</code></td><td>나머지 곱셈 피연산자를 <code>Y</code>로 잡는다.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="s018-p1-heading-14">원래 이슈가 0으로 접히는 경로</h3>
+        <div class="flow">
+          <span>mul x, sext(x == 0)</span><i>→</i><span>select (x == 0), -x, 0</span><i>→</i><span>0</span>
+        </div>
+
+        <table>
+          <tbody>
+            <tr><th><code>x == 0</code></th><td>true 분기에서 <code>-x = 0</code></td></tr>
+            <tr><th><code>x != 0</code></th><td>false 분기에서 <code>0</code></td></tr>
+          </tbody>
+        </table>
+        <p>새 fold는 중간 <code>select</code>까지만 만든다. 최종 0 상수는 기존 InstCombine의 후속 단순화에서 얻어진다.</p>
+      </section>
+
+      <section id="s018-p1-tests">
+        <p class="eyebrow">07 · Tests</p>
+        <h2 id="s018-p1-heading-15">대표 테스트 3개</h2>
+        <div class="flow">
+          <span>opt -passes=instcombine</span><i>→</i><span>InstCombinePass::run</span><i>→</i><span>visitMul</span><i>→</i><span>후속 select fold</span>
+        </div>
+
+        <table>
+          <thead><tr><th>테스트</th><th>검증 내용</th><th>결과</th></tr></thead>
+          <tbody>
+            <tr><td><code>mul_sext_icmp_with_zero</code></td><td>원래 이슈의 scalar 회귀 테스트</td><td class="green"><code>ret i32 0</code></td></tr>
+            <tr><td><code>test_mul_sext_bool_nsw</code></td><td>일반형과 <code>nsw</code> 전달</td><td class="green"><code>sub nsw 0, y</code> + <code>select</code></td></tr>
+            <tr><td><code>test_mul_sext_nonbool</code></td><td><code>sext i2</code>는 boolean이 아님</td><td class="red">fold하지 않음</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>추가 테스트</strong>
+          PR에는 <code>nuw</code>, <code>nuw nsw</code>, commuted operand, multi-use negative test도 포함된다.
+        </div>
+
+        <div class="panel">
+          <span class="label">Local reproduction</span>
+          <p>로컬 LLVM <code>24.0.0git</code>에서 <code>opt -passes=instcombine</code>을 실행해 scalar는 <code>ret i32 0</code>, vector는 <code>ret zeroinitializer</code>로 접히는 것을 확인했다.</p>
+        </div>
+      </section>
+
+      <section id="s018-p1-conclusion">
+        <p class="eyebrow">08 · Conclusion</p>
+        <h2 id="s018-p1-heading-16">결론</h2>
+        <div class="grid-3">
+          <div class="panel"><span class="label">원인</span><p>variable과 곱하는 boolean <code>sext</code> 패턴이 <code>visitMul()</code>에 없었다.</p></div>
+          <div class="panel"><span class="label">구현</span><p><code>mul(sext X), Y</code>를 <code>select X, -Y, 0</code>으로 정규화했다.</p></div>
+          <div class="panel"><span class="label">리뷰</span><p>이슈 전용 처리에서 scalar/vector와 피연산자 순서를 다루는 일반 fold로 변경됐다.</p></div>
+        </div>
+
+        <h3 id="s018-p1-heading-17">참고 링크</h3>
+        <ul class="references">
+          <li><a href="https://github.com/llvm/llvm-project/issues/84608" rel="noopener noreferrer">LLVM Issue #84608</a></li>
+          <li><a href="https://github.com/llvm/llvm-project/pull/84792" rel="noopener noreferrer">LLVM PR #84792</a></li>
+          <li><a href="https://github.com/llvm/llvm-project/commit/e61e26091c5088b32b68e020cd51ab6de972004f" rel="noopener noreferrer">Merge commit e61e260</a></li>
+          <li><a href="https://alive2.llvm.org/ce/z/uijB4T" rel="noopener noreferrer">Issue Alive2 proof</a></li>
+          <li><a href="https://alive2.llvm.org/ce/z/n_ns-W" rel="noopener noreferrer">PR Alive2 proof</a></li>
+        </ul>
+        <a class="back-top" href="#top">맨 위로 ↑</a>
+      </section>
+    </div>
+</div></div></section><section class="doc-section" id="editor-notes"><details class="editor-notes"><summary>핵심 원리와 편집 주석</summary><div><h3 id="pattern">이슈의 식과 일반형</h3><p>vector 비교 결과를 sext하면 각 원소는 0 또는 -1이다. <code>x * sext(x == 0)</code>은 x가 0인 경우와 그렇지 않은 경우에 모두 0이다.</p><div class="code-wrap"><div class="code-label">TEXT</div><pre><code>mul (sext i1 C), Y
+        ↓
+select C, -Y, 0</code></pre></div><p>PR은 이슈의 전체 식을 직접 0으로 바꾸기보다 위 일반형을 추가했다. 원래 이슈는 새 select에 기존 단순화가 이어지며 0으로 접힌다.</p><h3 id="flags">타입·사용처·플래그</h3><ul><li>sext의 입력은 scalar i1 또는 vector i1이어야 한다.</li><li>sext가 현재 곱셈에서만 사용되는지 확인한다.</li><li>곱셈의 두 피연산자 순서를 모두 처리한다.</li><li>새 neg에는 기존 mul의 nsw를 전달한다.</li><li>nuw를 같은 방식으로 새 neg에 전달하지 않는다.</li></ul><p>sext i2처럼 boolean이 아닌 입력은 같은 규칙으로 처리하지 않는다.</p><h3 id="review">기존 코드와 리뷰의 역할</h3><p>기존에는 zext boolean과 곱셈을 처리했다. sext boolean도 상수와 곱하는 경우는 처리했지만 일반 값 Y와의 조합이 빠져 있었다.</p><p>리뷰는 이슈 전용 처리에서 일반 fold로 범위를 바꾸었다. 곱셈 하나가 neg와 select로 바뀌는 비용 문제도 함께 논의했다.</p><h3 id="verification">검증과 읽을 때의 주의</h3><p>자료는 원래 식의 상수 변환과 일반형 변환에 대한 Alive2 근거를 구분한다. scalar, vector, 플래그, 교환 순서, multi-use negative 테스트도 설명한다.</p><p>작성자의 로컬 재현에서는 scalar가 <code>ret 0</code>, vector가 <code>ret zeroinitializer</code>로 단순화되었다고 기록한다.</p><aside class="note"><strong>읽을 때 확인할 점</strong>이 문서는 기존 PR의 분석이다. 원자료의 이름 입력 자리표시는 확인된 자료 게시자 이름인 이하동으로 정리했다.</aside></div></details></section><section class="doc-section" id="source-materials"><h2>문서 전문과 버전</h2><ul class="source-list"><li><span class="format">HTML</span><div><a href="../sources/s018.html">HTML 원자료</a><small>llvm_issue_84608_study.html</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></section><section class="doc-section" id="references"><h2>관련 이슈와 PR</h2><ul class="reference-list"><li><a href="https://github.com/llvm/llvm-project/issues/84608" rel="noopener noreferrer">Issue #84608</a></li><li><a href="https://github.com/llvm/llvm-project/pull/84792" rel="noopener noreferrer">PR #84792</a></li></ul><p class="small-note">구현·병합 상태와 측정값은 해당 제출 자료의 작성 시점 기준입니다.</p></section></article><aside class="article-toc"><strong>이 문서에서</strong><nav aria-label="이 문서의 목차"><a href="#s018-p1-heading-1">이슈와 문제 코드</a><a href="#s018-p1-heading-2">sext i1 과 곱셈의 의미</a><a href="#s018-p1-heading-3">원래 이슈 패턴</a><a href="#s018-p1-heading-4">Alive2 검증</a><a href="#s018-p1-heading-5">기존 코드가 놓친 이유</a><a href="#s018-p1-heading-6">PR과 리뷰 과정</a><a href="#s018-p1-heading-7">초기 패치</a><a href="#s018-p1-heading-8">일반화 요청</a><a href="#s018-p1-heading-9">구현과 테스트 정리</a><a href="#s018-p1-heading-10">최종 머지</a><a href="#s018-p1-heading-11">추가된 일반  mul  fold</a><a href="#s018-p1-heading-12">변환식</a><a href="#s018-p1-heading-13">matcher와 후속 fold</a><a href="#s018-p1-heading-14">원래 이슈가 0으로 접히는 경로</a><a href="#s018-p1-heading-15">대표 테스트 3개</a><a href="#s018-p1-heading-16">결론</a><a href="#s018-p1-heading-17">참고 링크</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav><p class="small-note"><a href="../glossary.html">기술 용어 확인하기 ↗</a></p></aside></div><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../about.html">편집 기준과 출처</a><br><a href="../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

@@ -1,0 +1,1538 @@
+{
+  "created": "2026-10-18",
+  "authors": 4,
+  "PR_count": 7,
+  "case_count": 12,
+  "method": "Author identity from individual final reports and team report; PR title/URL, related functions and actual changed-instruction execution from case-results.csv. Speeds retain the original workload aggregates.",
+  "scope": "Percentage is the observed patched-build workload result, not a measured speed contribution of an individual PR. Multiple related PRs are joint influence; explicit derived-code effects remain labelled.",
+  "PRs": {
+    "2": {
+      "id": "2",
+      "author": "최진범",
+      "url": "https://github.com/ThePo1es/llvm-project/pull/2",
+      "title": "[InstCombine] Let foldSelectBitTest use known bits for the single-bit mask",
+      "label": "포크 #2",
+      "short_description": "알려진 비트 정보로 단일 비트 조건의 select를 단순화",
+      "author_source": "최진범 최종보고서 5–6쪽 및 팀 보고서의 개인 포크 PR #2 기록",
+      "repository": "ThePo1es/llvm-project"
+    },
+    "219103": {
+      "id": "219103",
+      "author": "최진범",
+      "url": "https://github.com/llvm/llvm-project/pull/219103",
+      "title": "[ValueTracking] a u>= b and a = b + NonZero implies a != 0",
+      "label": "#219103",
+      "short_description": "대소 관계와 덧셈 조건에서 값이 0이 아님을 추론",
+      "author_source": "최진범 최종보고서 3–4쪽",
+      "repository": "llvm/llvm-project"
+    },
+    "215073": {
+      "id": "215073",
+      "author": "정지현",
+      "url": "https://github.com/llvm/llvm-project/pull/215073",
+      "title": "[Instcombine] Fold a zero-select hexadecimal digit count into ctlz(x | 1)",
+      "label": "#215073",
+      "short_description": "0 처리 비교·select를 ctlz(x | 1)로 정리",
+      "author_source": "정지현 최종보고서 3–5쪽",
+      "repository": "llvm/llvm-project"
+    },
+    "216072": {
+      "id": "216072",
+      "author": "이하동",
+      "url": "https://github.com/llvm/llvm-project/pull/216072",
+      "title": "[InstSimplify] Simplify nonzero comparisons involving X urem Y via X u>= Y",
+      "label": "#216072",
+      "short_description": "나머지 연산 변환 뒤에도 값의 비교 관계를 추론",
+      "author_source": "이하동 최종보고서 6·9쪽",
+      "repository": "llvm/llvm-project"
+    },
+    "223246": {
+      "id": "223246",
+      "author": "정하람",
+      "url": "https://github.com/llvm/llvm-project/pull/223246",
+      "title": "[InstCombine] Fold strlen/wcslen over select/phi of constants",
+      "label": "#223246",
+      "short_description": "선택된 상수 문자열의 strlen/wcslen을 컴파일 시 계산",
+      "author_source": "정하람 최종보고서 6–7쪽",
+      "repository": "llvm/llvm-project"
+    },
+    "214933": {
+      "id": "214933",
+      "author": "이하동",
+      "url": "https://github.com/llvm/llvm-project/pull/214933",
+      "title": "[InstCombine] Fold comparisons of urem with dividend",
+      "label": "#214933",
+      "short_description": "나머지 결과와 원래 값의 비교를 단순화",
+      "author_source": "이하동 최종보고서 6·9쪽",
+      "repository": "llvm/llvm-project"
+    },
+    "214108": {
+      "id": "214108",
+      "author": "정하람",
+      "url": "https://github.com/llvm/llvm-project/pull/214108",
+      "title": "[InstCombine] Fold comparisons of llvm.usub.sat result with its LHS",
+      "label": "#214108",
+      "short_description": "포화 뺄셈 결과와 원래 값의 비교를 단순화",
+      "author_source": "정하람 최종보고서 3–5쪽",
+      "repository": "llvm/llvm-project"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "png-photo-gray4-aloe-1282x1110",
+      "project": "libpng",
+      "input": "photo-gray4-aloe-1282x1110",
+      "display_label": "libpng · 영상 디코딩",
+      "execution_summary": "png_do_expand / png_do_read_transformations",
+      "reduction": 8.347935365920423,
+      "pairs": 20,
+      "faster_pairs": 20,
+      "PRs": [
+        "2"
+      ],
+      "authors": [
+        "최진범"
+      ],
+      "author_PRs": {
+        "최진범": [
+          "2"
+        ]
+      },
+      "relationship": "관련 PR 1개",
+      "derived_code_change": false,
+      "execution_scope": "direct: 4-bit grayscale 입력과 expand 호출이 변경된 4-bit 루프를 반드시 지난다.",
+      "function_records": [
+        {
+          "pr": "2",
+          "symbol": "png_do_expand / png_do_read_transformations",
+          "function": "png_do_expand / png_do_read_transformations",
+          "changed_operation_or_instruction": "4-bit grayscale 입력과 expand 호출이 변경된 4-bit 루프를 반드시 지난다."
+        }
+      ],
+      "attribution_evidence": "Reused exact-binary execution audit; PR list relates to changed functions; joint influence stated where applicable",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "sqlite-json",
+      "project": "SQLite",
+      "input": "speedtest1-json-size200",
+      "display_label": "SQLite · JSON",
+      "execution_summary": "jsonLookupStep",
+      "reduction": 1.8337618601537042,
+      "pairs": 60,
+      "faster_pairs": 59,
+      "PRs": [
+        "2",
+        "219103"
+      ],
+      "authors": [
+        "최진범"
+      ],
+      "author_PRs": {
+        "최진범": [
+          "2",
+          "219103"
+        ]
+      },
+      "relationship": "공동 영향",
+      "derived_code_change": false,
+      "execution_scope": "direct: 바뀐 JSONB 타입 선택 지점의 기존 coverage가 260회다.",
+      "function_records": [
+        {
+          "pr": "2,219103",
+          "symbol": "jsonLookupStep",
+          "function": "jsonLookupStep",
+          "changed_operation_or_instruction": "바뀐 JSONB 타입 선택 지점의 기존 coverage가 260회다."
+        }
+      ],
+      "attribution_evidence": "Reused exact-binary execution audit; PR list relates to changed functions; joint influence stated where applicable",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "duckdb-parquet",
+      "project": "DuckDB",
+      "input": "Parquet Brotli write of real source text at default quality 11",
+      "display_label": "DuckDB · Parquet",
+      "execution_summary": "내부 Brotli의 EncodeContextMap / BrotliSplitBlock",
+      "reduction": 1.3210855359291673,
+      "pairs": 60,
+      "faster_pairs": 58,
+      "PRs": [
+        "215073",
+        "216072"
+      ],
+      "authors": [
+        "정지현",
+        "이하동"
+      ],
+      "author_PRs": {
+        "정지현": [
+          "215073"
+        ],
+        "이하동": [
+          "216072"
+        ]
+      },
+      "relationship": "공동 영향",
+      "derived_code_change": false,
+      "execution_scope": "compression processing",
+      "function_records": [
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "mov    %rsi,(%rsp)"
+        },
+        {
+          "pr": "216072",
+          "symbol": "_ZN13duckdb_brotli16BrotliSplitBlockEPNS_13MemoryManagerEPKNS_7CommandEmPKhmmPK19BrotliEncoderParamsPNS_10BlockSplitESB_SB_",
+          "function": "duckdb_brotli::BrotliSplitBlock(duckdb_brotli::MemoryManager*, duckdb_brotli::Command const*, unsigned long, unsigned char const*, unsigned long, unsigned long, BrotliEncoderParams const*, duckdb_brotli::BlockSplit*, duckdb_brotli::BlockSplit*, duckdb_brotli::BlockSplit*)",
+          "changed_operation_or_instruction": "sub    %rdx,%rsi"
+        },
+        {
+          "pr": "216072",
+          "symbol": "_ZN13duckdb_brotli16BrotliSplitBlockEPNS_13MemoryManagerEPKNS_7CommandEmPKhmmPK19BrotliEncoderParamsPNS_10BlockSplitESB_SB_",
+          "function": "duckdb_brotli::BrotliSplitBlock(duckdb_brotli::MemoryManager*, duckdb_brotli::Command const*, unsigned long, unsigned char const*, unsigned long, unsigned long, BrotliEncoderParams const*, duckdb_brotli::BlockSplit*, duckdb_brotli::BlockSplit*, duckdb_brotli::BlockSplit*)",
+          "changed_operation_or_instruction": "mov    %r15,0x28(%rsp)"
+        },
+        {
+          "pr": "216072",
+          "symbol": "_ZN13duckdb_brotli16BrotliSplitBlockEPNS_13MemoryManagerEPKNS_7CommandEmPKhmmPK19BrotliEncoderParamsPNS_10BlockSplitESB_SB_",
+          "function": "duckdb_brotli::BrotliSplitBlock(duckdb_brotli::MemoryManager*, duckdb_brotli::Command const*, unsigned long, unsigned char const*, unsigned long, unsigned long, BrotliEncoderParams const*, duckdb_brotli::BlockSplit*, duckdb_brotli::BlockSplit*, duckdb_brotli::BlockSplit*)",
+          "changed_operation_or_instruction": "mov    %r12,0x28(%rsp)"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "xor    %r13d,%r13d"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "movzbl (%rbx,%r13,4),%r12d"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "cmp    %r12b,0x40(%rsp,%rdx,1)"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "mov    %edx,(%r14,%r13,4)"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "inc    %r13"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "mov    (%rsp),%rax"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "or     $0x1,%eax"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "mov    $0xffffffff,%ecx"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "lzcnt  %eax,%eax"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "mov    (%rsp),%rbp"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "mov    0xc(%rsp),%r9d"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "cmp    $0x1f,%r9d"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "setne  %cl"
+        },
+        {
+          "pr": "215073",
+          "symbol": "_ZL16EncodeContextMapPN13duckdb_brotli13MemoryManagerEP21EncodeContextMapArenaPKjmmPNS_11HuffmanTreeEPmPh",
+          "function": "EncodeContextMap(duckdb_brotli::MemoryManager*, EncodeContextMapArena*, unsigned int const*, unsigned long, unsigned long, duckdb_brotli::HuffmanTree*, unsigned long*, unsigned char*)",
+          "changed_operation_or_instruction": "mov    (%rsp),%rdi"
+        }
+      ],
+      "attribution_evidence": "Single-PR native ablation and actual changed instruction step",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "duckdb-datepart",
+      "project": "DuckDB",
+      "input": "1M rows, 12 dynamic calendar specifiers",
+      "display_label": "DuckDB · 날짜 처리",
+      "execution_summary": "TryGetDatePartSpecifier",
+      "reduction": 1.052171946949254,
+      "pairs": 60,
+      "faster_pairs": 42,
+      "PRs": [
+        "223246"
+      ],
+      "authors": [
+        "정하람"
+      ],
+      "author_PRs": {
+        "정하람": [
+          "223246"
+        ]
+      },
+      "relationship": "관련 PR 1개",
+      "derived_code_change": false,
+      "execution_scope": "direct: 새 고정 길이 문자열 비교의 실제 B 명령 PC 0x19557af에 저장된 표본이 있다.",
+      "function_records": [
+        {
+          "pr": "223246",
+          "symbol": "TryGetDatePartSpecifier",
+          "function": "TryGetDatePartSpecifier",
+          "changed_operation_or_instruction": "새 고정 길이 문자열 비교의 실제 B 명령 PC 0x19557af에 저장된 표본이 있다."
+        }
+      ],
+      "attribution_evidence": "Reused exact-binary execution audit; PR list relates to changed functions; joint influence stated where applicable",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "openssl-pkcs12-kdf",
+      "project": "OpenSSL",
+      "input": "Official PKCS12 KDF known-answer",
+      "display_label": "OpenSSL · KDF",
+      "execution_summary": "kdf_pkcs12_derive / fmtint",
+      "reduction": 0.572982675254119,
+      "pairs": 60,
+      "faster_pairs": 36,
+      "PRs": [
+        "214933",
+        "223246"
+      ],
+      "authors": [
+        "이하동",
+        "정하람"
+      ],
+      "author_PRs": {
+        "이하동": [
+          "214933"
+        ],
+        "정하람": [
+          "223246"
+        ]
+      },
+      "relationship": "공동 영향",
+      "derived_code_change": false,
+      "execution_scope": "cryptographic processing and result formatting",
+      "function_records": [
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "mov    %rcx,0x18(%rsp)"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "mov    %rsi,%r15"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "xor    %esi,%esi"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "movl   $0x0,0xc(%rsp)"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "div    %r9d"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "mov    %r14d,0x24(%rsp)"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "mov    %r14d,%edx"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "mov    %r10d,%eax"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "mov    %esi,%ebx"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "test   $0x1,%cl"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "cmpb   $0x0,0x24(%rsp)"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "mov    0x10(%rsp),%rdx"
+        },
+        {
+          "pr": "223246",
+          "symbol": "fmtint",
+          "function": "fmtint",
+          "changed_operation_or_instruction": "cmp    $0x19,%rbx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rsi,0x50(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rax,0x20(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rbx,0x38(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %r12,0x80(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %r14,0x60(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rcx,0x18(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rsi,0x30(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rdi,0x68(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %r15,0x58(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x48(%rsp),%esi"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x18(%rsp),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmp    %rax,0x28(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x38(%rsp),%rbx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x20(%rsp),%rbp"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x18(%rsp),%rdx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rax,0x78(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x68(%rsp),%rdx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x60(%rsp),%rsi"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x88(%rsp),%rbx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rbx,0x88(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x74(%rsp),%eax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x1d(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x1c(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x1b(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x1a(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x19(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x18(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x17(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x16(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x15(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x14(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x13(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x12(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x11(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x10(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xf(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xe(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xd(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xc(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xb(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xa(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x9(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x8(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rax,%rdx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x50(%rsp),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x1,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x2,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x3,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x4,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x5,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x6,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x7,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x8,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x9,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xa,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xb,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xc,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xd,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xe,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xf,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0xc0(%rsp),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x2,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x3,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x4,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x5,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x6,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    0x18(%rsp),%r9"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmp    %r9d,0x78(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmpq   $0x0,0x68(%rsp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmp    0x68(%rsp),%rcx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "add    %r14,0x80(%rsp)"
+        }
+      ],
+      "attribution_evidence": "Single-PR native ablation and actual changed instruction step",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "libgit2-filter",
+      "project": "libgit2",
+      "input": "Public worktree CRLF filter API",
+      "display_label": "libgit2 · CRLF",
+      "execution_summary": "crlf_check",
+      "reduction": 0.5695557792192996,
+      "pairs": 60,
+      "faster_pairs": 37,
+      "PRs": [
+        "2"
+      ],
+      "authors": [
+        "최진범"
+      ],
+      "author_PRs": {
+        "최진범": [
+          "2"
+        ]
+      },
+      "relationship": "관련 PR 1개",
+      "derived_code_change": false,
+      "execution_scope": "text processing",
+      "function_records": [
+        {
+          "pr": "2",
+          "symbol": "crlf_check",
+          "function": "crlf_check",
+          "changed_operation_or_instruction": "mov    0x8(%rsp),%eax"
+        }
+      ],
+      "attribution_evidence": "Single-PR native ablation and actual changed instruction step",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "pcre2-compile-upstream-and",
+      "project": "PCRE2",
+      "input": "Four exact upstream extended character class intersection patterns; full compilation",
+      "display_label": "PCRE2 · 컴파일",
+      "execution_summary": "compile_class_binary_tight",
+      "reduction": 0.40132255171690945,
+      "pairs": 60,
+      "faster_pairs": 42,
+      "PRs": [
+        "2"
+      ],
+      "authors": [
+        "최진범"
+      ],
+      "author_PRs": {
+        "최진범": [
+          "2"
+        ]
+      },
+      "relationship": "관련 PR 1개",
+      "derived_code_change": false,
+      "execution_scope": "Pattern compilation processing, not match/JIT",
+      "function_records": [
+        {
+          "pr": "2",
+          "symbol": "compile_class_binary_tight",
+          "function": "compile_class_binary_tight",
+          "changed_operation_or_instruction": "Bit-test/select folding in the exact upstream compile patterns"
+        }
+      ],
+      "attribution_evidence": "Reused single-PR IR/native ablation and single-step evidence",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "aom-av1",
+      "project": "AOM",
+      "input": "Foreman QCIF AV1 48 frames, cpu-used 4",
+      "display_label": "AOM · AV1",
+      "execution_summary": "encode_mv_component",
+      "reduction": 0.3410427776935898,
+      "pairs": 60,
+      "faster_pairs": 49,
+      "PRs": [
+        "2",
+        "215073"
+      ],
+      "authors": [
+        "최진범",
+        "정지현"
+      ],
+      "author_PRs": {
+        "최진범": [
+          "2"
+        ],
+        "정지현": [
+          "215073"
+        ]
+      },
+      "relationship": "공동 영향",
+      "derived_code_change": false,
+      "execution_scope": "direct: 실행된 encode_mv_component의 첫 분기·호출 전 or 1 → lzcnt 변환이 있다. 측정 범위는 인코딩과 내장 디코딩 검증이다.",
+      "function_records": [
+        {
+          "pr": "2,215073",
+          "symbol": "encode_mv_component",
+          "function": "encode_mv_component",
+          "changed_operation_or_instruction": "실행된 encode_mv_component의 첫 분기·호출 전 or 1 → lzcnt 변환이 있다. 측정 범위는 인코딩과 내장 디코딩 검증이다."
+        }
+      ],
+      "attribution_evidence": "Reused exact-binary execution audit; PR list relates to changed functions; joint influence stated where applicable",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "node-pfx",
+      "project": "Node.js",
+      "input": "TLS context creation from the official agent1 PKCS12 fixture",
+      "display_label": "Node.js · PFX",
+      "execution_summary": "OpenSSL의 kdf_pkcs12_derive",
+      "reduction": 0.28848080230688966,
+      "pairs": 60,
+      "faster_pairs": 38,
+      "PRs": [
+        "214933"
+      ],
+      "authors": [
+        "이하동"
+      ],
+      "author_PRs": {
+        "이하동": [
+          "214933"
+        ]
+      },
+      "relationship": "관련 PR 1개",
+      "derived_code_change": false,
+      "execution_scope": "TLS context cryptographic processing",
+      "function_records": [
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rdx,-0x80(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %ecx,-0x78(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rbx,-0xc0(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %r13,-0x90(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %r15,-0xb8(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %esi,-0x9c(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rdi,-0x60(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rcx,-0x68(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rax,-0x88(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0x78(%rbp),%esi"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0x50(%rbp),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0x68(%rbp),%r10"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmp    %rax,-0x60(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0x90(%rbp),%rsi"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0xc0(%rbp),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rcx,-0xa8(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0x88(%rbp),%rcx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0x88(%rbp),%rsi"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmpq   $0x2,-0xc0(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0xb8(%rbp),%r14"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %r14,-0xb8(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0x88(%rbp),%rdi"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0x9c(%rbp),%eax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x1c(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x1b(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x1a(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x19(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x18(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x17(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x16(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x15(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x14(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x13(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x12(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x11(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x10(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xf(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xe(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xd(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xc(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xb(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0xa(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x9(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "lea    -0x8(%rcx),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    %rax,%rdx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x1,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x2,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x3,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x4,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x5,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x6,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x7,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x8,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x9,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xa,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xb,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xc,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xd,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xe,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0xf,(%r15,%rax,1),%xmm0,%xmm0"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "mov    -0xf8(%rbp),%rax"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x2,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x3,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x4,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x5,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "vpinsrb $0x6,(%r15,%rax,1),%xmm1,%xmm1"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmp    %r13d,-0xa8(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmpq   $0x0,-0x98(%rbp)"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "cmp    -0x98(%rbp),%rcx"
+        },
+        {
+          "pr": "214933",
+          "symbol": "kdf_pkcs12_derive",
+          "function": "kdf_pkcs12_derive",
+          "changed_operation_or_instruction": "add    %rbx,-0xb0(%rbp)"
+        }
+      ],
+      "attribution_evidence": "Single-PR native ablation and actual changed instruction step",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "brotli-q11-source",
+      "project": "Brotli",
+      "input": "q11-sqlite-source",
+      "display_label": "Brotli · 파생 변화",
+      "execution_summary": "EncodeContextMap의 파생 코드 생성 변화",
+      "reduction": 0.26882765476874404,
+      "pairs": 60,
+      "faster_pairs": 47,
+      "PRs": [
+        "216072",
+        "215073",
+        "2"
+      ],
+      "authors": [
+        "이하동",
+        "정지현",
+        "최진범"
+      ],
+      "author_PRs": {
+        "이하동": [
+          "216072"
+        ],
+        "정지현": [
+          "215073"
+        ],
+        "최진범": [
+          "2"
+        ]
+      },
+      "relationship": "공동 영향",
+      "derived_code_change": true,
+      "execution_scope": "derived: 실행된 EncodeContextMap의 첫 분기 전 스택 저장 명령이 달라진다. 처리 비중은 판정 조건이 아니다.",
+      "function_records": [
+        {
+          "pr": "216072,215073,2",
+          "symbol": "EncodeContextMap",
+          "function": "EncodeContextMap",
+          "changed_operation_or_instruction": "실행된 EncodeContextMap의 첫 분기 전 스택 저장 명령이 달라진다. 처리 비중은 판정 조건이 아니다."
+        }
+      ],
+      "attribution_evidence": "Reused exact-binary execution audit; PR list relates to changed functions; joint influence stated where applicable",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "gmp-sqrt-8192",
+      "project": "GMP",
+      "input": "16 deterministic integers, 8192 bits",
+      "display_label": "GMP · 파생 변화",
+      "execution_summary": "mpn_dc_sqrt의 스택 크기 변화",
+      "reduction": 0.21129014721098516,
+      "pairs": 60,
+      "faster_pairs": 46,
+      "PRs": [
+        "2"
+      ],
+      "authors": [
+        "최진범"
+      ],
+      "author_PRs": {
+        "최진범": [
+          "2"
+        ]
+      },
+      "relationship": "관련 PR 1개",
+      "derived_code_change": true,
+      "execution_scope": "derived: 1024/8192 각각에서 함수 실행 표본이 있고 첫 분기 전 스택 크기 0x68 → 0x78 변화가 있다.",
+      "function_records": [
+        {
+          "pr": "2",
+          "symbol": "mpn_dc_sqrt",
+          "function": "mpn_dc_sqrt",
+          "changed_operation_or_instruction": "1024/8192 각각에서 함수 실행 표본이 있고 첫 분기 전 스택 크기 0x68 → 0x78 변화가 있다."
+        }
+      ],
+      "attribution_evidence": "Reused exact-binary execution audit; PR list relates to changed functions; joint influence stated where applicable",
+      "isolated_speed_contribution_measured": false
+    },
+    {
+      "case_id": "hyperscan-compile",
+      "project": "Hyperscan",
+      "input": "173 official compiler expressions, block API",
+      "display_label": "Hyperscan · 컴파일",
+      "execution_summary": "determinise의 transition 경로",
+      "reduction": 0.11698164598250571,
+      "pairs": 60,
+      "faster_pairs": 35,
+      "PRs": [
+        "214108",
+        "223246",
+        "215073"
+      ],
+      "authors": [
+        "정하람",
+        "정지현"
+      ],
+      "author_PRs": {
+        "정하람": [
+          "214108",
+          "223246"
+        ],
+        "정지현": [
+          "215073"
+        ]
+      },
+      "relationship": "공동 영향",
+      "derived_code_change": false,
+      "execution_scope": "direct: 변경 비교를 거친 뒤에만 도달하는 transition PC에 기존 실행 표본이 있다. 소스와 인라인 프레임도 대응한다.",
+      "function_records": [
+        {
+          "pr": "214108,223246,215073",
+          "symbol": "determinise — transition",
+          "function": "determinise — transition",
+          "changed_operation_or_instruction": "변경 비교를 거친 뒤에만 도달하는 transition PC에 기존 실행 표본이 있다. 소스와 인라인 프레임도 대응한다."
+        }
+      ],
+      "attribution_evidence": "Reused exact-binary execution audit; PR list relates to changed functions; joint influence stated where applicable",
+      "isolated_speed_contribution_measured": false
+    }
+  ]
+}

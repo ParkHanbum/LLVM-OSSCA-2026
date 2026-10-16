@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitHub Pages 게시 안내 · LLVM 멘티 기술 문서</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fbfaf7;color:#252c30;font:16px/1.9 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;word-break:keep-all}main{max-width:900px;padding:55px 30px 80px;margin:auto}h1{font-size:34px;letter-spacing:-1px;line-height:1.4;margin:12px 0 20px}h2{font-size:23px;margin:42px 0 16px;border-top:1px solid #deded6;padding-top:26px}p,li{font-size:15px}li{margin:10px 0}a{color:#a84625;text-underline-offset:4px}.tag{font:11px/1.6 ui-monospace,monospace;color:#a84625;letter-spacing:1.5px}.actions{display:flex;gap:12px;margin:28px 0;flex-wrap:wrap}.actions a{padding:10px 16px;background:#a84625;color:white;text-decoration:none;border-radius:4px;font-size:14px}.actions a+ a{background:#eee8de;color:#8d452a}code{font:.85em/1.8 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#efeee7;padding:2px 5px}pre{padding:18px 22px;background:#edf1ed;border:1px solid #d9ddd8;overflow:auto}pre code{background:none;padding:0;font-size:12px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;border:1px solid #deded6;padding:11px 13px;vertical-align:top}th{background:#eeece5}.note{padding:16px 20px;background:#f3e9df;font-size:13px}.small{color:#657078;font-size:12px}summary{cursor:pointer;font-weight:600}details{border:1px solid #deded6;padding:16px 20px;margin-top:22px}img{max-width:100%;height:auto;border:1px solid #deded6}@media(max-width:600px){main{padding:32px 20px}h1{font-size:28px}h2{font-size:21px}p,li{font-size:14px}th,td{padding:9px;font-size:11px}}
+</style>
+</head>
+<body><main>
+<div class="tag">LLVM MENTEE NOTES / HANDOFF / 2026-10-16</div>
+<h1>GitHub Pages에<br>게시할 준비를 마쳤습니다.</h1>
+<p>17명이 제출한 문서 36개를 전문으로 수록했습니다. 코드·표·그림·실험·검증 기록을 웹에서 바로 읽을 수 있습니다. 안내와 해설에는 ASD-STE100의 명료한 문장과 일관된 용어 원칙을 적용했습니다. 사이트는 HTML·CSS·JavaScript 파일만으로 동작합니다.</p>
+<div class="actions"><a href="docs/index.html">문서 사이트 열기</a><a href="docs/results.html">멘티들의 기여 결과</a><a href="docs/benchmarks.html">벤치마크 전체 결과</a><a href="docs/sources/index.html">36개 전문 보기</a></div>
+<p class="note">기존 저장소에서는 변경된 <code>docs</code> 폴더를 반영하면 됩니다. 현재 Pages의 <code>main /docs</code> 게시 설정을 그대로 사용할 수 있습니다. 업로드는 사용자가 직접 진행합니다.</p>
+<h2>1. 가장 간단한 게시 방법</h2>
+<ol>
+<li>압축을 풀고 <code>llvm-mentee-docs</code> 폴더를 엽니다.</li>
+<li>GitHub 저장소의 루트에 <code>docs</code> 폴더를 올립니다. 다른 파일도 함께 보관할 수 있습니다.</li>
+<li>저장소의 <strong>Settings → Pages</strong>를 엽니다.</li>
+<li><strong>Build and deployment → Source</strong>에서 <strong>Deploy from a branch</strong>를 선택합니다.</li>
+<li>업로드한 브랜치를 선택하고 폴더를 <strong>/docs</strong>로 지정합니다.</li>
+<li><strong>Save</strong>를 누릅니다. 배포가 끝나면 같은 화면에 사이트 주소가 표시됩니다.</li>
+</ol>
+<p class="note">저장소 안에 상위 폴더를 하나 더 만들지 말고, 저장소 루트에 <code>docs/index.html</code>이 위치하도록 올리세요. 페이지 간 링크와 그림 경로는 GitHub Pages의 저장소 하위 주소에서도 동작하도록 작성했습니다.</p>
+<p class="small">설정 근거: <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site">GitHub 공식 문서 — 게시 소스 설정</a></p>
+<h2>2. 문서 구성</h2>
+<table><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody>
+<tr><td>본문</td><td>29개 주제에서 36개 문서의 전문을 탐색합니다. 초안과 수정본은 각각 유지합니다.</td></tr>
+<tr><td>수록 자료</td><td>17명의 문서 36개. PDF 23개, PPTX 5개, HTML 3개, MD 3개, DOCX 2개입니다.</td></tr>
+<tr><td>전문과 그림</td><td>PDF 336쪽과 PPTX 67장의 본문·페이지 이미지 403개를 제공합니다. 설명 그림을 별도로 옮기고 이미지 안의 텍스트도 인식했습니다. DOCX·HTML·Markdown은 원문 구조를 유지합니다.</td></tr>
+<tr><td>멘티들의 기여 결과</td><td>strlen의 C O2/O3·C++ 실측 차트, 구현·검증 결과, 기존 패치 학습·재현 차트와 17명 전원의 결과를 제공합니다.</td></tr>
+<tr><td>벤치마크 전체 결과</td><td><code>benchmarks.html</code>에서 직접 측정한 42개 조건·47개 차트와 검증표를 봅니다. 프로젝트·판정·PR 검색을 제공합니다. 이전 19개 PR 검증 보고서 전문과 PR #228359의 78,742개 코드 생성 비교도 별도 페이지에 있습니다.</td></tr>
+<tr><td>벤치마크 자료 범위</td><td>최신 차트의 보고값과 실행 경로 검증표를 모두 수록했습니다. 최신 원시 관측 CSV와 이전 405행 CSV는 제공된 묶음에 없으므로 수록했다고 표시하지 않았습니다. 코드 생성 비교는 모든 행과 진단을 공개용 CSV·프로젝트별 페이지로 제공합니다.</td></tr>
+<tr><td>탐색</td><td>본문 검색, 작성자·분야·활동 필터, 원본 형식 필터와 목차를 제공합니다.</td></tr>
+<tr><td>읽기 기능</td><td>모바일 메뉴, 코드 복사, 글자 확대와 인쇄용 화면을 제공합니다.</td></tr>
+</tbody></table>
+<p class="small">성과·검증·성능 수치는 각 원자료의 보고값입니다. 문서 작성 중 새로 실행한 벤치마크 결과가 아닙니다. <a href="docs/about.html">전체 편집 기준</a>을 함께 확인할 수 있습니다.</p>
+<h2>3. 이후 내용 수정</h2>
+<ol>
+<li><code>content/sources.json</code>에서 전문을 수정합니다. 제목·주제·보조 해설은 <code>content/articles.json</code>, 멘티 제출 성능 자료는 <code>content/results.json</code>, 직접 측정한 벤치마크는 <code>content/benchmarks/</code>에 있습니다.</li>
+<li>아래 명령으로 HTML을 다시 만듭니다.</li>
+<li>검사가 통과하면 바뀐 <code>docs</code> 폴더를 저장소에 반영합니다.</li>
+</ol>
+<pre><code>python3 tools/build_site.py
+python3 tools/check_site.py</code></pre>
+<p>이 두 명령은 Python의 기본 기능만 사용합니다. 이미 변환한 자료와 그림을 다시 활용하므로 원본 PDF나 PowerPoint 프로그램이 필요하지 않습니다.</p>
+<p>화면 디자인은 <code>theme/site.css</code>에서 수정합니다. 수정한 뒤 같은 명령으로 반영하세요. <code>docs</code>의 파일을 직접 고치면 다음 생성 때 덮어씁니다.</p>
+<details><summary>선택 사항: GitHub Actions로 배포하기</summary>
+<ol><li><code>deployment/pages.yml</code>을 저장소의 <code>.github/workflows/pages.yml</code>로 복사합니다.</li>
+<li><strong>Settings → Pages → Source</strong>를 <strong>GitHub Actions</strong>로 설정합니다.</li>
+<li><strong>Actions → Publish documentation to GitHub Pages → Run workflow</strong>로 최초 배포를 실행합니다.</li>
+<li>이후 기본 브랜치의 <code>docs</code> 변경은 같은 workflow로 배포합니다.</li></ol>
+<p class="small">이 설정을 사용할 때는 위의 브랜치 게시 방식 대신 GitHub Actions를 게시 소스로 선택합니다. <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages">GitHub 공식 workflow 안내</a></p>
+</details>
+<h2>4. 파일 위치</h2>
+<table><thead><tr><th>위치</th><th>용도</th></tr></thead><tbody>
+<tr><td><code>docs/</code></td><td>웹에 게시할 완성 파일</td></tr>
+<tr><td><code>content/</code></td><td>편집한 본문과 공개용으로 정리한 원자료 내용</td></tr>
+<tr><td><code>theme/</code></td><td>화면 스타일과 탐색 기능</td></tr>
+<tr><td><code>tools/</code></td><td>사이트 생성·원자료 변환·링크 검사 도구</td></tr>
+<tr><td><code>deployment/</code></td><td>선택해서 적용할 GitHub Actions 설정</td></tr>
+</tbody></table>
+<p class="small">게시용 묶음에는 Discord 대화, 계정 식별번호, 게시자 대조표와 내부 작업 폴더를 넣지 않았습니다. 발견한 개인 연락처와 로컬 경로는 웹용 본문과 페이지 이미지에서 생략했습니다. 원본 첨부파일은 그대로 두었습니다.</p>
+</main></body></html>

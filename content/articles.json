@@ -1,0 +1,3261 @@
+[
+  {
+    "id": "xor-complement",
+    "author": "SeokHun",
+    "title": "상보적인 XOR 식을 상수로 접기",
+    "summary": "서로 반대인 비트 패턴을 찾아 AND는 0으로, OR는 모든 비트가 1인 값으로 바꾼다.",
+    "areas": [
+      "InstSimplify",
+      "정수·비트 연산"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "SeokHun/issue_75692.md"
+    ],
+    "issues": [
+      75692
+    ],
+    "prs": [
+      76637
+    ],
+    "sections": [
+      {
+        "id": "problem",
+        "title": "문제와 변환",
+        "blocks": [
+          [
+            "p",
+            "대상은 `(a ^ b) & (~a ^ b)`이다. `b`는 정수 상수다. 두 피연산자는 비트 단위로 서로 반대다."
+          ],
+          [
+            "code",
+            "cpp",
+            "int src1(int a) { return (a ^ 4) & (~a ^ 4); }\nint tgt1(int a) { return 0; }\nint src2(int a) { return (a ^ 4) | (~a ^ 4); }\nint tgt2(int a) { return -1; }"
+          ],
+          [
+            "p",
+            "AND는 같은 위치의 두 비트가 모두 1일 때만 1이다. 상보적인 두 값에는 그런 위치가 없다. OR는 모든 위치에서 1이 된다."
+          ]
+        ]
+      },
+      {
+        "id": "implementation",
+        "title": "구현 위치와 조건",
+        "blocks": [
+          [
+            "p",
+            "`InstructionSimplify.cpp`의 AND·OR 단순화 경로가 이 패턴을 검사한다. 이 계층은 새 명령어 대신 기존 값이나 상수를 반환할 수 있다."
+          ],
+          [
+            "list",
+            [
+              "같은 SSA 값 `A`를 사용하는 두 XOR인지 확인한다.",
+              "두 상수가 같은 비트 폭에서 서로 보수인지 확인한다.",
+              "결과 타입에 맞는 0 또는 all-ones 상수를 반환한다."
+            ]
+          ],
+          [
+            "p",
+            "단순화 함수를 호출한 패스가 사용처를 바꾸고 불필요한 명령어를 제거한다. 상수를 오른쪽에 두는 LLVM의 정규 형태도 matcher 선택에 영향을 준다."
+          ]
+        ]
+      },
+      {
+        "id": "validation",
+        "title": "검증 기록",
+        "blocks": [
+          [
+            "p",
+            "작성자는 C++에서 IR을 만들고 Alive2로 두 변환을 확인했다. 원자료에는 올바른 변환 2건과 오류 0건이 기록되어 있다."
+          ],
+          [
+            "p",
+            "기계어는 x86-64, AArch64, RISC-V 등으로 비교했다. RISC-V에서는 백엔드가 이미 같은 결합을 수행해 두 결과의 명령어 수가 같았다."
+          ],
+          [
+            "note",
+            "원자료의 llvm-mca 수치는 O0 코드 블록의 정적 추정이다. 전체 프로그램의 실행 시간 개선을 뜻하지 않는다."
+          ]
+        ]
+      },
+      {
+        "id": "learning",
+        "title": "분석에서 확인한 점",
+        "blocks": [
+          [
+            "p",
+            "IR에서 놓친 최적화가 최종 기계어에도 그대로 남는 것은 아니다. 백엔드가 같은 일을 하더라도 공통 IR을 일찍 정리하면 후속 패스가 더 단순한 입력을 받는다."
+          ],
+          [
+            "p",
+            "이 문서는 이미 존재하는 PR의 분석 기록이다. 연결된 PR을 작성자의 신규 제출 실적으로 해석하지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #75692",
+        "url": "https://github.com/llvm/llvm-project/issues/75692"
+      },
+      {
+        "label": "PR #76637",
+        "url": "https://github.com/llvm/llvm-project/pull/76637"
+      },
+      {
+        "label": "Alive2 검증",
+        "url": "https://alive2.llvm.org/ce/z/ht2MrQ"
+      },
+      {
+        "label": "Compiler Explorer",
+        "url": "https://godbolt.org/z/j53WPKrKn"
+      }
+    ]
+  },
+  {
+    "id": "hyperbolic-symmetry",
+    "author": "김명석",
+    "title": "쌍곡선 함수의 홀짝성을 최적화에 사용하기",
+    "summary": "같은 수학적 성질도 intrinsic 경로와 라이브러리 호출 경로에서 각각 처리해야 한다.",
+    "areas": [
+      "InstCombine",
+      "부동소수점"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "김명석/LLVM-good_first_issue_173706.pdf"
+    ],
+    "issues": [
+      173706
+    ],
+    "prs": [
+      173730,
+      193586
+    ],
+    "sections": [
+      {
+        "id": "problem",
+        "title": "문제와 수학적 성질",
+        "blocks": [
+          [
+            "p",
+            "`sinh`와 `tanh`는 홀함수다. `cosh`는 짝함수다. 이 성질을 사용하면 호출 전후의 불필요한 부호 반전을 줄일 수 있다."
+          ],
+          [
+            "code",
+            "text",
+            "-sinh(-x) → sinh(x)\n-tanh(-x) → tanh(x)\n cosh(-x) → cosh(x)"
+          ],
+          [
+            "p",
+            "작성자는 GCC와 Clang의 기계어를 비교했다. 분석 당시 Clang 출력에는 같은 성질을 적용하지 못한 경우가 남아 있었다."
+          ]
+        ]
+      },
+      {
+        "id": "paths",
+        "title": "두 입력 경로 구분",
+        "blocks": [
+          [
+            "table",
+            [
+              "입력 형태",
+              "관련 코드",
+              "확인할 내용"
+            ],
+            [
+              [
+                "LLVM intrinsic",
+                "InstCombineCalls.cpp",
+                "visitCallInst의 intrinsic 분기"
+              ],
+              [
+                "알려진 라이브러리 호출",
+                "SimplifyLibCalls.cpp",
+                "LibCallSimplifier와 optimizeSymmetric 경로"
+              ]
+            ]
+          ],
+          [
+            "p",
+            "`-fno-math-errno` 같은 설정은 생성되는 호출 형태에 영향을 줄 수 있다. 한 경로에서만 동작을 확인하면 다른 경로의 누락을 놓친다."
+          ]
+        ]
+      },
+      {
+        "id": "method",
+        "title": "분석 순서",
+        "blocks": [
+          [
+            "steps",
+            [
+              "옵션을 바꾸어 IR의 호출 형태를 확인한다.",
+              "기존 sin·cos 처리를 찾는다.",
+              "실제 입력이 통과하는 디스패치 경로를 추적한다.",
+              "opt 출력과 최종 기계어를 각각 비교한다.",
+              "기존 PR의 코드와 테스트를 예상한 수정 범위와 비교한다."
+            ]
+          ],
+          [
+            "p",
+            "자료는 intrinsic을 처리한 PR #173730과 libcall을 처리한 PR #193586을 나누어 설명한다. 함수 종류가 늘면 변수명과 주석도 그 범위를 나타내야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "limits",
+        "title": "결과와 문서의 경계",
+        "blocks": [
+          [
+            "p",
+            "핵심 학습은 수학식 자체보다 입력 표현과 구현 계층의 차이다. 같은 소스 식도 컴파일 옵션에 따라 다른 최적화 경로를 통과한다."
+          ],
+          [
+            "note",
+            "원자료 마지막 정리 장의 PR 번호 #173037은 앞 장의 #173730과 다르다. 이 편집본은 실제 PR 분석 장에서 사용한 #173730을 표기한다. 원자료는 별도로 보존한다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #173706",
+        "url": "https://github.com/llvm/llvm-project/issues/173706"
+      },
+      {
+        "label": "PR #173730",
+        "url": "https://github.com/llvm/llvm-project/pull/173730"
+      },
+      {
+        "label": "PR #193586",
+        "url": "https://github.com/llvm/llvm-project/pull/193586"
+      }
+    ]
+  },
+  {
+    "id": "clamp-nan",
+    "author": "김준영",
+    "title": "NaN 대체값을 보존하며 clamp를 정규화하기",
+    "summary": "여러 비교와 select로 표현한 clamp를 minnum·maxnum과 명시적인 NaN 선택으로 나눈다.",
+    "areas": [
+      "InstCombine",
+      "부동소수점"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "김준영/CLAMP_PATCH_REPORT.md",
+      "김준영/llvm_issue_213189_ppt.pdf",
+      "김준영/llvm_issue_27_analysis.docx",
+      "김준영/llvm_issue_27_analysis_edited.docx",
+      "김준영/llvm_issue_27_presentation.pdf"
+    ],
+    "issues": [
+      213189
+    ],
+    "prs": [],
+    "sections": [
+      {
+        "id": "purpose",
+        "title": "문제와 목표",
+        "blocks": [
+          [
+            "p",
+            "일반 숫자는 하한과 상한 사이로 제한한다. NaN 입력에는 별도의 fallback 값을 반환한다. 기존 표현은 여러 `fcmp`와 `select`가 얽힌 트리다."
+          ],
+          [
+            "p",
+            "목표는 NaN 선택과 범위 제한을 분리하는 것이다. 범위 제한은 `llvm.minnum`과 `llvm.maxnum`으로 표현한다."
+          ],
+          [
+            "code",
+            "llvm",
+            "; 구조를 설명하기 위한 요약이다. 실제 적용에는 아래 조건이 필요하다.\n%isnan = fcmp uno float %x, %x\n%upper = call nsz float @llvm.minnum.f32(float %x, float 1.0)\n%clamped = call nsz float @llvm.maxnum.f32(float %upper, float 0.0)\n%result = select i1 %isnan, float %fallback, float %clamped"
+          ]
+        ]
+      },
+      {
+        "id": "conditions",
+        "title": "변환 조건",
+        "blocks": [
+          [
+            "list",
+            [
+              "값을 만드는 select에서 필요한 signed-zero 허용 조건을 확인한다.",
+              "하한과 상한의 순서를 확인한다.",
+              "scalar 또는 부동소수점 vector 타입으로 범위를 제한한다.",
+              "denormal 처리 모드가 변환의 의미를 바꾸는지 확인한다.",
+              "NaN 입력에서는 fallback이 그대로 선택되어야 한다."
+            ]
+          ],
+          [
+            "p",
+            "`fcmp`는 +0과 -0을 같은 값으로 비교한다. 비교 명령의 `nsz` 여부와 값을 만드는 명령의 `nsz` 요구를 구분해야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "reasoning",
+        "title": "분석과 검증 과정",
+        "blocks": [
+          [
+            "table",
+            [
+              "단계",
+              "확인한 질문"
+            ],
+            [
+              [
+                "입력 분류",
+                "NaN, 하한 미만, 범위 안, 상한 초과에서 결과가 같은가?"
+              ],
+              [
+                "선례 조사",
+                "기존 min/max fold는 어떤 fast-math 조건을 요구하는가?"
+              ],
+              [
+                "형식 검증",
+                "Alive2가 가정한 FP·poison·undef 의미에서 변환이 성립하는가?"
+              ],
+              [
+                "환경 확인",
+                "FTZ 또는 denormal 설정이 정규화의 의미를 바꾸는가?"
+              ],
+              [
+                "백엔드 확인",
+                "min/max가 타깃의 명령어로 내려가는가, 함수 호출이 되는가?"
+              ]
+            ]
+          ],
+          [
+            "p",
+            "자료에는 성공한 증명뿐 아니라 실패한 시도와 그 원인도 남아 있다. 형식 검증의 결론은 도구가 모델링한 조건 안에서 읽어야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "versions",
+        "title": "자료별 구현 단계",
+        "blocks": [
+          [
+            "p",
+            "DOCX는 패턴 정의, 선례, 실험, 검증과 로컬 구현 검토를 상세히 다룬다. 수정 DOCX에는 설명 그림과 용어 정리가 추가되었다."
+          ],
+          [
+            "p",
+            "16장 발표자료는 이슈 제안과 별도 실습 브랜치를 구분한다. 18장 발표자료는 darktable 사례와 이후 브랜치의 구현 상태를 추가한다."
+          ],
+          [
+            "p",
+            "Markdown 패치 보고서는 로컬 구현과 회귀 테스트 결과를 설명한다. 각 자료의 숫자와 구현 상태는 해당 버전의 기록이다."
+          ],
+          [
+            "note",
+            "로컬 실험, 이슈 등록, 브랜치 구현은 서로 다른 단계다. 이 자료 묶음만으로 최종 업스트림 병합이나 모든 타깃의 성능 개선을 단정하지 않는다."
+          ]
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "결과와 남은 문제",
+        "blocks": [
+          [
+            "p",
+            "단순한 수식 치환을 FP 의미론, 실제 사용 사례, 검증 조건으로 확장한 기록이다. 이후 발견한 타입 크래시와 타깃별 비용 문제는 별도 문서에서 설명한다."
+          ],
+          [
+            "p",
+            "NaN을 별도로 처리해도 minnum·maxnum에 근거 없는 `nnan`을 붙일 수는 없다. 이 차이가 일부 타깃의 libcall 비용으로 이어질 수 있다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #213189",
+        "url": "https://github.com/llvm/llvm-project/issues/213189"
+      }
+    ]
+  },
+  {
+    "id": "clamp-debugging",
+    "author": "김준영",
+    "title": "clamp 패치에서 발견한 크래시와 잘못된 가정",
+    "summary": "타입 범위, 불필요한 플래그 조건, 상하한 순서, 타깃별 비용을 각각 검증한다.",
+    "areas": [
+      "InstCombine",
+      "부동소수점"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "김준영/llvm213690_proceed.pdf"
+    ],
+    "issues": [
+      213189
+    ],
+    "prs": [],
+    "sections": [
+      {
+        "id": "scope",
+        "title": "문제의 범위",
+        "blocks": [
+          [
+            "p",
+            "이 문서는 `foldClampWithNaNFallback`의 구현 과정에서 발견한 문제를 다룬다. 파일명의 숫자보다 본문에 명시된 이슈 #213189를 기준으로 연결한다."
+          ],
+          [
+            "table",
+            [
+              "문제",
+              "원인",
+              "대응"
+            ],
+            [
+              [
+                "정수 select의 크래시",
+                "FP 전용 속성을 타입 확인 없이 조회",
+                "허용 타입을 먼저 검사"
+              ],
+              [
+                "FP aggregate의 크래시",
+                "FPMathOperator가 필요한 범위보다 넓음",
+                "isFPOrFPVectorTy 사용"
+              ],
+              [
+                "정상 패턴의 누락",
+                "fcmp에도 nsz를 요구",
+                "불필요한 비교 플래그 조건 제거"
+              ],
+              [
+                "상하한 역전",
+                "LO > HI를 매칭 조건에서 배제하지 않음",
+                "LO <= HI를 명시적으로 확인"
+              ],
+              [
+                "일부 타깃의 비용 증가",
+                "nnan 없는 min/max가 libcall로 내려감",
+                "타깃별 결과와 적용 근거 검토"
+              ]
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "types",
+        "title": "타입 가드",
+        "blocks": [
+          [
+            "p",
+            "`select`는 정수, 부동소수점, aggregate 값도 선택할 수 있다. FP 필드로 이루어진 구조체도 필요한 scalar·vector 타입과는 다르다."
+          ],
+          [
+            "code",
+            "cpp",
+            "if (!Outer.getType()->isFPOrFPVectorTy() ||\n    !Outer.hasNoSignedZeros())\n  return nullptr;"
+          ],
+          [
+            "p",
+            "자료에 따르면 aggregate 사례는 fuzzing 도구가 발견했다. 해당 입력은 이후 회귀 테스트로 남았다."
+          ]
+        ]
+      },
+      {
+        "id": "bounds",
+        "title": "상하한 역전 반례",
+        "blocks": [
+          [
+            "p",
+            "`x=2`, `LO=1`, `HI=0`을 대입하면 문제를 직접 확인할 수 있다. 원래 트리는 0을 반환하고 단순 min/max 변환은 1을 반환한다."
+          ],
+          [
+            "p",
+            "다른 fold가 먼저 이 입력을 정리한다는 가정은 이 fold 자체의 정확성 조건을 대신하지 못한다. matcher에서 `LO <= HI`를 확인해야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "cost",
+        "title": "기계어 비용과 남은 판단",
+        "blocks": [
+          [
+            "p",
+            "자료는 i686·i386·SPARC의 일부 설정에서 fmin·fmax 호출을 관찰했다고 기록한다. 비교·선택만 있던 경로에 새 호출이 생길 수 있다."
+          ],
+          [
+            "note",
+            "이는 타깃과 옵션에 따른 관찰이다. IR 명령어 수 감소만으로 성능 개선을 주장할 수 없다. 자료 작성 시점에는 이 비용 문제의 정당화와 리뷰가 남아 있었다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #213189",
+        "url": "https://github.com/llvm/llvm-project/issues/213189"
+      }
+    ]
+  },
+  {
+    "id": "fract-integer-test",
+    "author": "김준영",
+    "title": "fract 기반 정수 판정을 trunc 비교로 바꾸기",
+    "summary": "ROCm 수학 라이브러리에서 나온 9개 명령어의 패턴을 하나의 정수 판정으로 분석한다.",
+    "areas": [
+      "InstCombine",
+      "부동소수점"
+    ],
+    "kind": "실험·제안",
+    "sources": [
+      "김준영/llvm_issue_188035.pptx"
+    ],
+    "issues": [
+      188035
+    ],
+    "prs": [
+      190620
+    ],
+    "sections": [
+      {
+        "id": "problem",
+        "title": "실제 코드와 문제",
+        "blocks": [
+          [
+            "p",
+            "ROCm device-libs의 감마 함수 구현에는 `fract(x) == 0` 형태의 정수 판정이 등장한다. 인라인 이후에는 floor, 뺄셈, minnum, 특수값 검사와 선택이 결합된다."
+          ],
+          [
+            "code",
+            "text",
+            "복잡한 fract(x) == 0 패턴\n          ↓\n      trunc(x) == x"
+          ],
+          [
+            "p",
+            "여기서 `trunc`는 부동소수점의 소수 부분을 버리는 연산이다. 정수 타입으로 비트를 자르는 LLVM IR의 `trunc` 명령과 구분한다."
+          ]
+        ]
+      },
+      {
+        "id": "semantics",
+        "title": "입력별 의미",
+        "blocks": [
+          [
+            "list",
+            [
+              "유한한 정수 입력에서는 trunc 결과가 입력과 같다.",
+              "유한한 비정수 입력에서는 trunc 결과가 입력과 다르다.",
+              "NaN·무한대는 원래 트리의 특수값 처리와 함께 확인해야 한다."
+            ]
+          ],
+          [
+            "p",
+            "자료는 특수값 경로를 포함한 전체 IR을 제시한다. 한 부분식만 떼어 일반적인 fract 정의와 같다고 가정하면 안 된다."
+          ]
+        ]
+      },
+      {
+        "id": "boundary",
+        "title": "기존 fold와 남은 범위",
+        "blocks": [
+          [
+            "p",
+            "연결된 PR #190620은 이미 더 좁은 패턴을 처리한다. 이슈 #188035의 과제는 복잡한 fract 트리 전체를 인식하는 것이다."
+          ],
+          [
+            "p",
+            "기존 fold가 도착점의 일부를 처리한다는 사실과, 이슈 전체가 해결되었다는 판단은 구분해야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "next",
+        "title": "구현 전 확인할 내용",
+        "blocks": [
+          [
+            "steps",
+            [
+              "실제 라이브러리에서 생성된 IR을 최소화한다.",
+              "NaN·무한대·signed zero 입력의 결과를 정리한다.",
+              "Alive2가 지원하는 범위에서 변환을 확인한다.",
+              "기존 matcher와 겹치는 부분을 찾는다.",
+              "전체 트리와 부분 패턴의 positive·negative 테스트를 나눈다."
+            ]
+          ],
+          [
+            "note",
+            "제출 자료는 이슈 소개와 설계 분석이다. 완성된 새 패치나 새 성능 측정 결과를 제시한 문서로 읽지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #188035",
+        "url": "https://github.com/llvm/llvm-project/issues/188035"
+      },
+      {
+        "label": "PR #190620",
+        "url": "https://github.com/llvm/llvm-project/pull/190620"
+      }
+    ]
+  },
+  {
+    "id": "bitcast-signbits",
+    "author": "김지환",
+    "title": "bitcast 뒤의 sign bits 정보를 전달하기",
+    "summary": "벡터를 더 작은 원소로 나누어도 유지되는 값의 성질을 공용 분석 함수에 전달한다.",
+    "areas": [
+      "ValueTracking",
+      "벡터"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "김지환/Issue87624.pdf"
+    ],
+    "issues": [
+      87624
+    ],
+    "prs": [
+      127218
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "문제와 핵심 성질",
+        "blocks": [
+          [
+            "p",
+            "원소의 모든 비트가 0이거나 모두 1이면 산술 오른쪽 시프트를 해도 값이 바뀌지 않는다. 이 값을 더 작은 원소로 bitcast해도 각 조각은 여전히 0 또는 -1이다."
+          ],
+          [
+            "code",
+            "llvm",
+            "%wide = sext <1 x i1> %condition to <1 x i8>\n%narrow = bitcast <1 x i8> %wide to <4 x i2>\n%shifted = ashr <4 x i2> %narrow, splat (i2 1)\n; 목표: %shifted 대신 %narrow를 반환한다."
+          ]
+        ]
+      },
+      {
+        "id": "cause",
+        "title": "분석 정보의 누락",
+        "blocks": [
+          [
+            "p",
+            "`ashr`를 지우는 규칙 자체는 이미 있었다. `ComputeNumSignBitsImpl`이 bitcast를 건너 값을 분석하지 못한 것이 문제였다."
+          ],
+          [
+            "p",
+            "따라서 새 시프트 fold 대신 ValueTracking의 공용 분석을 보완한다. 이 결과를 사용하는 기존 단순화가 뒤에서 동작한다."
+          ]
+        ]
+      },
+      {
+        "id": "conditions",
+        "title": "적용 조건",
+        "blocks": [
+          [
+            "list",
+            [
+              "정수 또는 정수 vector 입력으로 범위를 제한한다.",
+              "원본 원소의 비트 폭이 결과 원소의 비트 폭으로 나누어떨어지는지 확인한다.",
+              "원본 원소의 모든 비트가 sign bit와 같다는 fast case를 확인한다.",
+              "원본 타입의 원소 수에 맞는 demanded-elements 마스크를 사용한다."
+            ]
+          ],
+          [
+            "p",
+            "이 fast case는 어느 순서로 조각을 나누어도 각 조각이 같다. 따라서 이 범위에서는 endianness가 결론을 바꾸지 않는다."
+          ]
+        ]
+      },
+      {
+        "id": "validation",
+        "title": "검증과 결과 해석",
+        "blocks": [
+          [
+            "p",
+            "자료는 Alive2의 의미 검증, InstCombine의 IR 변화, 백엔드의 기계어 변화를 따로 확인한다."
+          ],
+          [
+            "p",
+            "관찰할 IR 변화는 bitcast 자체의 제거가 아니다. 마지막 `ashr`가 사라지고 bitcast 결과가 직접 사용되어야 한다."
+          ],
+          [
+            "note",
+            "기계어가 이미 같은 형태로 생성되는 타깃도 있을 수 있다. 이 분석은 기존 PR의 동작과 공용 정보 전달을 학습한 기록이다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #87624",
+        "url": "https://github.com/llvm/llvm-project/issues/87624"
+      },
+      {
+        "label": "PR #127218",
+        "url": "https://github.com/llvm/llvm-project/pull/127218"
+      }
+    ]
+  },
+  {
+    "id": "zero-count-min",
+    "author": "김지환",
+    "title": "zero count의 상한을 입력 비트에 반영하기",
+    "summary": "cttz·ctlz 결과에 적용한 umin을 입력의 OR 마스크와 하나의 zero count로 바꾼다.",
+    "areas": [
+      "InstCombine",
+      "정수·비트 연산"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "김지환/Issue90000.pdf"
+    ],
+    "issues": [
+      90000
+    ],
+    "prs": [
+      90402
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "변환의 의미",
+        "blocks": [
+          [
+            "p",
+            "`cttz(X)`는 최하위 비트 쪽의 연속된 0 개수다. 결과를 상수 `C` 이하로 제한하려면 입력의 bit C를 미리 1로 만들 수 있다."
+          ],
+          [
+            "code",
+            "text",
+            "umin(cttz(X), C) → cttz(X | (1 << C))\n; 이 식은 C가 유효한 비트 위치인 범위를 설명한다."
+          ],
+          [
+            "p",
+            "원래 zero count가 C보다 작으면 더 낮은 1비트가 결과를 결정한다. 그렇지 않으면 새로 설정한 bit C가 결과를 C로 고정한다."
+          ]
+        ]
+      },
+      {
+        "id": "conditions",
+        "title": "경계와 적용 조건",
+        "blocks": [
+          [
+            "list",
+            [
+              "cttz와 ctlz에는 방향에 맞는 서로 다른 마스크를 사용한다.",
+              "상수 C가 0, 마지막 비트, 비트 폭 이상인 경우를 나누어 처리한다.",
+              "입력이 0일 때 intrinsic의 zero-undef 조건을 확인한다.",
+              "원래 zero count 결과의 one-use 조건을 확인한다.",
+              "vector의 상수가 uniform splat인지 확인한다."
+            ]
+          ],
+          [
+            "p",
+            "유효한 비트 위치를 벗어나는 C에는 단순히 `1 << C`를 만들면 안 된다. 이 경우의 umin 제거 가능성은 별도 조건으로 판단한다."
+          ]
+        ]
+      },
+      {
+        "id": "implementation",
+        "title": "구현과 분석 순서",
+        "blocks": [
+          [
+            "p",
+            "대상은 umin과 zero-count intrinsic의 조합이다. 작성자는 `InstCombineCalls.cpp`의 intrinsic 처리 경로를 예상한 뒤 실제 패치와 비교했다."
+          ],
+          [
+            "steps",
+            [
+              "최소 src·tgt IR을 작성한다.",
+              "Alive2로 변환 조건을 확인한다.",
+              "InstCombine만 실행해 IR 변화가 생기는지 확인한다.",
+              "같은 llc 조건에서 기계어를 비교한다.",
+              "경계값과 적용하면 안 되는 사례를 테스트한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "evidence",
+        "title": "근거와 결과의 범위",
+        "blocks": [
+          [
+            "p",
+            "자료가 인용한 이슈의 코퍼스 조사에는 cttz+umin 사례가 있지만 같은 조사에서 ctlz+umin 사례는 발견되지 않았다. 둘의 실제 사용 빈도가 같다고 가정하지 않는다."
+          ],
+          [
+            "p",
+            "작성자는 비교와 조건부 이동의 제거 가능성을 관찰했다. 정확성, 적용 빈도, 타깃별 비용은 각각 다른 질문이다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #90000",
+        "url": "https://github.com/llvm/llvm-project/issues/90000"
+      },
+      {
+        "label": "PR #90402",
+        "url": "https://github.com/llvm/llvm-project/pull/90402"
+      },
+      {
+        "label": "PR에 제시된 Alive2",
+        "url": "https://alive2.llvm.org/ce/z/y8Hdb8"
+      }
+    ]
+  },
+  {
+    "id": "loop-remainder",
+    "author": "라민우",
+    "title": "반복 감산을 비트 연산과 나머지 식으로 이해하기",
+    "summary": "2씩 빼는 루프의 짝홀성부터 시작해 demanded bits와 일반 나머지 패턴까지 추적한다.",
+    "areas": [
+      "InstCombine",
+      "정수·비트 연산"
+    ],
+    "kind": "실험·제안",
+    "sources": [
+      "라민우/LLVM_Issue_121853.pdf"
+    ],
+    "issues": [
+      121853
+    ],
+    "prs": [],
+    "sections": [
+      {
+        "id": "problem",
+        "title": "처음 문제",
+        "blocks": [
+          [
+            "p",
+            "대상 루프는 `while (len > 1) len -= 2;`다. 부호 없는 len이라면 최종 결과는 짝수에서 0, 홀수에서 1이다."
+          ],
+          [
+            "p",
+            "LLVM이 만든 중간 표현에는 `umax(len, 1)`과 하위 비트를 지우는 AND가 남았다. 작성자는 이 표현이 왜 원래 값의 짝홀성과 같은지 분석했다."
+          ],
+          [
+            "code",
+            "text",
+            "len == (max(len, 1) & -2)\n              ↓\n       (len & 1) == 0"
+          ]
+        ]
+      },
+      {
+        "id": "demanded",
+        "title": "필요한 비트만 보기",
+        "blocks": [
+          [
+            "p",
+            "`umax(A, C)`가 A와 다른 부분이 결과에서 사용하지 않는 낮은 비트에만 있으면 상한 처리를 제거할 수 있다."
+          ],
+          [
+            "p",
+            "필요한 비트 중 가장 낮은 위치를 d라 하자. `C.getActiveBits() <= d`이면 C는 `2^d`보다 작다. A가 C보다 작은 경우에도 두 값의 bit d 이상은 모두 0이다."
+          ],
+          [
+            "note",
+            "원자료에는 이 경계를 `C <= 2^d`로 쓴 부분이 있다. active-bits 조건의 정확한 해석은 `C < 2^d`다. 이 편집본은 경계를 분명히 적고 원자료를 함께 제공한다."
+          ]
+        ]
+      },
+      {
+        "id": "canonical",
+        "title": "비교 정규화와 사용처",
+        "blocks": [
+          [
+            "code",
+            "text",
+            "(X & C) == X  →  (X & ~C) == 0"
+          ],
+          [
+            "p",
+            "위 정규화는 필요한 비트를 직접 비교하는 형태를 만든다. 새 모양은 후속 fold의 조건을 만족할 기회를 늘릴 수 있다."
+          ],
+          [
+            "p",
+            "정규화했다고 언제나 single-use가 되는 것은 아니다. 다른 사용처가 남는지 별도로 확인해야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "generalize",
+        "title": "3 이상으로 확장한 탐구",
+        "blocks": [
+          [
+            "p",
+            "작성자는 3씩 빼는 경우를 추가로 관찰하고 umax와 urem이 섞인 식을 분석했다."
+          ],
+          [
+            "code",
+            "text",
+            "A - umax(A, K-1) + urem(umax(A, K-1), K)\n                      ↓\n                  urem(A, K)"
+          ],
+          [
+            "p",
+            "K와 A의 범위, 비트 폭, 정수 넘침, 0 나눗셈 조건을 함께 검증해야 한다. 자료의 코드 조각은 이 일반화에 대한 패치 접근안이다."
+          ],
+          [
+            "note",
+            "제안한 matcher가 업스트림에 반영되었거나 모든 정수 조건에서 검증되었다는 결론은 자료만으로 확인할 수 없다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #121853",
+        "url": "https://github.com/llvm/llvm-project/issues/121853"
+      }
+    ]
+  },
+  {
+    "id": "fcmp-ord-refinement",
+    "author": "라민우",
+    "title": "fcmp ord 결합에서 freeze가 필요한 이유",
+    "summary": "NaN 검사 결합을 분석하며 poison의 전파와 refinement의 방향을 구분한다.",
+    "areas": [
+      "InstCombine",
+      "부동소수점"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "라민우/LLVM_Issue_49175.pdf"
+    ],
+    "issues": [
+      49175
+    ],
+    "prs": [
+      205076
+    ],
+    "sections": [
+      {
+        "id": "background",
+        "title": "ord와 uno",
+        "blocks": [
+          [
+            "p",
+            "`fcmp ord`는 두 입력이 모두 NaN이 아닐 때 참이다. `fcmp uno`는 하나라도 NaN이면 참이다. 따라서 `fcmp ord x, 0.0`은 x의 NaN 여부를 검사한다."
+          ],
+          [
+            "p",
+            "여러 비교와 논리적 선택을 하나의 비교로 합치려면 NaN뿐 아니라 poison과 fast-math 조건도 확인해야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "poison",
+        "title": "선택이 가리는 poison",
+        "blocks": [
+          [
+            "p",
+            "`select`는 선택하지 않은 값의 poison을 결과로 전달하지 않는다. 원래 식이 한쪽 비교를 건너뛰는 구조라면, 두 입력을 바로 비교하는 새 식이 poison을 새로 노출할 수 있다."
+          ],
+          [
+            "p",
+            "`freeze`는 poison 또는 undef를 고정된 값으로 바꾼다. 새 비교 전에 적절한 입력을 freeze하면 원래 정의된 결과를 보존할 수 있다."
+          ]
+        ]
+      },
+      {
+        "id": "refinement",
+        "title": "같음과 refinement 구분",
+        "blocks": [
+          [
+            "p",
+            "최적화는 원본이 정의한 동작을 새 식에서도 보존해야 한다. 원본이 poison인 경우에 새 식이 더 구체적인 값을 반환하는 것은 허용될 수 있다."
+          ],
+          [
+            "p",
+            "반대 방향은 다르다. 원본이 false처럼 정의된 값을 반환하는 입력에서 새 식이 poison을 만들면 정확성을 위반한다."
+          ],
+          [
+            "p",
+            "자료에는 처음의 등식 중심 설명을 수정하고 이 방향성을 이해한 과정이 남아 있다."
+          ]
+        ]
+      },
+      {
+        "id": "flags",
+        "title": "freeze와 플래그를 함께 검토하기",
+        "blocks": [
+          [
+            "list",
+            [
+              "원래 select가 어느 입력의 poison을 가리는지 확인한다.",
+              "어느 피연산자를 freeze하는지 실제 matcher의 순서와 대조한다.",
+              "두 비교의 fast-math flags를 결합할 때 ninf가 남는지 확인한다.",
+              "NaN·Inf·poison 조합에서 src가 정의된 값을 내는 경우를 우선 확인한다."
+            ]
+          ],
+          [
+            "note",
+            "원자료는 분석 도중의 가설과 후반 패치 해석을 함께 담고 있다. 앞부분의 freeze 설명을 최종 구현의 피연산자 선택과 같은 결론으로 읽으면 안 된다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #49175",
+        "url": "https://github.com/llvm/llvm-project/issues/49175"
+      },
+      {
+        "label": "PR #205076",
+        "url": "https://github.com/llvm/llvm-project/pull/205076"
+      }
+    ]
+  },
+  {
+    "id": "trunc-select",
+    "author": "송효섭",
+    "title": "trunc의 no-wrap 조건으로 select 값을 고정하기",
+    "summary": "nuw·nsw가 담은 값의 범위를 선택된 arm 안에서만 사용한다.",
+    "areas": [
+      "InstCombine",
+      "정수·비트 연산"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "송효섭/LLVM-96765-review.pdf"
+    ],
+    "issues": [
+      96765
+    ],
+    "prs": [],
+    "sections": [
+      {
+        "id": "range",
+        "title": "플래그가 주는 값의 범위",
+        "blocks": [
+          [
+            "p",
+            "`trunc nuw X to i1`이 poison이 아니면 X는 0 또는 1이다. `trunc nsw X to i1`이면 X는 0 또는 -1이다."
+          ],
+          [
+            "table",
+            [
+              "플래그",
+              "X가 true arm일 때",
+              "X가 false arm일 때"
+            ],
+            [
+              [
+                "nuw",
+                "1",
+                "0"
+              ],
+              [
+                "nsw",
+                "-1",
+                "0"
+              ]
+            ]
+          ],
+          [
+            "code",
+            "llvm",
+            "%t = trunc nuw i8 %x to i1\n%s = select i1 %t, i8 %x, i8 %y\n; true arm의 %x만 1로 바꾼다.\n%s.folded = select i1 %t, i8 1, i8 %y"
+          ]
+        ]
+      },
+      {
+        "id": "context",
+        "title": "문맥을 벗어나면 안 되는 사실",
+        "blocks": [
+          [
+            "p",
+            "X가 1이라는 사실은 선택 조건이 참인 경로 안에서만 성립한다. select 바깥의 X 사용처를 1로 바꾸면 안 된다."
+          ],
+          [
+            "p",
+            "플래그가 없는 trunc에는 이 추론을 적용할 수 없다. 예를 들어 X=3이면 하위 비트는 1이지만 원래 값은 1이 아니다."
+          ]
+        ]
+      },
+      {
+        "id": "implementation",
+        "title": "구현과 경계",
+        "blocks": [
+          [
+            "list",
+            [
+              "조건이 m_NUWTrunc 또는 m_NSWTrunc와 일치하는지 확인한다.",
+              "선택 값이 바로 그 trunc의 입력 X인지 확인한다.",
+              "상수 입력의 반복 fold를 막는 조건을 유지한다.",
+              "-1은 결과 타입 전체가 1인 상수로 만든다.",
+              "새 select 대신 기존 명령어의 해당 피연산자를 바꾸는 경로를 검토한다."
+            ]
+          ],
+          [
+            "p",
+            "branch와 PHI의 비슷한 사례는 다른 패스가 처리할 수 있다. 원자료의 실험에서는 단독 InstCombine과 전체 O2 파이프라인의 결과가 달랐다."
+          ]
+        ]
+      },
+      {
+        "id": "validation",
+        "title": "검증 기록과 효과",
+        "blocks": [
+          [
+            "p",
+            "작성자는 Alive2 positive 사례와 플래그가 없는 negative 사례를 비교했다. 테스트는 fold를 켠 빌드에서 10건 통과했고, fold를 끈 빌드에서는 그중 6건이 실패했다고 기록했다."
+          ],
+          [
+            "p",
+            "단순 예제의 x86-64·AArch64 명령어 수는 전후가 같았다. 반면 선택되는 두 값이 모두 1이 되는 실사용 형태에서는 함수가 `ret 1`로 단순화되었다."
+          ],
+          [
+            "note",
+            "직접적인 명령어 수 감소와 후속 상수 전파 기회는 구분해서 평가해야 한다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #96765",
+        "url": "https://github.com/llvm/llvm-project/issues/96765"
+      },
+      {
+        "label": "Alive2 positive 사례",
+        "url": "https://alive2.llvm.org/ce/z/TonKE9"
+      }
+    ]
+  },
+  {
+    "id": "casted-shift",
+    "author": "오수영",
+    "title": "잘린 시프트의 0 비교를 범위 비교로 바꾸기",
+    "summary": "설정된 비트가 trunc의 보존 범위 안에 있는지 직접 비교한다.",
+    "areas": [
+      "InstCombine",
+      "정수·비트 연산"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "오수영/llvm-instcombine-issue-51889-report.pdf"
+    ],
+    "issues": [
+      51889
+    ],
+    "prs": [],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "문제와 변환",
+        "blocks": [
+          [
+            "code",
+            "llvm",
+            "; Before\n%shl = shl i32 1, %a\n%t = trunc i32 %shl to i8\n%r = icmp eq i8 %t, 0\n\n; After\n%r = icmp ugt i32 %a, 7"
+          ],
+          [
+            "p",
+            "1을 a칸 이동하면 bit a만 1이다. i8로 자르면 bit 0부터 7까지만 남는다. 따라서 정의된 시프트 범위에서 결과가 0인지 여부는 a가 7보다 큰지로 정해진다."
+          ]
+        ]
+      },
+      {
+        "id": "conditions",
+        "title": "정확성의 조건",
+        "blocks": [
+          [
+            "p",
+            "원래 i32 시프트의 범위를 벗어나는 입력은 poison을 만들 수 있다. 단순화의 의미를 일반적인 C 정수 시프트의 직관만으로 판단하면 안 된다."
+          ],
+          [
+            "list",
+            [
+              "시프트 폭과 trunc 뒤의 비트 폭을 함께 확인한다.",
+              "시프트 입력이 1인 패턴과 다른 값을 구분한다.",
+              "비교 predicate와 보존 범위의 경계값을 확인한다.",
+              "vector와 추가 사용처가 있는 입력을 별도 테스트한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "method",
+        "title": "분석과 테스트",
+        "blocks": [
+          [
+            "p",
+            "작성자는 이슈의 src·tgt를 최소 재현 입력으로 사용했다. Alive2로 의미를 확인하고, llc를 통해 타깃별 기계어 차이를 관찰했다."
+          ],
+          [
+            "p",
+            "패치 위치는 cast 뒤 비교를 처리하는 InstCombine 경로다. 새 규칙을 예상한 뒤 병합된 패치와 비교하는 순서로 분석했다."
+          ]
+        ]
+      },
+      {
+        "id": "evidence",
+        "title": "관찰 결과의 범위",
+        "blocks": [
+          [
+            "p",
+            "자료는 x86와 AArch64의 기계어 및 llvm-mca 결과를 제시한다. IR의 세 명령을 하나의 비교로 줄이는 것이 핵심이다."
+          ],
+          [
+            "note",
+            "llvm-mca는 CPU에서 실제 프로그램을 실행한 결과가 아니다. 정적 모델의 처리량과 실행 시간 측정을 같은 값으로 읽지 않는다. 분석·보완 날짜는 원자료에 구분되어 있다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #51889",
+        "url": "https://github.com/llvm/llvm-project/issues/51889"
+      }
+    ]
+  },
+  {
+    "id": "urem-noexcept",
+    "author": "이하동",
+    "title": "값의 관계 추론과 clang-tidy 크래시를 고치기",
+    "summary": "urem 이후의 nonzero 추론과 불완전한 예외 명세를 읽는 크래시를 서로 다른 계층에서 해결한다.",
+    "areas": [
+      "ValueTracking",
+      "Clang-Tidy"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "이하동/index.html"
+    ],
+    "issues": [
+      216071,
+      214291
+    ],
+    "prs": [
+      216072,
+      218256
+    ],
+    "sections": [
+      {
+        "id": "scope",
+        "title": "두 문제의 위치",
+        "blocks": [
+          [
+            "table",
+            [
+              "대상",
+              "문제",
+              "수정 계층"
+            ],
+            [
+              [
+                "PR #216072",
+                "urem 결과와 입력의 non-equality 추론 누락",
+                "ValueTracking"
+              ],
+              [
+                "PR #218256",
+                "unparsed exception specification 조회 중 크래시",
+                "clang-tidy modernize-use-noexcept"
+              ]
+            ]
+          ],
+          [
+            "p",
+            "한 문서 안의 두 사례지만 수정 원리와 검증 방법은 다르다. 최적화 문제와 오류 입력의 크래시 문제를 구분해 읽는다."
+          ]
+        ]
+      },
+      {
+        "id": "urem",
+        "title": "urem: 식을 바꾸는 대신 관계를 알리기",
+        "blocks": [
+          [
+            "p",
+            "초기 접근은 InstCombine에서 비교식을 바꾸는 것이었다. 그러나 분기에서 얻던 값의 관계가 달라져 후속 추론이 약해질 수 있었다."
+          ],
+          [
+            "p",
+            "최종 방향은 `isKnownNonEqual`에서 구조적인 관계를 알려 주는 것이다. 공통 분석이 필요한 사실을 반환하면 기존 사용처가 그 정보를 사용한다."
+          ],
+          [
+            "p",
+            "자료는 중간 워크노트와 최종 병합 코드의 범위를 구분한다. 이후 추가한 증명과 파일 구성은 공개 리뷰와 병합 코드를 근거로 설명한다."
+          ]
+        ]
+      },
+      {
+        "id": "exception",
+        "title": "예외 명세: 조회 전에 상태 확인",
+        "blocks": [
+          [
+            "p",
+            "소스 위치의 matcher가 성공해도 semantic type의 예외 명세가 완성되었다는 보장은 없다. 실패한 template specialization에는 `EST_Unparsed` 상태가 남을 수 있다."
+          ],
+          [
+            "code",
+            "cpp",
+            "if (FnTy->getExceptionSpecType() == EST_Unparsed ||\n    isUnresolvedExceptionSpec(FnTy->getExceptionSpecType()))\n  return;"
+          ],
+          [
+            "p",
+            "callback은 `isNothrow`를 호출하기 전에 이 상태를 걸러낸다. 전역 helper의 의미를 바꾸는 대신 기존 guard가 책임지는 경계에 검사를 추가한다."
+          ]
+        ]
+      },
+      {
+        "id": "tests",
+        "title": "회귀 테스트와 실행 범위",
+        "blocks": [
+          [
+            "p",
+            "크래시 입력은 compiler error를 내는 잘못된 코드다. 테스트는 오류 진단을 기대하면서 임의의 signal crash는 허용하지 않아야 한다."
+          ],
+          [
+            "p",
+            "C++11·14와 C++17 이후의 추가 진단을 CHECK suffix로 구분한다. helper 도구가 없는 테스트 환경 실패와 새 CHECK의 오류도 나누어 조사했다."
+          ],
+          [
+            "note",
+            "자료에는 수정 후 로컬 전체 suite 재실행은 미완주라고 명시되어 있다. focused test 통과와 최종 CI 통과를 로컬 전체 재검증 완료로 바꾸어 쓰지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #216071",
+        "url": "https://github.com/llvm/llvm-project/issues/216071"
+      },
+      {
+        "label": "Issue #214291",
+        "url": "https://github.com/llvm/llvm-project/issues/214291"
+      },
+      {
+        "label": "PR #216072",
+        "url": "https://github.com/llvm/llvm-project/pull/216072"
+      },
+      {
+        "label": "PR #218256",
+        "url": "https://github.com/llvm/llvm-project/pull/218256"
+      }
+    ]
+  },
+  {
+    "id": "lowbit-comparisons",
+    "author": "이하동",
+    "title": "가장 낮은 1비트의 비교를 단순화하기",
+    "summary": "x & -x를 0 또는 1과 비교하는 식을 입력의 0 여부와 최하위 비트 검사로 바꾼다.",
+    "areas": [
+      "InstCombine",
+      "정수·비트 연산"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "이하동/instcombine-lowbit-presentation.html"
+    ],
+    "issues": [
+      213708
+    ],
+    "prs": [
+      213709
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "lowbit의 의미",
+        "blocks": [
+          [
+            "p",
+            "`x & -x`는 x에서 가장 낮은 위치의 1비트만 남긴다. 비트 폭에 맞는 정수 연산을 전제로 다음 비교를 단순화할 수 있다."
+          ],
+          [
+            "table",
+            [
+              "원래 식",
+              "단순화"
+            ],
+            [
+              [
+                "(x & -x) == 0",
+                "x == 0"
+              ],
+              [
+                "(x & -x) != 0",
+                "x != 0"
+              ],
+              [
+                "(x & -x) == 1",
+                "trunc x to i1"
+              ],
+              [
+                "(x & -x) != 1",
+                "not (trunc x to i1)"
+              ]
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "conditions",
+        "title": "사용처와 비용 조건",
+        "blocks": [
+          [
+            "p",
+            "0 비교와 1 비교는 새로 만드는 명령어 수가 다르다. `!= 1`은 trunc와 NOT이 필요하므로 AND가 사라질 때만 적용하는 조건이 필요하다."
+          ],
+          [
+            "list",
+            [
+              "비트 폭이 1보다 큰지 확인한다.",
+              "AND의 피연산자 순서를 바꾼 경우도 매칭한다.",
+              "0·1 이외의 비교 상수는 이 규칙에서 처리하지 않는다.",
+              "`!= 1`에는 AND의 one-use 조건을 적용한다.",
+              "neg가 다른 곳에서도 쓰이는 경우와 AND가 다른 곳에서도 쓰이는 경우를 구분한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "process",
+        "title": "구현과 리뷰",
+        "blocks": [
+          [
+            "p",
+            "작성자는 초기 요청을 실제 이슈 #213708로 옮기고 PR #213709를 제출했다. 테스트를 먼저 추가한 커밋과 구현 커밋을 구분했다."
+          ],
+          [
+            "p",
+            "리뷰에서는 neg에 다른 사용처가 있는 테스트를 추가했다. 캡처하는 값이 lowbit 결과가 아니라 원래 X이므로 변수명도 `MatchedX`로 바꾸었다."
+          ],
+          [
+            "p",
+            "원자료는 focused 테스트, InstCombine 전체 테스트, CI 통과와 2026년 8월 9일 병합을 기록한다."
+          ]
+        ]
+      },
+      {
+        "id": "evidence",
+        "title": "근거의 역할",
+        "blocks": [
+          [
+            "p",
+            "스칼라와 vector, 비트 폭, 교환된 피연산자, 추가 사용처를 테스트했다. Alive2 링크도 제시했다."
+          ],
+          [
+            "note",
+            "코퍼스와 backend 비용 자료에는 멘토가 제공한 근거가 포함된다. 이 문서는 그 자료를 멘티가 독립적으로 수집한 성과로 바꾸어 서술하지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #213708",
+        "url": "https://github.com/llvm/llvm-project/issues/213708"
+      },
+      {
+        "label": "PR #213709",
+        "url": "https://github.com/llvm/llvm-project/pull/213709"
+      },
+      {
+        "label": "Alive2 검증",
+        "url": "https://alive2.llvm.org/ce/z/Zwy2hW"
+      }
+    ]
+  },
+  {
+    "id": "boolean-multiply",
+    "author": "이하동",
+    "title": "boolean sext와 곱셈을 select로 정규화하기",
+    "summary": "벡터의 x * (x == 0)을 직접 처리하는 대신 더 일반적인 곱셈 패턴을 단순한 선택으로 바꾼다.",
+    "areas": [
+      "InstCombine",
+      "벡터"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "이하동/llvm_issue_84608_study.html"
+    ],
+    "issues": [
+      84608
+    ],
+    "prs": [
+      84792
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "이슈의 식과 일반형",
+        "blocks": [
+          [
+            "p",
+            "vector 비교 결과를 sext하면 각 원소는 0 또는 -1이다. `x * sext(x == 0)`은 x가 0인 경우와 그렇지 않은 경우에 모두 0이다."
+          ],
+          [
+            "code",
+            "text",
+            "mul (sext i1 C), Y\n        ↓\nselect C, -Y, 0"
+          ],
+          [
+            "p",
+            "PR은 이슈의 전체 식을 직접 0으로 바꾸기보다 위 일반형을 추가했다. 원래 이슈는 새 select에 기존 단순화가 이어지며 0으로 접힌다."
+          ]
+        ]
+      },
+      {
+        "id": "flags",
+        "title": "타입·사용처·플래그",
+        "blocks": [
+          [
+            "list",
+            [
+              "sext의 입력은 scalar i1 또는 vector i1이어야 한다.",
+              "sext가 현재 곱셈에서만 사용되는지 확인한다.",
+              "곱셈의 두 피연산자 순서를 모두 처리한다.",
+              "새 neg에는 기존 mul의 nsw를 전달한다.",
+              "nuw를 같은 방식으로 새 neg에 전달하지 않는다."
+            ]
+          ],
+          [
+            "p",
+            "sext i2처럼 boolean이 아닌 입력은 같은 규칙으로 처리하지 않는다."
+          ]
+        ]
+      },
+      {
+        "id": "review",
+        "title": "기존 코드와 리뷰의 역할",
+        "blocks": [
+          [
+            "p",
+            "기존에는 zext boolean과 곱셈을 처리했다. sext boolean도 상수와 곱하는 경우는 처리했지만 일반 값 Y와의 조합이 빠져 있었다."
+          ],
+          [
+            "p",
+            "리뷰는 이슈 전용 처리에서 일반 fold로 범위를 바꾸었다. 곱셈 하나가 neg와 select로 바뀌는 비용 문제도 함께 논의했다."
+          ]
+        ]
+      },
+      {
+        "id": "verification",
+        "title": "검증과 읽을 때의 주의",
+        "blocks": [
+          [
+            "p",
+            "자료는 원래 식의 상수 변환과 일반형 변환에 대한 Alive2 근거를 구분한다. scalar, vector, 플래그, 교환 순서, multi-use negative 테스트도 설명한다."
+          ],
+          [
+            "p",
+            "작성자의 로컬 재현에서는 scalar가 `ret 0`, vector가 `ret zeroinitializer`로 단순화되었다고 기록한다."
+          ],
+          [
+            "note",
+            "이 문서는 기존 PR의 분석이다. 원자료의 이름 입력 자리표시는 확인된 자료 게시자 이름인 이하동으로 정리했다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #84608",
+        "url": "https://github.com/llvm/llvm-project/issues/84608"
+      },
+      {
+        "label": "PR #84792",
+        "url": "https://github.com/llvm/llvm-project/pull/84792"
+      }
+    ]
+  },
+  {
+    "id": "shared-sext-mask",
+    "author": "이호연",
+    "title": "공유된 boolean mask와 덧셈을 select로 연결하기",
+    "summary": "같은 0·all-ones mask를 적용한 두 값의 덧셈을 분석하며 기존 fold의 one-use 제한을 찾는다.",
+    "areas": [
+      "InstCombine",
+      "벡터"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "이호연/LLVM_Issue_81288.pdf"
+    ],
+    "issues": [
+      81288
+    ],
+    "prs": [
+      81409
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "문제의 값 흐름",
+        "blocks": [
+          [
+            "p",
+            "비교 결과를 sext한 mask는 각 원소에서 0 또는 all-ones다. 같은 mask를 a와 b에 각각 AND한 뒤 더하는 것이 대상이다."
+          ],
+          [
+            "code",
+            "text",
+            "mask = sext(condition)\n(a & mask) + (b & mask)\n             ↓\nselect condition, (a + b), 0"
+          ],
+          [
+            "p",
+            "조건이 참이면 두 입력이 모두 남는다. 거짓이면 두 입력이 모두 0이 된다."
+          ]
+        ]
+      },
+      {
+        "id": "cause",
+        "title": "규칙이 있는데 적용되지 않은 이유",
+        "blocks": [
+          [
+            "p",
+            "기존에는 `and(sext C, V)`를 `select C, V, 0`으로 바꾸는 규칙이 있었다. 그러나 sext가 한 번만 사용된다는 조건이 붙었다."
+          ],
+          [
+            "p",
+            "대상에서는 같은 mask가 두 AND에서 사용된다. 따라서 기존 규칙의 입력 조건을 통과하지 못했다."
+          ],
+          [
+            "p",
+            "새로운 전체 식 전용 규칙을 늘리는 방법과, 기존 정규화가 이어지도록 경계를 바꾸는 방법을 구분해 분석한다."
+          ]
+        ]
+      },
+      {
+        "id": "implementation",
+        "title": "matcher와 후속 단순화",
+        "blocks": [
+          [
+            "list",
+            [
+              "sext의 원본이 scalar 또는 vector i1인지 확인한다.",
+              "AND의 피연산자 순서를 모두 검사한다.",
+              "공유된 mask와 각 사용처의 관계를 확인한다.",
+              "생성한 select가 기존 덧셈 단순화로 이어지는지 확인한다."
+            ]
+          ],
+          [
+            "p",
+            "원자료는 PR #81409와 코드 생성 결과를 연결한다. 한 번의 fold와 최종 출력 사이에는 기존 최적화가 여러 번 동작할 수 있다."
+          ]
+        ]
+      },
+      {
+        "id": "validation",
+        "title": "자료의 검증 결과",
+        "blocks": [
+          [
+            "p",
+            "자료에는 Alive2 비교, llc 출력, regression test와 llvm-mca 결과가 포함되어 있다. 예제 블록에서 명령어 집계 500→400, Block RThroughput 1.3→1.0을 기록한다."
+          ],
+          [
+            "note",
+            "위 값은 해당 블록과 모델의 결과다. 실제 프로그램의 실행 시간이나 모든 vector 입력의 개선율로 확대하지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #81288",
+        "url": "https://github.com/llvm/llvm-project/issues/81288"
+      },
+      {
+        "label": "PR #81409",
+        "url": "https://github.com/llvm/llvm-project/pull/81409"
+      }
+    ]
+  },
+  {
+    "id": "demanded-elts-reland",
+    "author": "임승현",
+    "title": "되돌려진 FP-class 패치의 크래시를 재현하고 수정하기",
+    "summary": "만료된 빌드 로그 대신 표적 IR로 마스크 폭 불일치를 재현하고 demanded-elements 전달을 안전하게 만든다.",
+    "areas": [
+      "InstCombine",
+      "ValueTracking",
+      "벡터"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "임승현/reland-174176-slides.pdf"
+    ],
+    "issues": [
+      174143
+    ],
+    "prs": [
+      174176,
+      212183
+    ],
+    "sections": [
+      {
+        "id": "purpose",
+        "title": "작업 범위",
+        "blocks": [
+          [
+            "p",
+            "기존 패치는 `SimplifyDemandedFPClass`에 필요한 vector 원소 정보를 전달하는 인자를 추가했다. 병합 뒤 되돌려졌고, 작성자는 재적용 작업을 진행했다."
+          ],
+          [
+            "note",
+            "이 단계는 all-ones 마스크를 전달하는 기반 작업이다. 레인별 최적화 자체는 후속 과제다. NFC와 실행 성능 개선을 구분해야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "cause",
+        "title": "재현한 결함",
+        "blocks": [
+          [
+            "p",
+            "결과 타입의 마스크 폭을 다른 타입의 피연산자에 그대로 전달하면 vector 원소 수와 맞지 않을 수 있다. 좁은 마스크에서 더 큰 원소 위치를 읽으면 assertion이 발생한다."
+          ],
+          [
+            "list",
+            [
+              "two-use extractelement 입력으로 먼저 일어나는 scalar화를 막는다.",
+              "narrowing shufflevector를 확인한다.",
+              "vector 원소를 가진 insertvalue를 확인한다.",
+              "크래시가 없던 widening·삽입·추출 경로도 폭 조건을 검사한다."
+            ]
+          ],
+          [
+            "p",
+            "자료는 세 경로의 크래시를 로컬에서 재현했다고 기록한다. 원래 buildbot 실패와 동일한 실행 경로였는지는 만료된 로그 때문에 직접 입증하지 못했다."
+          ]
+        ]
+      },
+      {
+        "id": "fix",
+        "title": "수정 원리",
+        "blocks": [
+          [
+            "p",
+            "마스크는 결과 타입이 아니라 질문을 전달할 피연산자의 타입에 맞게 만든다. vector에는 해당 원소 수의 all-ones, scalar에는 1비트 마스크를 사용한다."
+          ],
+          [
+            "p",
+            "폭과 원소 수의 관계를 assertion과 회귀 테스트로 고정한다. 아직 구현하지 않은 레인별 처리의 TODO는 기반 작업과 구분해 유지한다."
+          ]
+        ]
+      },
+      {
+        "id": "tests",
+        "title": "검증 기록",
+        "blocks": [
+          [
+            "table",
+            [
+              "검증",
+              "원자료의 결과"
+            ],
+            [
+              [
+                "기존 27개 파일 전후 IR",
+                "바이트 단위 동일"
+              ],
+              [
+                "FP-class lit",
+                "28/28 통과"
+              ],
+              [
+                "CodeGen/AMDGPU lit",
+                "4,921 통과"
+              ],
+              [
+                "새 폭 회귀 테스트",
+                "6개 함수"
+              ]
+            ]
+          ],
+          [
+            "p",
+            "stale 도구 때문에 발생한 실패는 재빌드 후 다시 확인했다. 자료는 PR #212183 제출과 당시 리뷰 상태를 기록한다."
+          ]
+        ]
+      },
+      {
+        "id": "next",
+        "title": "후속 작업",
+        "blocks": [
+          [
+            "p",
+            "다음 단계는 실제 demanded-lane 처리를 추가하는 것이다. 사용하지 않는 레인에 poison을 도입할 때는 살아 있는 레인까지 손상하지 않는지 확인해야 한다."
+          ],
+          [
+            "p",
+            "이 단계의 테스트 수는 안정성 확인의 근거다. 출력이 같다는 결과를 새로운 성능 향상 수치로 바꾸지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #174143",
+        "url": "https://github.com/llvm/llvm-project/issues/174143"
+      },
+      {
+        "label": "PR #174176",
+        "url": "https://github.com/llvm/llvm-project/pull/174176"
+      },
+      {
+        "label": "PR #212183",
+        "url": "https://github.com/llvm/llvm-project/pull/212183"
+      }
+    ]
+  },
+  {
+    "id": "symmetric-selects",
+    "author": "임예원",
+    "title": "대칭적인 중첩 select를 XOR와 select로 바꾸기",
+    "summary": "작은 fold에서도 조건 타입의 일치와 사용처에 따른 비용을 따로 확인해야 한다.",
+    "areas": [
+      "InstCombine",
+      "벡터"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "임예원/LLVM-Issue98800-PR99245.pptx"
+    ],
+    "issues": [
+      98800
+    ],
+    "prs": [
+      99245
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "변환",
+        "blocks": [
+          [
+            "code",
+            "llvm",
+            "; Before\n%s1 = select i1 %c1, i32 %a, i32 %b\n%s2 = select i1 %c1, i32 %b, i32 %a\n%r = select i1 %c2, i32 %s1, i32 %s2\n\n; After\n%x = xor i1 %c1, %c2\n%r = select i1 %x, i32 %b, i32 %a"
+          ],
+          [
+            "p",
+            "안쪽 두 select는 같은 조건과 반대 순서의 값을 사용한다. 바깥 선택까지 합치면 조건 두 개의 XOR로 최종 값을 고를 수 있다."
+          ]
+        ]
+      },
+      {
+        "id": "pipeline",
+        "title": "검증 도구의 범위",
+        "blocks": [
+          [
+            "p",
+            "이슈는 처음에 코드 생성 이득이 없다는 이유로 닫혔다가 다시 열렸다. 최초 확인은 InstCombine을 실행하지 않은 llc 비교였다."
+          ],
+          [
+            "code",
+            "sh",
+            "opt -passes=instcombine -S input.ll -o combined.ll\nllc combined.ll -o output.s"
+          ],
+          [
+            "p",
+            "검증하려는 패스를 실행하지 않으면 해당 최적화의 유무를 판단할 수 없다. IR 변화와 기계어 변화를 순서대로 확인한다."
+          ]
+        ]
+      },
+      {
+        "id": "guards",
+        "title": "리뷰에서 추가한 조건",
+        "blocks": [
+          [
+            "list",
+            [
+              "안쪽과 바깥쪽 조건의 타입이 같아야 한다.",
+              "두 안쪽 select는 각각 바깥 select에서만 사용되어야 한다.",
+              "같은 조건과 반대 순서의 같은 SSA 값인지 확인한다."
+            ]
+          ],
+          [
+            "p",
+            "조건 타입이 다르면 XOR 생성에서 크래시가 날 수 있다. 안쪽 select가 다른 곳에서도 필요하면 새 XOR 비용만 추가되고 기존 select가 남을 수 있다."
+          ],
+          [
+            "note",
+            "원자료에는 multi-use 뒤 명령어 수를 5개로 센 설명이 있다. 바깥 select를 새 select로 대체하는 순수 명령어 집계는 4개다. 핵심은 3개에서 늘어날 수 있다는 점이다."
+          ]
+        ]
+      },
+      {
+        "id": "scope",
+        "title": "검증과 범위 결정",
+        "blocks": [
+          [
+            "p",
+            "자료는 기본형, 피연산자 순서, scalar·vector 조합, multi-use, 조건 타입 불일치를 포함한 9종 회귀 테스트를 정리한다."
+          ],
+          [
+            "p",
+            "반대 조건으로 확장하는 안과 scalar 조건을 vector로 넓히는 안은 사용 빈도와 검증 결과를 근거로 보류했다. 이미 병합된 PR의 리뷰 과정을 분석한 자료다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #98800",
+        "url": "https://github.com/llvm/llvm-project/issues/98800"
+      },
+      {
+        "label": "PR #99245",
+        "url": "https://github.com/llvm/llvm-project/pull/99245"
+      }
+    ]
+  },
+  {
+    "id": "floating-zero-compare",
+    "author": "전의정",
+    "title": "x와 -x 중 선택한 값의 0 비교를 줄이기",
+    "summary": "선택 조건을 분석하지 않고도 equality 비교가 원래 x의 0 여부와 같다는 점을 사용한다.",
+    "areas": [
+      "InstCombine",
+      "부동소수점"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "전의정/Issue85250_.pdf"
+    ],
+    "issues": [
+      85250
+    ],
+    "prs": [
+      85673
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "변환의 범위",
+        "blocks": [
+          [
+            "p",
+            "x와 -x는 equality 관점에서 0 여부가 같다. 따라서 둘 중 하나를 선택한 결과를 0과 비교할 때 선택을 생략할 수 있다."
+          ],
+          [
+            "code",
+            "text",
+            "fcmp eq (select cond, x, -x), 0\n                  ↓\n             fcmp eq x, 0"
+          ],
+          [
+            "p",
+            "실제 패치는 `ueq`, `une`, `oeq`, `one`을 다룬다. 위의 eq는 구조 설명용이다. ordered·unordered 의미는 원래 predicate대로 유지한다."
+          ]
+        ]
+      },
+      {
+        "id": "review",
+        "title": "기존 명령어의 속성 보존",
+        "blocks": [
+          [
+            "p",
+            "초안은 새 FCmpInst를 만들었다. 리뷰에서는 기존 fast-math flags 등 명령어의 속성을 잃지 않도록 기존 비교의 피연산자만 바꾸는 방향을 제시했다."
+          ],
+          [
+            "code",
+            "cpp",
+            "return replaceOperand(I, 0, X);"
+          ],
+          [
+            "p",
+            "select 조건은 x의 부호 검사일 필요가 없다. 어느 값이 선택되어도 0 비교의 결론이 같다는 것이 근거다."
+          ]
+        ]
+      },
+      {
+        "id": "tests",
+        "title": "검증 범위",
+        "blocks": [
+          [
+            "list",
+            [
+              "네 가지 equality predicate를 각각 확인한다.",
+              "scalar와 vector를 확인한다.",
+              "임의의 select 조건을 확인한다.",
+              "+0과 -0을 확인한다.",
+              "denormal 처리 속성과 fast-math flags 보존을 확인한다."
+            ]
+          ],
+          [
+            "p",
+            "작성자는 Alive2와 여러 타깃의 기계어를 비교했다. 기존 패치의 작은 코드 변경과 별개로 검증 표면은 넓다."
+          ]
+        ]
+      },
+      {
+        "id": "performance",
+        "title": "자료에 기록된 성능 관찰",
+        "blocks": [
+          [
+            "table",
+            [
+              "관찰",
+              "변환 전",
+              "변환 후"
+            ],
+            [
+              [
+                "x86 llvm-mca 명령어/반복",
+                "9",
+                "5"
+              ],
+              [
+                "x86 Block RThroughput",
+                "3.0",
+                "1.8"
+              ],
+              [
+                "AArch64: ret 포함 명령어",
+                "6",
+                "3"
+              ],
+              [
+                "RISC-V: 예제 명령어",
+                "6",
+                "3"
+              ]
+            ]
+          ],
+          [
+            "note",
+            "x86 수치는 자료의 x86-64-v3 scheduling model과 1,000회 반복 조건이다. 정적 추정값이며 실제 서비스의 실행 시간 개선율은 아니다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #85250",
+        "url": "https://github.com/llvm/llvm-project/issues/85250"
+      },
+      {
+        "label": "PR #85673",
+        "url": "https://github.com/llvm/llvm-project/pull/85673"
+      },
+      {
+        "label": "Alive2 이슈 예제",
+        "url": "https://alive2.llvm.org/ce/z/NFEKjp"
+      },
+      {
+        "label": "Alive2 PR 예제",
+        "url": "https://alive2.llvm.org/ce/z/7DMRCy"
+      }
+    ]
+  },
+  {
+    "id": "pmaddubsw-combine",
+    "author": "정지현",
+    "title": "PMADDUBSW 두 개와 덧셈을 하나로 결합하기",
+    "summary": "포화 연산의 의미와 입력 재구성 비용을 확인해 x86의 multiply-add 패턴을 결합한다.",
+    "areas": [
+      "X86",
+      "벡터"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "정지현/LLVM_PR228359_PMADDUBSW_.pdf"
+    ],
+    "issues": [
+      223367
+    ],
+    "prs": [
+      228359
+    ],
+    "sections": [
+      {
+        "id": "instruction",
+        "title": "명령어의 의미",
+        "blocks": [
+          [
+            "p",
+            "PMADDUBSW는 unsigned byte와 signed byte를 원소별로 곱한다. 인접한 두 곱을 더한 뒤 signed i16 범위로 포화한다."
+          ],
+          [
+            "code",
+            "text",
+            "R[i] = sat16(A[2i] * B[2i] + A[2i+1] * B[2i+1])"
+          ],
+          [
+            "p",
+            "예를 들어 64,770은 32,767로 포화한다. 일반 i16 ADD의 wraparound 결과와 같지 않다."
+          ]
+        ]
+      },
+      {
+        "id": "pattern",
+        "title": "결합할 패턴",
+        "blocks": [
+          [
+            "p",
+            "짝수·홀수 입력을 나누어 각각 두 번째 곱이 0이 되도록 만든 PMADDUBSW 두 개와 뒤의 ADD가 대상이다. 조건이 맞으면 원래 입력의 PMADDUBSW 하나로 바꿀 수 있다."
+          ],
+          [
+            "list",
+            [
+              "각 PMADD 쌍의 두 번째 곱이 0인지 확인한다.",
+              "두 결과를 더할 때 signed i16 overflow가 없는지 확인한다.",
+              "unsigned 입력과 signed 입력의 역할을 유지한다.",
+              "입력 재구성에 새 셔플이 필요한지 확인한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "saturation",
+        "title": "포화와 wraparound의 반례",
+        "blocks": [
+          [
+            "table",
+            [
+              "계산",
+              "결과"
+            ],
+            [
+              [
+                "255×127 + 255×127",
+                "64,770"
+              ],
+              [
+                "일반 i16 ADD로 표현한 결과",
+                "-766"
+              ],
+              [
+                "포화 PMADDUBSW 결과",
+                "32,767"
+              ]
+            ]
+          ],
+          [
+            "p",
+            "overflow 조건을 빼면 위처럼 서로 다른 결과가 나온다. ADD 피연산자는 교환할 수 있어도 PMADD의 signed·unsigned 입력을 무조건 교환할 수는 없다."
+          ]
+        ]
+      },
+      {
+        "id": "implementation",
+        "title": "구현과 수익성",
+        "blocks": [
+          [
+            "p",
+            "자료는 기존 `combineAddOfPMADDWD`를 `combineAddOfPMADD`로 확장하는 과정을 설명한다. PMADDUBSW의 128·256·512비트 형태를 처리하고 기존 PMADDWD 동작을 유지한다."
+          ],
+          [
+            "p",
+            "`getInterleavedPMADDInput`은 타깃 셔플과 bitcast를 추적한다. 두 입력이 기존 vector를 복원하는 경우에 결합한다. 독립 입력을 섞기 위해 새 셔플이 필요하면 기존 계산을 유지한다."
+          ],
+          [
+            "note",
+            "이 자료는 패턴과 안전성, 비용 조건을 설명한다. 전체 응용 프로그램의 성능 측정값은 제시하지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #223367",
+        "url": "https://github.com/llvm/llvm-project/issues/223367"
+      },
+      {
+        "label": "PR #228359",
+        "url": "https://github.com/llvm/llvm-project/pull/228359"
+      }
+    ]
+  },
+  {
+    "id": "libc-fmemopen",
+    "author": "정지현",
+    "title": "메모리 버퍼를 FILE 스트림으로 연결하기",
+    "summary": "fmemopen을 구현하며 POSIX 동작, 버퍼 경계, seek 범위와 오류 코드를 검토한다.",
+    "areas": [
+      "libc"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "정지현/LLVM_fmemopen_.pdf"
+    ],
+    "issues": [
+      220762
+    ],
+    "prs": [
+      221748
+    ],
+    "sections": [
+      {
+        "id": "purpose",
+        "title": "API와 사용 예",
+        "blocks": [
+          [
+            "p",
+            "`fmemopen`은 메모리 버퍼를 FILE 스트림으로 연다. 호출자는 같은 스트림에 fread, fwrite, fseek 같은 인터페이스를 사용할 수 있다."
+          ],
+          [
+            "code",
+            "c",
+            "char buf[8];\nFILE *f = fmemopen(buf, sizeof(buf), \"w+\");\nfwrite(\"ABC\", 1, 3, f);\nfclose(f);\n/* 성공하면 buf에는 ABC와 종료 NUL이 남는다. */"
+          ]
+        ]
+      },
+      {
+        "id": "design",
+        "title": "MemoryFile의 상태",
+        "blocks": [
+          [
+            "p",
+            "구현은 기존 File 클래스를 확장한다. 모드 해석, stdio 버퍼링, 파일 목록 관리는 재사용하고 메모리용 read·write·seek·close를 구현한다."
+          ],
+          [
+            "table",
+            [
+              "상태",
+              "의미"
+            ],
+            [
+              [
+                "capacity",
+                "데이터 버퍼의 최대 용량"
+              ],
+              [
+                "position",
+                "현재 읽기·쓰기 위치"
+              ],
+              [
+                "end",
+                "현재 데이터 끝 위치"
+              ]
+            ]
+          ],
+          [
+            "p",
+            "stdio stream_buffer와 실제 데이터 storage는 서로 다른 버퍼다. 읽을 때 NUL은 데이터이며 end에 도달하면 EOF가 된다."
+          ]
+        ]
+      },
+      {
+        "id": "boundaries",
+        "title": "쓰기와 seek의 경계",
+        "blocks": [
+          [
+            "list",
+            [
+              "쓰기는 남은 용량까지만 수행한다.",
+              "append 모드에서는 seek 위치와 관계없이 현재 end에서 쓴다.",
+              "새 end 뒤에 공간이 있으면 종료 NUL을 기록한다.",
+              "seek는 0부터 capacity까지 허용한다.",
+              "실패한 seek는 이전 위치를 유지한다."
+            ]
+          ],
+          [
+            "p",
+            "리뷰는 off_t 최솟값과 형 변환을 검토했다. 허용 offset의 최소·최대값을 먼저 비교하고 그다음 새 위치를 계산하는 형태로 단순화했다."
+          ]
+        ]
+      },
+      {
+        "id": "review",
+        "title": "표준 근거와 테스트",
+        "blocks": [
+          [
+            "p",
+            "버퍼 공간이 부족할 때 ENOSPC를 사용하는 이유를 리뷰에서 논의했다. 작성자는 POSIX의 fflush·fseek 오류 조건을 근거로 설명하고 코드에 주석을 추가했다."
+          ],
+          [
+            "p",
+            "자료는 모드별 초기 상태, 읽기·쓰기, append, seek 경계, 내부 버퍼, 0바이트 용량, 오류 복구를 포함한 11개 단위 테스트를 기록한다."
+          ],
+          [
+            "p",
+            "원자료에 기록된 병합일은 2026년 9월 10일이다. 이 기여의 중심은 API 동작과 경계 조건이며 실행 속도 향상 수치는 제시되지 않았다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #220762",
+        "url": "https://github.com/llvm/llvm-project/issues/220762"
+      },
+      {
+        "label": "PR #221748",
+        "url": "https://github.com/llvm/llvm-project/pull/221748"
+      }
+    ]
+  },
+  {
+    "id": "strlen-constant-selection",
+    "author": "정하람",
+    "title": "문자열 주소 대신 상수 길이를 선택하기",
+    "summary": "중첩 select·PHI로 고른 문자열의 길이를 미리 계산하고 런타임 strlen 호출을 제거한다.",
+    "areas": [
+      "InstCombine",
+      "문자열"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "정하람/223246.md",
+      "정하람/LLVM_PR223246__strlen.pptx",
+      "정하람/LLVM_PR_.pptx",
+      "정하람/llvm_strlen_pr_presentation.pptx"
+    ],
+    "issues": [
+      217529
+    ],
+    "prs": [
+      223246
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "어떤 호출을 없애는가",
+        "blocks": [
+          [
+            "p",
+            "후보 문자열이 모두 상수면 각 후보의 길이를 컴파일할 때 구할 수 있다. 실행 중에는 문자열을 스캔하는 대신 길이 값 자체를 선택한다."
+          ],
+          [
+            "code",
+            "llvm",
+            "; Before: 주소를 선택한 뒤 길이를 계산한다.\n%inner = select i1 %c2, ptr @missing, ptr @cancelled\n%p = select i1 %c1, ptr @ok, ptr %inner\n%len = call i64 @strlen(ptr %p)\n\n; After: 이미 아는 길이를 선택한다.\n%inner.len = select i1 %c2, i64 7, i64 9\n%len = select i1 %c1, i64 2, i64 %inner.len"
+          ],
+          [
+            "p",
+            "단순한 두 리터럴의 select는 기존에도 최적화된다. 이 자료는 중첩 select와 PHI가 새로 처리되는 예제를 구분한다."
+          ]
+        ]
+      },
+      {
+        "id": "design",
+        "title": "구현과 보존 조건",
+        "blocks": [
+          [
+            "p",
+            "상수 문자열의 평가는 ConstantFolding에서 수행한다. InstCombine은 select·PHI 입력을 따라 결과를 구성한다. strlen 전용 예외 처리보다 기존 상수 접기 체계를 사용하는 설계다."
+          ],
+          [
+            "list",
+            [
+              "길이를 알 수 없는 동적 입력이 있으면 호출을 유지한다.",
+              "변경 가능한 전역 문자열은 상수 문자열로 가정하지 않는다.",
+              "순환을 감지하고 탐색 깊이를 제한한다.",
+              "평가 결과를 캐시해 중복 탐색을 줄인다.",
+              "wcslen에는 필요한 wchar 크기 정보가 있어야 한다.",
+              "musttail의 직접 반환 조건을 보존한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "regression",
+        "title": "서로 다른 오류의 수정",
+        "blocks": [
+          [
+            "p",
+            "자료는 Archer의 musttail 크래시 보고와 별도로 발견한 fixpoint 회귀를 구분한다. 핵심 사례 몇 개만 통과한 상태에서도 인접 테스트는 실패할 수 있었다."
+          ],
+          [
+            "p",
+            "호출 결과를 접은 뒤 남은 호출을 작업 목록에서 계속 처리하도록 수정했다. 자료는 19개 관련 테스트 통과와 확장 검증 2,263개 통과·92개 미지원을 기록한다."
+          ],
+          [
+            "p",
+            "8개 테스트 실패는 같은 fixpoint 문제를 검출한 것이다. 이를 독립적인 버그 8개로 세지 않는다. 초기 Markdown의 로컬 수정 상태와 후속 발표의 브랜치 반영 상태도 구분한다."
+          ]
+        ]
+      },
+      {
+        "id": "measurement",
+        "title": "측정 방법",
+        "blocks": [
+          [
+            "p",
+            "자료의 측정일은 2026년 9월 15일이다. macOS arm64에서 같은 frontend IR, 부모·PR opt, 같은 llc를 사용했다. O2와 O3는 전체 최적화 파이프라인으로 비교했다."
+          ],
+          [
+            "list",
+            [
+              "10만 회 준비 실행 뒤 15회 측정의 중앙값을 사용했다.",
+              "실행 순서를 무작위화했다.",
+              "런타임 입력과 독립적으로 계산한 checksum을 사용했다.",
+              "함수별 실행 파일과 별도 드라이버를 사용했다.",
+              "LTO를 사용하지 않고 noinline 조건을 유지했다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "results",
+        "title": "보고된 O2 결과",
+        "blocks": [
+          [
+            "table",
+            [
+              "합성 사례",
+              "이전 ns/호출",
+              "PR ns/호출",
+              "시간 감소"
+            ],
+            [
+              [
+                "중첩 select",
+                "5.086",
+                "1.233",
+                "75.8%"
+              ],
+              [
+                "switch / PHI",
+                "7.306",
+                "1.233",
+                "83.1%"
+              ],
+              [
+                "C++ string_view",
+                "5.478",
+                "1.229",
+                "77.6%"
+              ],
+              [
+                "C++ 문자열 생성·append·해시",
+                "102.283",
+                "93.260",
+                "8.8%"
+              ]
+            ]
+          ],
+          [
+            "note",
+            "위 값은 I/O가 없는 합성 작업의 보고값이다. 실제 서비스 전체의 성능이나 모든 strlen 호출의 개선을 뜻하지 않는다. 동적 문자열 대조군의 작은 차이는 개선으로 주장하지 않았다."
+          ]
+        ]
+      },
+      {
+        "id": "limits",
+        "title": "측정과 자료의 한계",
+        "blocks": [
+          [
+            "p",
+            "처음 한 실행 파일에 모은 측정에서는 같은 기계어의 대조군도 느려졌다. 함수를 분리해 다시 측정하자 차이가 줄었다. 작성자는 배치 효과의 원인을 확정하지 않고 최종 발표에 분리 측정값을 사용했다."
+          ],
+          [
+            "p",
+            "벤치마크 원시값과 스크립트의 상대 링크는 첨부 자료에 없는 파일을 가리킨다. 이 사이트는 그 파일을 제공한다고 표시하지 않는다. PR의 현재 상태도 원자료 작성 시점과 구분한다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #217529",
+        "url": "https://github.com/llvm/llvm-project/issues/217529"
+      },
+      {
+        "label": "PR #223246",
+        "url": "https://github.com/llvm/llvm-project/pull/223246"
+      }
+    ]
+  },
+  {
+    "id": "fabs-fneg",
+    "author": "정하람",
+    "title": "fabs 앞의 부호 반전을 제거하기",
+    "summary": "절댓값이 부호를 제거한다는 성질을 IR과 기계어에서 확인한다.",
+    "areas": [
+      "InstCombine",
+      "부동소수점"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "정하람/94170_.pdf"
+    ],
+    "issues": [
+      94170
+    ],
+    "prs": [],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "변환",
+        "blocks": [
+          [
+            "code",
+            "llvm",
+            "; Before\n%neg = fneg float %x\n%r = call float @llvm.fabs.f32(float %neg)\n\n; After\n%r = call float @llvm.fabs.f32(float %x)"
+          ],
+          [
+            "p",
+            "fneg는 부호를 반전한다. fabs는 결과에서 부호를 제거한다. 따라서 절댓값을 구하기 직전의 부호 반전은 결과에 영향을 주지 않는다."
+          ]
+        ]
+      },
+      {
+        "id": "semantics",
+        "title": "특수값과 intrinsic 구분",
+        "blocks": [
+          [
+            "p",
+            "대상은 C 라이브러리의 임의 함수 호출이 아니라 LLVM의 fabs intrinsic이다. signed zero와 NaN을 포함한 의미는 해당 intrinsic의 규칙으로 판단해야 한다."
+          ],
+          [
+            "p",
+            "새 결과에서 쓰이지 않는 fneg는 제거할 수 있다. 다른 사용처가 있으면 그 명령어가 남을 수 있으므로 함수 전체의 명령어 수와 구분한다."
+          ]
+        ]
+      },
+      {
+        "id": "method",
+        "title": "분석 순서",
+        "blocks": [
+          [
+            "steps",
+            [
+              "src·tgt IR을 작성한다.",
+              "Alive2로 의미 보존을 확인한다.",
+              "opt 단독 실행으로 fold를 확인한다.",
+              "llc로 기계어를 비교한다.",
+              "비트 폭·vector·플래그·추가 사용처를 테스트한다."
+            ]
+          ],
+          [
+            "p",
+            "원자료는 matcher의 입력을 찾고 테스트의 CHECK가 무엇을 고정하는지 설명한다."
+          ]
+        ]
+      },
+      {
+        "id": "result",
+        "title": "분석의 결과",
+        "blocks": [
+          [
+            "p",
+            "핵심은 큰 알고리즘을 추가하는 것이 아니다. 결과를 바꾸지 않는 연산을 적절한 IR 계층에서 제거하는 것이다."
+          ],
+          [
+            "note",
+            "이미 해결된 이슈를 분석한 학습 기록이다. 연결 이슈의 코드 변경을 작성자의 신규 PR 실적으로 세지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #94170",
+        "url": "https://github.com/llvm/llvm-project/issues/94170"
+      }
+    ]
+  },
+  {
+    "id": "range-compare",
+    "author": "정하람",
+    "title": "붙어 있는 정수 범위를 하나의 비교로 합치기",
+    "summary": "특정 값 하나와 바로 뒤의 구간을 합쳐 같은 연속 범위로 표현한다.",
+    "areas": [
+      "InstCombine",
+      "정수·비트 연산"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "정하람/llvm__1.pdf"
+    ],
+    "issues": [
+      152948
+    ],
+    "prs": [
+      153842
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "문제와 목표",
+        "blocks": [
+          [
+            "code",
+            "cpp",
+            "// Before\nreturn c == 127 || (128 <= c && c <= 159);\n// After\nreturn 127 <= c && c <= 159;"
+          ],
+          [
+            "p",
+            "두 식은 같은 정수 집합을 나타낸다. 부호 없는 값에서는 하한을 뺀 뒤 범위의 길이와 비교하는 형태로도 정규화할 수 있다."
+          ]
+        ]
+      },
+      {
+        "id": "analysis",
+        "title": "IR과 기계어의 차이",
+        "blocks": [
+          [
+            "p",
+            "자료는 첫 식의 여러 비교·비트 연산과 두 번째 식의 단순한 범위 비교를 대조한다. `foldAndOrOfICmpsUsingRanges`의 기존 범위 처리를 추적한다."
+          ],
+          [
+            "p",
+            "수학적으로 붙어 있는 구간이라는 사실과, 정해진 비트 폭에서 넘침까지 포함해 올바른 IR 변환이라는 사실을 함께 확인해야 한다."
+          ]
+        ]
+      },
+      {
+        "id": "boundaries",
+        "title": "적용하면 안 되는 경우",
+        "blocks": [
+          [
+            "list",
+            [
+              "두 구간 사이에 빈 값이 있으면 하나의 연속 범위로 합치지 않는다.",
+              "부호 있는 비교와 부호 없는 비교를 구분한다.",
+              "마스크 결과가 다른 곳에서도 사용되는지 확인한다.",
+              "경계값을 더하거나 뺄 때 정수 넘침 조건을 확인한다."
+            ]
+          ],
+          [
+            "p",
+            "원자료에는 하나의 연속 범위가 아닌 사례와 masked compare의 추가 사용처를 포함한 negative 테스트가 있다."
+          ]
+        ]
+      },
+      {
+        "id": "validation",
+        "title": "검증과 효과 해석",
+        "blocks": [
+          [
+            "p",
+            "작성자는 최소 IR, 기계어, llvm-mca와 벤치마크 명령을 남겼다. 테스트는 기대하는 단순화와 기존 표현을 유지해야 하는 조건을 함께 고정한다."
+          ],
+          [
+            "note",
+            "자료의 측정은 제시한 범위 검사 예제의 결과다. 다른 입력 분포나 전체 응용 프로그램의 이득을 보장하지 않는다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #152948",
+        "url": "https://github.com/llvm/llvm-project/issues/152948"
+      },
+      {
+        "label": "PR #153842",
+        "url": "https://github.com/llvm/llvm-project/pull/153842"
+      }
+    ]
+  },
+  {
+    "id": "onnx-widen-shuffle",
+    "author": "조영진",
+    "title": "ONNX Runtime 커널의 확장·셔플 순서를 분석하기",
+    "summary": "INT8 양자화 덧셈의 데이터 흐름에서 중간 확장과 셔플이 만드는 비효율을 찾는다.",
+    "areas": [
+      "VectorCombine",
+      "벡터"
+    ],
+    "kind": "실험·제안",
+    "sources": [
+      "조영진/260906_-_found_LLVM_fold_in_ONNXRuntime_Kernel.pdf"
+    ],
+    "issues": [],
+    "prs": [],
+    "sections": [
+      {
+        "id": "context",
+        "title": "실제 사용 맥락",
+        "blocks": [
+          [
+            "p",
+            "양자화된 두 텐서의 scale과 zero point가 다르면 정수 값만 바로 더할 수 없다. 입력을 더 넓은 타입으로 옮겨 보정하는 계산이 필요하다."
+          ],
+          [
+            "p",
+            "자료는 ONNX Runtime의 AVX2 INT8 덧셈 커널에서 이 과정이 생성한 IR을 분석한다. 원소 복제용 shuffle과 INT8→INT32 확장이 핵심이다."
+          ]
+        ]
+      },
+      {
+        "id": "pattern",
+        "title": "관찰한 비효율",
+        "blocks": [
+          [
+            "p",
+            "확장과 셔플의 순서 때문에 중간 vector가 생기고 불필요한 데이터 조합이 남을 수 있다. 목표는 같은 원소를 결과 위치에 보내면서 더 직접적인 확장·셔플 순서를 찾는 것이다."
+          ],
+          [
+            "p",
+            "mask는 원소의 출처를 정한다. 숫자 값이 비슷해 보인다는 이유로 mask를 바꾸면 안 된다. 부호 확장과 0 확장도 구분한다."
+          ]
+        ]
+      },
+      {
+        "id": "proof",
+        "title": "작은 입력에서 시작한 검증",
+        "blocks": [
+          [
+            "p",
+            "전체 IR의 Alive2 검증은 시간 초과가 발생했다고 기록한다. 작성자는 작은 vector 예제로 줄여 의미를 확인하는 접근을 사용했다."
+          ],
+          [
+            "steps",
+            [
+              "원래 kernel의 값 흐름과 shuffle mask를 기록한다.",
+              "작은 vector 예제를 만든다.",
+              "확장 전후에 각 원소가 어디로 이동하는지 확인한다.",
+              "Alive2의 성공·시간 초과 결과를 구분한다.",
+              "원래 크기의 IR을 LLVM 테스트 입력으로 다시 확인한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "location",
+        "title": "패치 위치와 진행 상태",
+        "blocks": [
+          [
+            "p",
+            "자료는 VectorCombine의 기존 함수와 새 fold의 위치를 검토한다. 실제 테스트에서는 기대한 중간 값이 남아 있는 결과도 제시한다."
+          ],
+          [
+            "note",
+            "이 자료는 실전 커널에서 찾은 후보와 구현 방향의 탐구다. 완성된 upstream 패치나 실측 성능 향상으로 표기하지 않는다. 멘토와의 공동 논의가 자료에 명시되어 있다."
+          ]
+        ]
+      }
+    ],
+    "refs": []
+  },
+  {
+    "id": "or-disjoint-zext",
+    "author": "조영진",
+    "title": "or disjoint와 zext 재결합을 일반화하기",
+    "summary": "전용 XOR fold로 시작한 수정을 기존 reassociation helper에 통합하고 nneg 보존 조건을 검토한다.",
+    "areas": [
+      "InstCombine",
+      "정수·비트 연산"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "조영진/LLVM_InstCombine_or_disjoint_zext_.pdf"
+    ],
+    "issues": [
+      214652
+    ],
+    "prs": [
+      214970
+    ],
+    "sections": [
+      {
+        "id": "property",
+        "title": "or disjoint의 성질",
+        "blocks": [
+          [
+            "p",
+            "`or disjoint`는 두 입력의 1비트가 겹치지 않는다는 조건을 갖는다. 정의된 입력에서는 OR와 XOR의 결과가 같다."
+          ],
+          [
+            "code",
+            "text",
+            "X & C = 0인 범위에서\nX | C = X ^ C"
+          ],
+          [
+            "p",
+            "이 성질을 사용하면 zext 안팎의 상수 연산을 기존 reassociation 경로로 처리할 수 있다."
+          ]
+        ]
+      },
+      {
+        "id": "design",
+        "title": "전용 fold에서 공통 helper로",
+        "blocks": [
+          [
+            "p",
+            "첫 구현은 visitXor의 전용 matcher였다. 리뷰는 기존 `simplifyAssocCastAssoc`에서 처리하도록 방향을 바꾸었다."
+          ],
+          [
+            "p",
+            "핵심은 새로운 특수 규칙을 두 방향으로 늘리지 않는 것이다. 기존 OR·XOR 재결합의 공통 구조에 disjoint 조건을 연결한다."
+          ]
+        ]
+      },
+      {
+        "id": "flags",
+        "title": "nneg 보존은 방향에 따라 다르다",
+        "blocks": [
+          [
+            "p",
+            "`zext nneg`의 입력이 음수이면 결과가 poison이다. 연산을 안팎으로 옮기면 그 전제도 달라질 수 있다."
+          ],
+          [
+            "p",
+            "안쪽 OR를 제거하는 방향과 안쪽 XOR를 제거하는 방향은 같은 플래그 복사 규칙으로 처리할 수 없다. 부호 비트가 바뀔 수 있는지 각각 확인해야 한다."
+          ],
+          [
+            "list",
+            [
+              "plain OR에는 disjoint 성질을 가정하지 않는다.",
+              "필요한 one-use 조건을 유지한다.",
+              "부호 비트가 걸린 상수와 vector 상수를 확인한다.",
+              "안팎의 opcode가 다른 두 방향을 모두 테스트한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "result",
+        "title": "리뷰가 바꾼 결과",
+        "blocks": [
+          [
+            "p",
+            "자료는 missed fold에서 출발해 공통 helper의 재사용, 두 방향의 처리, 플래그 안전성으로 범위를 다듬은 과정을 기록한다."
+          ],
+          [
+            "note",
+            "코드 크기나 PR의 줄 수보다 의미 보존과 기존 구조와의 통합이 이 문서의 중심이다. 전체 프로그램의 새 성능 수치는 제시되지 않았다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #214652",
+        "url": "https://github.com/llvm/llvm-project/issues/214652"
+      },
+      {
+        "label": "PR #214970",
+        "url": "https://github.com/llvm/llvm-project/pull/214970"
+      }
+    ]
+  },
+  {
+    "id": "zext-nneg-sext",
+    "author": "최민우",
+    "title": "zext nneg를 기존 sext fold에 연결하기",
+    "summary": "음수가 아니라는 조건을 사용해 add·확장·add를 더 단순한 부호 확장으로 접는다.",
+    "areas": [
+      "InstCombine",
+      "정수·비트 연산"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "최민우/LLVM_Closed_Issue_Analysis__1_88348_v1.1.pdf"
+    ],
+    "issues": [
+      88348
+    ],
+    "prs": [
+      88887
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "대상 식",
+        "blocks": [
+          [
+            "code",
+            "llvm",
+            "; Before\n%a = add nsw i8 %x, 1\n%b = zext nneg i8 %a to i32\n%r = add nsw i32 %b, -1\n\n; After\n%r = sext i8 %x to i32"
+          ],
+          [
+            "p",
+            "zext의 입력이 음수가 아니면 같은 입력의 sext와 결과가 같다. 이 사실을 이용해 기존 sext 기반 fold를 재사용한다."
+          ]
+        ]
+      },
+      {
+        "id": "conditions",
+        "title": "플래그와 기존 규칙",
+        "blocks": [
+          [
+            "p",
+            "`nneg`는 단순한 힌트가 아니다. 전제를 위반한 입력은 poison이 될 수 있다. 내부 덧셈의 `nsw`와 확장 전후의 비트 폭도 변환 조건에 포함된다."
+          ],
+          [
+            "p",
+            "자료는 `SExt`만 찾던 matcher를 `SExtLike`로 넓히는 방향을 설명한다. 별도 식을 추가하기보다 같은 성질을 가진 입력을 기존 규칙에 연결한다."
+          ]
+        ]
+      },
+      {
+        "id": "history",
+        "title": "문제의 출처와 학습 과정",
+        "blocks": [
+          [
+            "p",
+            "원래 현상은 Rust의 match와 cast가 다른 IR로 내려가는 사례와 연결되어 있었다. 언어별 소스가 달라도 결함은 공통 LLVM 최적화에 있을 수 있다."
+          ],
+          [
+            "steps",
+            [
+              "Rust와 LLVM 이슈의 연결을 확인한다.",
+              "최소 src·tgt IR을 만든다.",
+              "Alive2로 의미를 확인한다.",
+              "Compiler Explorer에서 기계어를 비교한다.",
+              "기존 패치의 matcher와 테스트를 예상안과 대조한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "measurement",
+        "title": "보고된 기계어 관찰",
+        "blocks": [
+          [
+            "table",
+            [
+              "항목",
+              "src",
+              "tgt"
+            ],
+            [
+              [
+                "예제 기계어 명령어",
+                "5",
+                "3"
+              ],
+              [
+                "100회 llvm-mca 명령어",
+                "500",
+                "300"
+              ],
+              [
+                "Block RThroughput",
+                "1.3",
+                "1.0"
+              ]
+            ]
+          ],
+          [
+            "note",
+            "자료의 정적 모델 관찰값이다. CPU·옵션이 다른 환경의 실행 시간 결과를 뜻하지 않는다. 이 문서는 기존 PR 분석이다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #88348",
+        "url": "https://github.com/llvm/llvm-project/issues/88348"
+      },
+      {
+        "label": "PR #88887",
+        "url": "https://github.com/llvm/llvm-project/pull/88887"
+      },
+      {
+        "label": "Alive2 검증",
+        "url": "https://alive2.llvm.org/ce/z/2_oqoa"
+      }
+    ]
+  },
+  {
+    "id": "vector-growth-nonzero",
+    "author": "최진범",
+    "title": "vector 성장 경로에서 값이 0이 아님을 증명하기",
+    "summary": "넘침 분기의 조건과 umin을 통과한 관계 추론으로 불필요한 0 검사를 제거한다.",
+    "areas": [
+      "ValueTracking",
+      "정수·비트 연산"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "최진범/LLVM_.pdf"
+    ],
+    "issues": [
+      200661
+    ],
+    "prs": [
+      219103
+    ],
+    "sections": [
+      {
+        "id": "problem",
+        "title": "인라인 뒤에 남은 검사",
+        "blocks": [
+          [
+            "p",
+            "libstdc++의 vector 성장 경로를 인라인하면 umax, 덧셈, 넘침 검사, umin과 select가 이어진다. 선택된 길이는 0이 아니지만 기존 분석이 이를 증명하지 못했다."
+          ],
+          [
+            "p",
+            "중간 덧셈만 보면 0이 될 수 있다. 실제로 큰 입력에서는 wraparound가 발생한다. 하지만 이 경우 select는 다른 고정 상수를 선택한다."
+          ]
+        ]
+      },
+      {
+        "id": "reasoning",
+        "title": "분기 조건을 사용한 증명",
+        "blocks": [
+          [
+            "p",
+            "넘치지 않은 분기에서는 덧셈 결과가 원래 값 이상이라는 부호 없는 비교를 얻는다. 더한 값이 0이 아님을 알면 결과도 0이 아님을 추론할 수 있다."
+          ],
+          [
+            "p",
+            "그다음 umin의 한 피연산자가 0이 아니면, umin의 0 여부를 다른 피연산자의 0 여부로 넘겨 물을 수 있다. 두 규칙이 이어져야 전체 질문에 답한다."
+          ]
+        ]
+      },
+      {
+        "id": "implementation",
+        "title": "공용 분석의 수정",
+        "blocks": [
+          [
+            "p",
+            "자료는 `isImpliedCondICmps`와 `isImpliedCondition`의 보완을 설명한다. select를 직접 재작성하지 않고 분기별 사실을 질의하므로 기존 사용처 수의 제약을 피한다."
+          ],
+          [
+            "list",
+            [
+              "부호 없는 비교가 제공하는 전제를 확인한다.",
+              "더한 값이 0이 아님을 확인한다.",
+              "umin의 다른 피연산자가 0이 아님을 확인한다.",
+              "공유 질의 변수를 바꾸지 않고 재귀 인자로 새 값을 넘긴다.",
+              "새 경로에서 답을 못하면 기존 분석을 계속한다."
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "validation",
+        "title": "검증 기록",
+        "blocks": [
+          [
+            "p",
+            "자료는 두 Alive2 증명과 22개 테스트를 기록한다. positive 17개와 negative 5개로 나누어 비트 폭, vector, 순서, assume, 0인 clamp와 알 수 없는 증가량을 확인했다."
+          ],
+          [
+            "p",
+            "코드 생성에서는 비교와 분기가 제거되는지 확인했다. 다만 자료에 적힌 제출 당시 상태와 현재 PR 상태는 별개다."
+          ],
+          [
+            "note",
+            "새 테스트의 통과와 기존 CHECK 변경이 없다는 사실은 유용한 근거다. 이것만으로 전체 LLVM의 회귀가 없음을 증명하지는 않는다."
+          ]
+        ]
+      },
+      {
+        "id": "learning",
+        "title": "작성자가 남긴 후속 과제",
+        "blocks": [
+          [
+            "p",
+            "작성자는 AI 도움으로 코드를 만든 과정과 설계를 판단하기 어려웠던 지점을 함께 기록했다. 공유 상태의 영향과 유지보수 부담을 검토하는 능력을 보완 과제로 제시했다."
+          ],
+          [
+            "p",
+            "다음 작업은 컴파일 시간 측정, 리뷰 대응, 조건별 테스트 보강이다. 범위 확대는 이득을 확인한 뒤 별도 변경으로 다룬다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #200661",
+        "url": "https://github.com/llvm/llvm-project/issues/200661"
+      },
+      {
+        "label": "PR #219103",
+        "url": "https://github.com/llvm/llvm-project/pull/219103"
+      }
+    ]
+  },
+  {
+    "id": "fneg-select",
+    "author": "최진범",
+    "title": "fneg와 select의 순서를 바꾸는 조건을 이해하기",
+    "summary": "수학적으로 가능한 치환과 실제 비용이 줄어드는 치환을 나누고 fast-math flags를 검토한다.",
+    "areas": [
+      "InstCombine",
+      "부동소수점"
+    ],
+    "kind": "기존 패치 분석",
+    "sources": [
+      "최진범/LLVM_85251_.pdf"
+    ],
+    "issues": [
+      85251
+    ],
+    "prs": [
+      89947
+    ],
+    "sections": [
+      {
+        "id": "pattern",
+        "title": "문제와 일반형",
+        "blocks": [
+          [
+            "code",
+            "text",
+            "fneg(select Cond, X, Y)\n            ↓\nselect Cond, fneg(X), fneg(Y)"
+          ],
+          [
+            "p",
+            "원래 이슈를 해결하는 동작은 다른 최적화의 리뷰 과정에서 형성되었다. 이슈의 설명과 최종 패치의 출발점은 항상 같지 않다."
+          ]
+        ]
+      },
+      {
+        "id": "profitability",
+        "title": "가능한 변환과 유리한 변환",
+        "blocks": [
+          [
+            "p",
+            "모든 입력에서 위 식을 그대로 전개하면 fneg가 둘로 늘 수 있다. 실제 패치는 상수 arm처럼 한쪽 연산을 접을 수 있는 조건을 검사한다."
+          ],
+          [
+            "p",
+            "타입에 맞는 즉시 상수 matcher와 기존 fold 순서가 비용 경계를 만든다. 수학적으로 같다는 사실만으로 적용 범위를 정하지 않는다."
+          ]
+        ]
+      },
+      {
+        "id": "flags",
+        "title": "fast-math flags와 signed zero",
+        "blocks": [
+          [
+            "p",
+            "새 연산의 플래그는 근거가 있는 범위에서만 전달해야 한다. select에 있던 플래그와 바깥 fneg에 있던 플래그를 같은 것으로 보지 않는다."
+          ],
+          [
+            "p",
+            "자료는 CommonOperand 처리와 nsz 제거를 막는 테스트를 구분한다. 서로 다른 플래그 조합에서 어떤 속성이 남는지 CHECK로 확인한다."
+          ]
+        ]
+      },
+      {
+        "id": "verification",
+        "title": "검증과 패치의 형성",
+        "blocks": [
+          [
+            "p",
+            "작성자는 재현, Alive2, codegen 결과를 먼저 남긴 뒤 accepted patch와 비교했다. 테스트의 10개 함수 가운데 출력이 바뀌는 것과 유지되는 것을 나누어 설명한다."
+          ],
+          [
+            "p",
+            "PR의 리뷰 커밋 구조와 main의 병합 커밋 구조도 구분한다. 코드가 짧아도 타입, 상수, 사용처, 플래그와 후속 백엔드가 검증 범위에 들어간다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #85251",
+        "url": "https://github.com/llvm/llvm-project/issues/85251"
+      },
+      {
+        "label": "PR #89947",
+        "url": "https://github.com/llvm/llvm-project/pull/89947"
+      }
+    ]
+  },
+  {
+    "id": "libc-umask",
+    "author": "최진범",
+    "title": "llvm-libc의 umask를 여러 계층에 연결하기",
+    "summary": "syscall wrapper 하나에서 끝내지 않고 공개 헤더, 타깃 등록, 빌드와 테스트까지 API를 연결한다.",
+    "areas": [
+      "libc"
+    ],
+    "kind": "기여 과정",
+    "sources": [
+      "최진범/issue_220759_.pdf"
+    ],
+    "issues": [
+      220759
+    ],
+    "prs": [
+      222499
+    ],
+    "sections": [
+      {
+        "id": "api",
+        "title": "API의 역할",
+        "blocks": [
+          [
+            "p",
+            "umask는 파일 생성 시 적용할 권한 마스크를 바꾸고 이전 마스크를 반환한다. 이 작업은 llvm-libc의 POSIX API 구현이다."
+          ],
+          [
+            "p",
+            "API가 외부에서 사용되려면 syscall 호출뿐 아니라 공개 선언과 빌드 대상 등록도 필요하다."
+          ]
+        ]
+      },
+      {
+        "id": "layers",
+        "title": "구현 계층",
+        "blocks": [
+          [
+            "table",
+            [
+              "계층",
+              "파일 또는 역할"
+            ],
+            [
+              [
+                "Linux syscall wrapper",
+                "__support/OSUtil/linux/syscall_wrappers/umask.h"
+              ],
+              [
+                "libc entrypoint",
+                "src/sys/stat/umask.h · linux/umask.cpp"
+              ],
+              [
+                "공개 헤더 생성",
+                "include/sys/stat.yaml → sys/stat.h"
+              ],
+              [
+                "타깃 등록",
+                "Linux x86_64·aarch64·riscv entrypoints"
+              ],
+              [
+                "테스트와 빌드",
+                "umask_test.cpp와 각 CMake 대상"
+              ]
+            ]
+          ],
+          [
+            "p",
+            "자료는 wrapper, 공개 entrypoint와 생성 헤더의 책임을 나누어 설명한다. 해당 API의 오류 동작도 확인해 불필요한 errno 처리를 정리했다."
+          ]
+        ]
+      },
+      {
+        "id": "test",
+        "title": "이전 상태를 복구하는 테스트",
+        "blocks": [
+          [
+            "p",
+            "테스트는 새 마스크를 적용한 뒤 이전 마스크를 다시 설정한다. 그때 반환되는 값으로 앞선 변경을 확인한다."
+          ],
+          [
+            "code",
+            "cpp",
+            "mode_t old = LIBC_NAMESPACE::umask(S_IRWXG | S_IRWXO);\nEXPECT_EQ(LIBC_NAMESPACE::umask(old),\n          static_cast<mode_t>(S_IRWXG | S_IRWXO));"
+          ],
+          [
+            "p",
+            "마스크는 프로세스 상태에 영향을 준다. 테스트가 상태를 복구하는 과정도 검증 코드의 일부다."
+          ]
+        ]
+      },
+      {
+        "id": "review",
+        "title": "리뷰와 결과",
+        "blocks": [
+          [
+            "p",
+            "자료는 파일 헤더 형식, 기존 구현과의 정합성, AI 사용 표기, 바뀐 upstream CMake 구성에 맞춘 rebase를 기록한다."
+          ],
+          [
+            "p",
+            "원자료에 기록된 병합일은 2026년 9월 10일이다. 이 기여는 실행 속도 최적화보다 표준 API의 제공 범위를 넓히는 작업이다."
+          ]
+        ]
+      }
+    ],
+    "refs": [
+      {
+        "label": "Issue #220759",
+        "url": "https://github.com/llvm/llvm-project/issues/220759"
+      },
+      {
+        "label": "PR #222499",
+        "url": "https://github.com/llvm/llvm-project/pull/222499"
+      }
+    ]
+  }
+]

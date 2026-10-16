@@ -1,0 +1,56 @@
+{
+  "source": "pr229086-benchmark",
+  "published": "2026-10-22",
+  "files": [
+    {
+      "name": "DATA-SCOPE.txt",
+      "sha256": "5b740cf6676b08f0e71bc055bff2e33ac4f14c97fdcf704bc47e5ed3d9341e6b",
+      "bytes": 1175
+    },
+    {
+      "name": "aa-60-pairs.csv",
+      "sha256": "248d91c4ac878359d63287071ba655bbc5dca20ec199f0c90bd77378934bbf0e",
+      "bytes": 11485
+    },
+    {
+      "name": "clean-60-pairs.csv",
+      "sha256": "572d97ac0cd82f932dc58592ba718fa6a6cf28a114d4aaa2f548c862c4934696",
+      "bytes": 14356
+    },
+    {
+      "name": "custom_add.cpp.txt",
+      "sha256": "a0e75013d06fe1b4af5d23bd8e35ce6218bd852f02775553cfbf8b9aa59936e1",
+      "bytes": 3653
+    },
+    {
+      "name": "custom_add_switch.cpp.txt",
+      "sha256": "322a848a3e3f60689cbc957b604fa3a304e3a4e79dc56ba78bf01b402e6f0208",
+      "bytes": 1757
+    },
+    {
+      "name": "diagnostic-add-60-pairs.csv",
+      "sha256": "4aaec2ccda527feda723a64a701c2baeb5369b240000331a766f00d287470fd0",
+      "bytes": 13982
+    },
+    {
+      "name": "initial-12-pair-records.csv",
+      "sha256": "aea19d1c2b88acef36fef05cc67ee58570bdd628c652b6d5e42f0e06f50c9fb7",
+      "bytes": 4186
+    },
+    {
+      "name": "profile-aa-60-pairs.csv",
+      "sha256": "adb321ef1cfe28bc38d6e0f891c571924a924314682060ecd3d9277a4bf9ed24",
+      "bytes": 18624
+    },
+    {
+      "name": "requirements.lock.txt",
+      "sha256": "ab7646e0e179c48b8e2864b6dbdecfddab6640af7b93c266a50455efd75e1483",
+      "bytes": 227
+    },
+    {
+      "name": "summary.json",
+      "sha256": "dc1d94ee83d335f585323b7577a57adf4919672fa717da07d5691c450e998c55",
+      "bytes": 1066805
+    }
+  ]
+}

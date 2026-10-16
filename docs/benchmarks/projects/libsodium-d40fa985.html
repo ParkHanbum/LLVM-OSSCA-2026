@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="LLVM 멘티의 이슈 분석, 구현 과정, 검증 기록을 정리한 한국어 기술 문서입니다."><meta name="theme-color" content="#fbfaf7"><title>libsodium · PR 228359 코드 생성 · LLVM 멘티 기술 문서</title><link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../../assets/site.css?v=41429de5fd03"><script defer src="../../assets/site.js?v=28009b539b2a"></script></head><body id="top" class="benchmarks-view"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../../index.html" class="nav-articles">문서</a><a href="../../results.html" class="nav-results">기여 결과</a><a href="../../benchmarks.html" class="nav-benchmarks active" aria-current="page">벤치마크</a><a href="../../sources/index.html" class="nav-sources">자료</a><a href="../../glossary.html" class="nav-glossary">용어</a><a href="../../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details><summary>라민우<span class="count">02</span></summary><ul><li><a href="../../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details><summary>이하동<span class="count">03</span></summary><ul><li><a href="../../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main archive-main"><article class="article archive-article"><header class="article-header"><div class="eyebrow">OUR BENCHMARK ARCHIVE / LLVM</div><h1>libsodium · 전체 모듈 비교</h1><p class="article-lead">프로젝트의 모든 모듈·프로파일 결과입니다. 동일 출력과 실패를 함께 보여 줍니다.</p><div class="article-meta"><span>56개 모듈</span><span>112개 비교</span><span>PR #228359</span></div><div class="article-tools"><a href="../../benchmarks.html">벤치마크 전체 결과</a><a href="../../results.html">멘티들의 기여 결과</a></div></header><p><a href="../backend.html">← 코퍼스 전체 결과</a></p><p class="small-note">A는 패치 이전, B는 패치 이후입니다. 해시 열은 출력 assembly의 SHA256 앞 16자리이며, 전체 64자리와 소스·정규화 IR 해시는 CSV에 있습니다. 실패한 출력의 빈 해시는 일치로 취급하지 않습니다. 함수 목록이 비어 있고 성공한 출력이 같으면 동일로 분류합니다.</p><div class="table-wrap"><table><thead><tr><th scope="col">모듈</th><th scope="col">프로파일</th><th scope="col">결과 / 진단</th><th scope="col">A/B 반환 코드</th><th scope="col">A/B 출력 SHA256</th></tr></thead><tbody><tr><td>aead_aes256gcm_aesni.ll</td><td>avx2-v3</td><td><span class="archive-status regressed">실패</span><details class="archive-diagnostic"><summary>A 진단 전문</summary><pre>LLVM ERROR: Cannot select: t581: v2i64 = X86ISD::PCLMULQDQ t453, t875, TargetConstant:i8&lt;0&gt;
+  t453: v2i64 = xor t594, t597
+    t594: v2i64 = X86ISD::PCLMULQDQ t598, t875, TargetConstant:i8&lt;0&gt;
+      t598: v2i64 = X86ISD::PCLMULQDQ t354, t354, TargetConstant:i8&lt;0&gt;
+        t354: v2i64 = xor t353, t621
+          t353: v2i64 = xor t352, t644
+            t352: v2i64 = xor t618, t659
+              t618: v2i64 = X86ISD::PCLMULQDQ t349, t875, TargetConstant:i8&lt;0&gt;
+                t349: v2i64 = xor t633, t1149
+                  t633: v2i64 = bitcast t632
+
+                  t1149: v2i64 = X86ISD::PCLMULQDQ t660, t875, TargetConstant:i8&lt;0&gt;
+
+
+                t875: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+              t659: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+                t333: v2i64 = xor t332, t679
+                  t332: v2i64 = xor t676, t693
+
+
+                  t679: v2i64 = bitcast t678
+
+                t254: v2i64 = xor t248, t563
+                  t248: v2i64 = and t244, t874
+
+
+                  t563: v2i64 = or t564, t566
+
+
+            t644: v2i64 = bitcast t643
+              t643: v16i8 = X86ISD::VSRLDQ t642, TargetConstant:i8&lt;8&gt;
+                t642: v16i8 = bitcast t343
+                  t343: v2i64 = xor t662, t661
+
+
+          t621: v2i64 = bitcast t620
+            t620: v4i32 = X86ISD::PSHUFD t619, TargetConstant:i8&lt;78&gt;
+              t619: v4i32 = bitcast t349
+                t349: v2i64 = xor t633, t1149
+                  t633: v2i64 = bitcast t632
+
+                  t1149: v2i64 = X86ISD::PCLMULQDQ t660, t875, TargetConstant:i8&lt;0&gt;
+
+
+        t354: v2i64 = xor t353, t621
+          t353: v2i64 = xor t352, t644
+            t352: v2i64 = xor t618, t659
+              t618: v2i64 = X86ISD::PCLMULQDQ t349, t875, TargetConstant:i8&lt;0&gt;
+                t349: v2i64 = xor t633, t1149
+                  t633: v2i64 = bitcast t632
+
+                  t1149: v2i64 = X86ISD::PCLMULQDQ t660, t875, TargetConstant:i8&lt;0&gt;
+
+
+                t875: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+              t659: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+                t333: v2i64 = xor t332, t679
+                  t332: v2i64 = xor t676, t693
+
+
+                  t679: v2i64 = bitcast t678
+
+                t254: v2i64 = xor t248, t563
+                  t248: v2i64 = and t244, t874
+
+
+                  t563: v2i64 = or t564, t566
+
+
+            t644: v2i64 = bitcast t643
+              t643: v16i8 = X86ISD::VSRLDQ t642, TargetConstant:i8&lt;8&gt;
+                t642: v16i8 = bitcast t343
+                  t343: v2i64 = xor t662, t661
+
+
+          t621: v2i64 = bitcast t620
+            t620: v4i32 = X86ISD::PSHUFD t619, TargetConstant:i8&lt;78&gt;
+              t619: v4i32 = bitcast t349
+                t349: v2i64 = xor t633, t1149
+                  t633: v2i64 = bitcast t632
+
+                  t1149: v2i64 = X86ISD::PCLMULQDQ t660, t875, TargetConstant:i8&lt;0&gt;
+
+
+      t875: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+    t597: v2i64 = bitcast t596
+      t596: v4i32 = X86ISD::PSHUFD t595, TargetConstant:i8&lt;78&gt;
+        t595: v4i32 = bitcast t598
+          t598: v2i64 = X86ISD::PCLMULQDQ t354, t354, TargetConstant:i8&lt;0&gt;
+            t354: v2i64 = xor t353, t621
+              t353: v2i64 = xor t352, t644
+                t352: v2i64 = xor t618, t659
+                  t618: v2i64 = X86ISD::PCLMULQDQ t349, t875, TargetConstant:i8&lt;0&gt;
+
+
+                  t659: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+
+
+                t644: v2i64 = bitcast t643
+                  t643: v16i8 = X86ISD::VSRLDQ t642, TargetConstant:i8&lt;8&gt;
+
+              t621: v2i64 = bitcast t620
+                t620: v4i32 = X86ISD::PSHUFD t619, TargetConstant:i8&lt;78&gt;
+                  t619: v4i32 = bitcast t349
+
+            t354: v2i64 = xor t353, t621
+              t353: v2i64 = xor t352, t644
+                t352: v2i64 = xor t618, t659
+                  t618: v2i64 = X86ISD::PCLMULQDQ t349, t875, TargetConstant:i8&lt;0&gt;
+
+
+                  t659: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+
+
+                t644: v2i64 = bitcast t643
+                  t643: v16i8 = X86ISD::VSRLDQ t642, TargetConstant:i8&lt;8&gt;
+
+              t621: v2i64 = bitcast t620
+                t620: v4i32 = X86ISD::PSHUFD t619, TargetConstant:i8&lt;78&gt;
+                  t619: v4i32 = bitcast t349
+
+  t875: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+In function: crypto_aead_aes256gcm_beforenm
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v3 -o /private/tmp/pr228359-0r5jztoi/before.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@crypto_aead_aes256gcm_beforenm&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x0000000101c1126c llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x0000000101c0e674 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x0000000101c11b9c SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x0000000101b699f0 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000101ab7638 llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x0000000101ab6a04 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x00000001003beb20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x0000000101aad354 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x0000000101aac414 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x0000000101aaa9d4 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000101aa8074 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000101aa6554 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x0000000100cc67e4 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x000000010116de5c llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000101174f30 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x000000010116e684 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x000000010208e730 llcMain + 9904
+20 llc                      0x00000001002cdda4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details><details class="archive-diagnostic"><summary>B 진단 전문</summary><pre>LLVM ERROR: Cannot select: t581: v2i64 = X86ISD::PCLMULQDQ t453, t875, TargetConstant:i8&lt;0&gt;
+  t453: v2i64 = xor t594, t597
+    t594: v2i64 = X86ISD::PCLMULQDQ t598, t875, TargetConstant:i8&lt;0&gt;
+      t598: v2i64 = X86ISD::PCLMULQDQ t354, t354, TargetConstant:i8&lt;0&gt;
+        t354: v2i64 = xor t353, t621
+          t353: v2i64 = xor t352, t644
+            t352: v2i64 = xor t618, t659
+              t618: v2i64 = X86ISD::PCLMULQDQ t349, t875, TargetConstant:i8&lt;0&gt;
+                t349: v2i64 = xor t633, t1149
+                  t633: v2i64 = bitcast t632
+
+                  t1149: v2i64 = X86ISD::PCLMULQDQ t660, t875, TargetConstant:i8&lt;0&gt;
+
+
+                t875: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+              t659: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+                t333: v2i64 = xor t332, t679
+                  t332: v2i64 = xor t676, t693
+
+
+                  t679: v2i64 = bitcast t678
+
+                t254: v2i64 = xor t248, t563
+                  t248: v2i64 = and t244, t874
+
+
+                  t563: v2i64 = or t564, t566
+
+
+            t644: v2i64 = bitcast t643
+              t643: v16i8 = X86ISD::VSRLDQ t642, TargetConstant:i8&lt;8&gt;
+                t642: v16i8 = bitcast t343
+                  t343: v2i64 = xor t662, t661
+
+
+          t621: v2i64 = bitcast t620
+            t620: v4i32 = X86ISD::PSHUFD t619, TargetConstant:i8&lt;78&gt;
+              t619: v4i32 = bitcast t349
+                t349: v2i64 = xor t633, t1149
+                  t633: v2i64 = bitcast t632
+
+                  t1149: v2i64 = X86ISD::PCLMULQDQ t660, t875, TargetConstant:i8&lt;0&gt;
+
+
+        t354: v2i64 = xor t353, t621
+          t353: v2i64 = xor t352, t644
+            t352: v2i64 = xor t618, t659
+              t618: v2i64 = X86ISD::PCLMULQDQ t349, t875, TargetConstant:i8&lt;0&gt;
+                t349: v2i64 = xor t633, t1149
+                  t633: v2i64 = bitcast t632
+
+                  t1149: v2i64 = X86ISD::PCLMULQDQ t660, t875, TargetConstant:i8&lt;0&gt;
+
+
+                t875: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+              t659: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+                t333: v2i64 = xor t332, t679
+                  t332: v2i64 = xor t676, t693
+
+
+                  t679: v2i64 = bitcast t678
+
+                t254: v2i64 = xor t248, t563
+                  t248: v2i64 = and t244, t874
+
+
+                  t563: v2i64 = or t564, t566
+
+
+            t644: v2i64 = bitcast t643
+              t643: v16i8 = X86ISD::VSRLDQ t642, TargetConstant:i8&lt;8&gt;
+                t642: v16i8 = bitcast t343
+                  t343: v2i64 = xor t662, t661
+
+
+          t621: v2i64 = bitcast t620
+            t620: v4i32 = X86ISD::PSHUFD t619, TargetConstant:i8&lt;78&gt;
+              t619: v4i32 = bitcast t349
+                t349: v2i64 = xor t633, t1149
+                  t633: v2i64 = bitcast t632
+
+                  t1149: v2i64 = X86ISD::PCLMULQDQ t660, t875, TargetConstant:i8&lt;0&gt;
+
+
+      t875: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+    t597: v2i64 = bitcast t596
+      t596: v4i32 = X86ISD::PSHUFD t595, TargetConstant:i8&lt;78&gt;
+        t595: v4i32 = bitcast t598
+          t598: v2i64 = X86ISD::PCLMULQDQ t354, t354, TargetConstant:i8&lt;0&gt;
+            t354: v2i64 = xor t353, t621
+              t353: v2i64 = xor t352, t644
+                t352: v2i64 = xor t618, t659
+                  t618: v2i64 = X86ISD::PCLMULQDQ t349, t875, TargetConstant:i8&lt;0&gt;
+
+
+                  t659: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+
+
+                t644: v2i64 = bitcast t643
+                  t643: v16i8 = X86ISD::VSRLDQ t642, TargetConstant:i8&lt;8&gt;
+
+              t621: v2i64 = bitcast t620
+                t620: v4i32 = X86ISD::PSHUFD t619, TargetConstant:i8&lt;78&gt;
+                  t619: v4i32 = bitcast t349
+
+            t354: v2i64 = xor t353, t621
+              t353: v2i64 = xor t352, t644
+                t352: v2i64 = xor t618, t659
+                  t618: v2i64 = X86ISD::PCLMULQDQ t349, t875, TargetConstant:i8&lt;0&gt;
+
+
+                  t659: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+
+
+                t644: v2i64 = bitcast t643
+                  t643: v16i8 = X86ISD::VSRLDQ t642, TargetConstant:i8&lt;8&gt;
+
+              t621: v2i64 = bitcast t620
+                t620: v4i32 = X86ISD::PSHUFD t619, TargetConstant:i8&lt;78&gt;
+                  t619: v4i32 = bitcast t349
+
+  t875: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+In function: crypto_aead_aes256gcm_beforenm
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v3 -o /private/tmp/pr228359-0r5jztoi/after.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@crypto_aead_aes256gcm_beforenm&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x0000000102351a70 llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x000000010234ee78 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001023523a0 SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001022aa1f4 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x00000001021f7e3c llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x00000001021f7208 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000100afeb20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x00000001021edb58 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x00000001021ecc18 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x00000001021eb1d8 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x00000001021e8878 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x00000001021e6d58 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x0000000101406fe8 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x00000001018ae660 llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x00000001018b5734 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x00000001018aee88 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x00000001027cef34 llcMain + 9904
+20 llc                      0x0000000100a0dda4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details></td><td>-6 / -6</td><td><code title="">—</code><br><code title="">—</code></td></tr><tr><td>aead_aes256gcm_aesni.ll</td><td>avx512-v4</td><td><span class="archive-status regressed">실패</span><details class="archive-diagnostic"><summary>A 진단 전문</summary><pre>LLVM ERROR: Cannot select: t579: v2i64 = X86ISD::PCLMULQDQ t453, t874, TargetConstant:i8&lt;0&gt;
+  t453: v2i64 = xor t592, t595
+    t592: v2i64 = X86ISD::PCLMULQDQ t596, t874, TargetConstant:i8&lt;0&gt;
+      t596: v2i64 = X86ISD::PCLMULQDQ t354, t354, TargetConstant:i8&lt;0&gt;
+        t354: v2i64 = xor t353, t620
+          t353: v2i64 = xor t352, t643
+            t352: v2i64 = xor t617, t658
+              t617: v2i64 = X86ISD::PCLMULQDQ t349, t874, TargetConstant:i8&lt;0&gt;
+                t349: v2i64 = xor t632, t1148
+                  t632: v2i64 = bitcast t631
+
+                  t1148: v2i64 = X86ISD::PCLMULQDQ t659, t874, TargetConstant:i8&lt;0&gt;
+
+
+                t874: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+              t658: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+                t333: v2i64 = xor t332, t678
+                  t332: v2i64 = xor t675, t692
+
+
+                  t678: v2i64 = bitcast t677
+
+                t254: v2i64 = xor t248, t562
+                  t248: v2i64 = and t244, t873
+
+
+                  t562: v2i64 = or t563, t564
+
+
+            t643: v2i64 = bitcast t642
+              t642: v16i8 = X86ISD::VSRLDQ t641, TargetConstant:i8&lt;8&gt;
+                t641: v16i8 = bitcast t343
+                  t343: v2i64 = xor t661, t660
+
+
+          t620: v2i64 = bitcast t619
+            t619: v4i32 = X86ISD::PSHUFD t618, TargetConstant:i8&lt;78&gt;
+              t618: v4i32 = bitcast t349
+                t349: v2i64 = xor t632, t1148
+                  t632: v2i64 = bitcast t631
+
+                  t1148: v2i64 = X86ISD::PCLMULQDQ t659, t874, TargetConstant:i8&lt;0&gt;
+
+
+        t354: v2i64 = xor t353, t620
+          t353: v2i64 = xor t352, t643
+            t352: v2i64 = xor t617, t658
+              t617: v2i64 = X86ISD::PCLMULQDQ t349, t874, TargetConstant:i8&lt;0&gt;
+                t349: v2i64 = xor t632, t1148
+                  t632: v2i64 = bitcast t631
+
+                  t1148: v2i64 = X86ISD::PCLMULQDQ t659, t874, TargetConstant:i8&lt;0&gt;
+
+
+                t874: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+              t658: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+                t333: v2i64 = xor t332, t678
+                  t332: v2i64 = xor t675, t692
+
+
+                  t678: v2i64 = bitcast t677
+
+                t254: v2i64 = xor t248, t562
+                  t248: v2i64 = and t244, t873
+
+
+                  t562: v2i64 = or t563, t564
+
+
+            t643: v2i64 = bitcast t642
+              t642: v16i8 = X86ISD::VSRLDQ t641, TargetConstant:i8&lt;8&gt;
+                t641: v16i8 = bitcast t343
+                  t343: v2i64 = xor t661, t660
+
+
+          t620: v2i64 = bitcast t619
+            t619: v4i32 = X86ISD::PSHUFD t618, TargetConstant:i8&lt;78&gt;
+              t618: v4i32 = bitcast t349
+                t349: v2i64 = xor t632, t1148
+                  t632: v2i64 = bitcast t631
+
+                  t1148: v2i64 = X86ISD::PCLMULQDQ t659, t874, TargetConstant:i8&lt;0&gt;
+
+
+      t874: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+    t595: v2i64 = bitcast t594
+      t594: v4i32 = X86ISD::PSHUFD t593, TargetConstant:i8&lt;78&gt;
+        t593: v4i32 = bitcast t596
+          t596: v2i64 = X86ISD::PCLMULQDQ t354, t354, TargetConstant:i8&lt;0&gt;
+            t354: v2i64 = xor t353, t620
+              t353: v2i64 = xor t352, t643
+                t352: v2i64 = xor t617, t658
+                  t617: v2i64 = X86ISD::PCLMULQDQ t349, t874, TargetConstant:i8&lt;0&gt;
+
+
+                  t658: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+
+
+                t643: v2i64 = bitcast t642
+                  t642: v16i8 = X86ISD::VSRLDQ t641, TargetConstant:i8&lt;8&gt;
+
+              t620: v2i64 = bitcast t619
+                t619: v4i32 = X86ISD::PSHUFD t618, TargetConstant:i8&lt;78&gt;
+                  t618: v4i32 = bitcast t349
+
+            t354: v2i64 = xor t353, t620
+              t353: v2i64 = xor t352, t643
+                t352: v2i64 = xor t617, t658
+                  t617: v2i64 = X86ISD::PCLMULQDQ t349, t874, TargetConstant:i8&lt;0&gt;
+
+
+                  t658: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+
+
+                t643: v2i64 = bitcast t642
+                  t642: v16i8 = X86ISD::VSRLDQ t641, TargetConstant:i8&lt;8&gt;
+
+              t620: v2i64 = bitcast t619
+                t619: v4i32 = X86ISD::PSHUFD t618, TargetConstant:i8&lt;78&gt;
+                  t618: v4i32 = bitcast t349
+
+  t874: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+In function: crypto_aead_aes256gcm_beforenm
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v4 -o /private/tmp/pr228359-k47qw3s1/before.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@crypto_aead_aes256gcm_beforenm&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001046bd26c llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001046ba674 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001046bdb9c SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001046159f0 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000104563638 llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x0000000104562a04 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000102e6ab20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x0000000104559354 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x0000000104558414 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x00000001045569d4 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000104554074 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000104552554 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x00000001037727e4 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x0000000103c19e5c llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000103c20f30 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x0000000103c1a684 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x0000000104b3a730 llcMain + 9904
+20 llc                      0x0000000102d79da4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details><details class="archive-diagnostic"><summary>B 진단 전문</summary><pre>LLVM ERROR: Cannot select: t579: v2i64 = X86ISD::PCLMULQDQ t453, t874, TargetConstant:i8&lt;0&gt;
+  t453: v2i64 = xor t592, t595
+    t592: v2i64 = X86ISD::PCLMULQDQ t596, t874, TargetConstant:i8&lt;0&gt;
+      t596: v2i64 = X86ISD::PCLMULQDQ t354, t354, TargetConstant:i8&lt;0&gt;
+        t354: v2i64 = xor t353, t620
+          t353: v2i64 = xor t352, t643
+            t352: v2i64 = xor t617, t658
+              t617: v2i64 = X86ISD::PCLMULQDQ t349, t874, TargetConstant:i8&lt;0&gt;
+                t349: v2i64 = xor t632, t1148
+                  t632: v2i64 = bitcast t631
+
+                  t1148: v2i64 = X86ISD::PCLMULQDQ t659, t874, TargetConstant:i8&lt;0&gt;
+
+
+                t874: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+              t658: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+                t333: v2i64 = xor t332, t678
+                  t332: v2i64 = xor t675, t692
+
+
+                  t678: v2i64 = bitcast t677
+
+                t254: v2i64 = xor t248, t562
+                  t248: v2i64 = and t244, t873
+
+
+                  t562: v2i64 = or t563, t564
+
+
+            t643: v2i64 = bitcast t642
+              t642: v16i8 = X86ISD::VSRLDQ t641, TargetConstant:i8&lt;8&gt;
+                t641: v16i8 = bitcast t343
+                  t343: v2i64 = xor t661, t660
+
+
+          t620: v2i64 = bitcast t619
+            t619: v4i32 = X86ISD::PSHUFD t618, TargetConstant:i8&lt;78&gt;
+              t618: v4i32 = bitcast t349
+                t349: v2i64 = xor t632, t1148
+                  t632: v2i64 = bitcast t631
+
+                  t1148: v2i64 = X86ISD::PCLMULQDQ t659, t874, TargetConstant:i8&lt;0&gt;
+
+
+        t354: v2i64 = xor t353, t620
+          t353: v2i64 = xor t352, t643
+            t352: v2i64 = xor t617, t658
+              t617: v2i64 = X86ISD::PCLMULQDQ t349, t874, TargetConstant:i8&lt;0&gt;
+                t349: v2i64 = xor t632, t1148
+                  t632: v2i64 = bitcast t631
+
+                  t1148: v2i64 = X86ISD::PCLMULQDQ t659, t874, TargetConstant:i8&lt;0&gt;
+
+
+                t874: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+              t658: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+                t333: v2i64 = xor t332, t678
+                  t332: v2i64 = xor t675, t692
+
+
+                  t678: v2i64 = bitcast t677
+
+                t254: v2i64 = xor t248, t562
+                  t248: v2i64 = and t244, t873
+
+
+                  t562: v2i64 = or t563, t564
+
+
+            t643: v2i64 = bitcast t642
+              t642: v16i8 = X86ISD::VSRLDQ t641, TargetConstant:i8&lt;8&gt;
+                t641: v16i8 = bitcast t343
+                  t343: v2i64 = xor t661, t660
+
+
+          t620: v2i64 = bitcast t619
+            t619: v4i32 = X86ISD::PSHUFD t618, TargetConstant:i8&lt;78&gt;
+              t618: v4i32 = bitcast t349
+                t349: v2i64 = xor t632, t1148
+                  t632: v2i64 = bitcast t631
+
+                  t1148: v2i64 = X86ISD::PCLMULQDQ t659, t874, TargetConstant:i8&lt;0&gt;
+
+
+      t874: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+    t595: v2i64 = bitcast t594
+      t594: v4i32 = X86ISD::PSHUFD t593, TargetConstant:i8&lt;78&gt;
+        t593: v4i32 = bitcast t596
+          t596: v2i64 = X86ISD::PCLMULQDQ t354, t354, TargetConstant:i8&lt;0&gt;
+            t354: v2i64 = xor t353, t620
+              t353: v2i64 = xor t352, t643
+                t352: v2i64 = xor t617, t658
+                  t617: v2i64 = X86ISD::PCLMULQDQ t349, t874, TargetConstant:i8&lt;0&gt;
+
+
+                  t658: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+
+
+                t643: v2i64 = bitcast t642
+                  t642: v16i8 = X86ISD::VSRLDQ t641, TargetConstant:i8&lt;8&gt;
+
+              t620: v2i64 = bitcast t619
+                t619: v4i32 = X86ISD::PSHUFD t618, TargetConstant:i8&lt;78&gt;
+                  t618: v4i32 = bitcast t349
+
+            t354: v2i64 = xor t353, t620
+              t353: v2i64 = xor t352, t643
+                t352: v2i64 = xor t617, t658
+                  t617: v2i64 = X86ISD::PCLMULQDQ t349, t874, TargetConstant:i8&lt;0&gt;
+
+
+                  t658: v2i64 = X86ISD::PCLMULQDQ t333, t254, TargetConstant:i8&lt;17&gt;
+
+
+                t643: v2i64 = bitcast t642
+                  t642: v16i8 = X86ISD::VSRLDQ t641, TargetConstant:i8&lt;8&gt;
+
+              t620: v2i64 = bitcast t619
+                t619: v4i32 = X86ISD::PSHUFD t618, TargetConstant:i8&lt;78&gt;
+                  t618: v4i32 = bitcast t349
+
+  t874: v2i64 = scalar_to_vector Constant:i64&lt;-4467570830351532032&gt;
+In function: crypto_aead_aes256gcm_beforenm
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v4 -o /private/tmp/pr228359-k47qw3s1/after.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@crypto_aead_aes256gcm_beforenm&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001047f1a70 llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001047eee78 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001047f23a0 SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x000000010474a1f4 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000104697e3c llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x0000000104697208 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000102f9eb20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x000000010468db58 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x000000010468cc18 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x000000010468b1d8 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000104688878 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000104686d58 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x00000001038a6fe8 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x0000000103d4e660 llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000103d55734 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x0000000103d4ee88 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x0000000104c6ef34 llcMain + 9904
+20 llc                      0x0000000102eadda4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details></td><td>-6 / -6</td><td><code title="">—</code><br><code title="">—</code></td></tr><tr><td>aead_chacha20poly1305.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f4fe7eba71c6d986b8fac9a9d1c6c51a23817ca6eb409fe490fc7658dad2c882">f4fe7eba71c6d986</code><br><code title="f4fe7eba71c6d986b8fac9a9d1c6c51a23817ca6eb409fe490fc7658dad2c882">f4fe7eba71c6d986</code></td></tr><tr><td>aead_chacha20poly1305.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f4fe7eba71c6d986b8fac9a9d1c6c51a23817ca6eb409fe490fc7658dad2c882">f4fe7eba71c6d986</code><br><code title="f4fe7eba71c6d986b8fac9a9d1c6c51a23817ca6eb409fe490fc7658dad2c882">f4fe7eba71c6d986</code></td></tr><tr><td>aead_xchacha20poly1305.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f0d14a76895897a29f9735565a4f79b2fdeebc1e254267698e7304fd892630a4">f0d14a76895897a2</code><br><code title="f0d14a76895897a29f9735565a4f79b2fdeebc1e254267698e7304fd892630a4">f0d14a76895897a2</code></td></tr><tr><td>aead_xchacha20poly1305.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f0d14a76895897a29f9735565a4f79b2fdeebc1e254267698e7304fd892630a4">f0d14a76895897a2</code><br><code title="f0d14a76895897a29f9735565a4f79b2fdeebc1e254267698e7304fd892630a4">f0d14a76895897a2</code></td></tr><tr><td>aegis128l_soft.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="b78afebf6e11f8ce33b63cb380baee3b32b9b92388df34bab219b9399229d061">b78afebf6e11f8ce</code><br><code title="b78afebf6e11f8ce33b63cb380baee3b32b9b92388df34bab219b9399229d061">b78afebf6e11f8ce</code></td></tr><tr><td>aegis128l_soft.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3685dddb7c2620eb2ee70fece48a937ee99e56021fe5fea86c39209e705c02e8">3685dddb7c2620eb</code><br><code title="3685dddb7c2620eb2ee70fece48a937ee99e56021fe5fea86c39209e705c02e8">3685dddb7c2620eb</code></td></tr><tr><td>aegis256_soft.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="487788df95c84bf7e26f2c7d90a16cfb7b123fb6e57f5e0b832dfd867d29e44c">487788df95c84bf7</code><br><code title="487788df95c84bf7e26f2c7d90a16cfb7b123fb6e57f5e0b832dfd867d29e44c">487788df95c84bf7</code></td></tr><tr><td>aegis256_soft.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f1e45990b0eb1c17b3d80aac585bac4b5bc35bd8f26bfbfc532f04fd8a9c763e">f1e45990b0eb1c17</code><br><code title="f1e45990b0eb1c17b3d80aac585bac4b5bc35bd8f26bfbfc532f04fd8a9c763e">f1e45990b0eb1c17</code></td></tr><tr><td>argon2-core.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="84cc35995b4e19dbba6febb629184868936755f14f57a3c02545b8ddb64d2357">84cc35995b4e19db</code><br><code title="84cc35995b4e19dbba6febb629184868936755f14f57a3c02545b8ddb64d2357">84cc35995b4e19db</code></td></tr><tr><td>argon2-core.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="84cc35995b4e19dbba6febb629184868936755f14f57a3c02545b8ddb64d2357">84cc35995b4e19db</code><br><code title="84cc35995b4e19dbba6febb629184868936755f14f57a3c02545b8ddb64d2357">84cc35995b4e19db</code></td></tr><tr><td>argon2-encoding.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="126e8752663335de6088b8cb3629a989b5f4f1754aeaa3449e8d3b49a5ff3979">126e8752663335de</code><br><code title="126e8752663335de6088b8cb3629a989b5f4f1754aeaa3449e8d3b49a5ff3979">126e8752663335de</code></td></tr><tr><td>argon2-encoding.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="126e8752663335de6088b8cb3629a989b5f4f1754aeaa3449e8d3b49a5ff3979">126e8752663335de</code><br><code title="126e8752663335de6088b8cb3629a989b5f4f1754aeaa3449e8d3b49a5ff3979">126e8752663335de</code></td></tr><tr><td>argon2-fill-block-avx2.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="b74cd116dae2bf0d530a3853700c803980ca670071948069374f67c8affa2df8">b74cd116dae2bf0d</code><br><code title="b74cd116dae2bf0d530a3853700c803980ca670071948069374f67c8affa2df8">b74cd116dae2bf0d</code></td></tr><tr><td>argon2-fill-block-avx2.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f140e4b13821832c53298f663fb00b8323fdc93b41f8326d468bd91f914e04dd">f140e4b13821832c</code><br><code title="f140e4b13821832c53298f663fb00b8323fdc93b41f8326d468bd91f914e04dd">f140e4b13821832c</code></td></tr><tr><td>argon2-fill-block-avx512f.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="25daf0f3a554da43e5518a68250a96b0dc35f735d274f4208a04f1f366733764">25daf0f3a554da43</code><br><code title="25daf0f3a554da43e5518a68250a96b0dc35f735d274f4208a04f1f366733764">25daf0f3a554da43</code></td></tr><tr><td>argon2-fill-block-avx512f.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="9ed9e1489ab07fe9dceecfeba28697f688670b6cfda202a180faafab5fe25221">9ed9e1489ab07fe9</code><br><code title="9ed9e1489ab07fe9dceecfeba28697f688670b6cfda202a180faafab5fe25221">9ed9e1489ab07fe9</code></td></tr><tr><td>argon2-fill-block-ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="52139f72f902584fee6e8bb02b475ee4b481b796f8a295f63e492cb14dfd3ab8">52139f72f902584f</code><br><code title="52139f72f902584fee6e8bb02b475ee4b481b796f8a295f63e492cb14dfd3ab8">52139f72f902584f</code></td></tr><tr><td>argon2-fill-block-ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="c7b7973e9fd746e09a163aef03189b7e23441908242f9ec6e06ca6bc96329dcb">c7b7973e9fd746e0</code><br><code title="c7b7973e9fd746e09a163aef03189b7e23441908242f9ec6e06ca6bc96329dcb">c7b7973e9fd746e0</code></td></tr><tr><td>argon2-fill-block-ssse3.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="0c22c27f20e04bdf019d4884c2c95bd088c188a2f34d86aed94a01fdd3437890">0c22c27f20e04bdf</code><br><code title="0c22c27f20e04bdf019d4884c2c95bd088c188a2f34d86aed94a01fdd3437890">0c22c27f20e04bdf</code></td></tr><tr><td>argon2-fill-block-ssse3.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f4c45aa2d0ba49d78d3b6754c0b6d0ebf2a892beb593feb23dd91e12f745a6dc">f4c45aa2d0ba49d7</code><br><code title="f4c45aa2d0ba49d78d3b6754c0b6d0ebf2a892beb593feb23dd91e12f745a6dc">f4c45aa2d0ba49d7</code></td></tr><tr><td>argon2.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="c4439111df30b75dac362552fe30934b744ece52c4e50c92caa7a0dadfda3c39">c4439111df30b75d</code><br><code title="c4439111df30b75dac362552fe30934b744ece52c4e50c92caa7a0dadfda3c39">c4439111df30b75d</code></td></tr><tr><td>argon2.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="9b4099784e1b726ecfa06202f0879c608d9965779cf3671137fe12f91ed957b6">9b4099784e1b726e</code><br><code title="9b4099784e1b726ecfa06202f0879c608d9965779cf3671137fe12f91ed957b6">9b4099784e1b726e</code></td></tr><tr><td>auth_hmacsha256.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="525afd2d81d75bf4ba2866865f88f11be173c1fd190ddeff113254a83051529f">525afd2d81d75bf4</code><br><code title="525afd2d81d75bf4ba2866865f88f11be173c1fd190ddeff113254a83051529f">525afd2d81d75bf4</code></td></tr><tr><td>auth_hmacsha256.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3db4965c1dc417b6b63ddce3394921254be831029d6479f666e3940f33bbdd71">3db4965c1dc417b6</code><br><code title="3db4965c1dc417b6b63ddce3394921254be831029d6479f666e3940f33bbdd71">3db4965c1dc417b6</code></td></tr><tr><td>auth_hmacsha512.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="53695f3aa259cf170c03514a98ed02f0b7d2aa5645d11ddba0c1246d1df08ae1">53695f3aa259cf17</code><br><code title="53695f3aa259cf170c03514a98ed02f0b7d2aa5645d11ddba0c1246d1df08ae1">53695f3aa259cf17</code></td></tr><tr><td>auth_hmacsha512.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f3647c57f217f7aa28ba92bccbb369893deb74e7e7b931c12354c8392e3b5cb3">f3647c57f217f7aa</code><br><code title="f3647c57f217f7aa28ba92bccbb369893deb74e7e7b931c12354c8392e3b5cb3">f3647c57f217f7aa</code></td></tr><tr><td>blake2b-compress-avx2.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="cbdfbfa04b08983fca4b268b5e2d1f2ce58008b275e36c4c6f754778fa0f1724">cbdfbfa04b08983f</code><br><code title="cbdfbfa04b08983fca4b268b5e2d1f2ce58008b275e36c4c6f754778fa0f1724">cbdfbfa04b08983f</code></td></tr><tr><td>blake2b-compress-avx2.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="1616d4556e0f35c01d1fa6fd05bcd8df81ed6d5de35046827b611fa9891ac1aa">1616d4556e0f35c0</code><br><code title="1616d4556e0f35c01d1fa6fd05bcd8df81ed6d5de35046827b611fa9891ac1aa">1616d4556e0f35c0</code></td></tr><tr><td>blake2b-compress-ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6a82c94aa52f870ec6deb2be1dbfb5bbb8785f01f3b0230d80720d3a6ac92588">6a82c94aa52f870e</code><br><code title="6a82c94aa52f870ec6deb2be1dbfb5bbb8785f01f3b0230d80720d3a6ac92588">6a82c94aa52f870e</code></td></tr><tr><td>blake2b-compress-ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="299d4457bf15643869f192ce4726cede9e1375bc6ef7ffb52943a24d48e3ac87">299d4457bf156438</code><br><code title="299d4457bf15643869f192ce4726cede9e1375bc6ef7ffb52943a24d48e3ac87">299d4457bf156438</code></td></tr><tr><td>blake2b-ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="551f10eb7ab19c5d9de57b6692f6c4534dd7a71cb5625c3c7f97079b37db958f">551f10eb7ab19c5d</code><br><code title="551f10eb7ab19c5d9de57b6692f6c4534dd7a71cb5625c3c7f97079b37db958f">551f10eb7ab19c5d</code></td></tr><tr><td>blake2b-ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="bc998a4cce70623066b643ba2ecfdaf5582e72e6cb57de3732ef638b6ab3b085">bc998a4cce706230</code><br><code title="bc998a4cce70623066b643ba2ecfdaf5582e72e6cb57de3732ef638b6ab3b085">bc998a4cce706230</code></td></tr><tr><td>chacha20_dolbeau-avx2.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="b1589e171c6c0deefd1152342322f4248959456508d8a4e403ba74a8c52ad288">b1589e171c6c0dee</code><br><code title="b1589e171c6c0deefd1152342322f4248959456508d8a4e403ba74a8c52ad288">b1589e171c6c0dee</code></td></tr><tr><td>chacha20_dolbeau-avx2.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="1220d8992c2edafd2dc2d027bc7d272233b01cfc5a17f0bc48e917298125beb3">1220d8992c2edafd</code><br><code title="1220d8992c2edafd2dc2d027bc7d272233b01cfc5a17f0bc48e917298125beb3">1220d8992c2edafd</code></td></tr><tr><td>chacha20_dolbeau-ssse3.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="25a5c817c737d1b031d97640dac7397a15d330a41af4ac03f83dd6b5f50b3bd6">25a5c817c737d1b0</code><br><code title="25a5c817c737d1b031d97640dac7397a15d330a41af4ac03f83dd6b5f50b3bd6">25a5c817c737d1b0</code></td></tr><tr><td>chacha20_dolbeau-ssse3.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6f3b217969da24e8d805dbd7ef4f25160bc33dec969dbb6112937cc4ebceb99c">6f3b217969da24e8</code><br><code title="6f3b217969da24e8d805dbd7ef4f25160bc33dec969dbb6112937cc4ebceb99c">6f3b217969da24e8</code></td></tr><tr><td>chacha20_ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="1777734ac485baeca874677cad06310ee5d6b7f0c3571d35fd4a29e5f2492885">1777734ac485baec</code><br><code title="1777734ac485baeca874677cad06310ee5d6b7f0c3571d35fd4a29e5f2492885">1777734ac485baec</code></td></tr><tr><td>chacha20_ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="a4005739e650716517360d8cbe195c76c9a989e26dc7e63d01dc8227792619c8">a4005739e6507165</code><br><code title="a4005739e650716517360d8cbe195c76c9a989e26dc7e63d01dc8227792619c8">a4005739e6507165</code></td></tr><tr><td>codecs.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="d13c441a08ea201009c2899b3d31d17c31c61f7442814c91eb19ae5903506c04">d13c441a08ea2010</code><br><code title="d13c441a08ea201009c2899b3d31d17c31c61f7442814c91eb19ae5903506c04">d13c441a08ea2010</code></td></tr><tr><td>codecs.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="31409f64bd325feb460ada6f37cb3ae265cd450c6fd1406b83c07aa7fcb47ff2">31409f64bd325feb</code><br><code title="31409f64bd325feb460ada6f37cb3ae265cd450c6fd1406b83c07aa7fcb47ff2">31409f64bd325feb</code></td></tr><tr><td>core_ed25519.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="fb0684a10b1a278e3cf94e3abf4865fb3cd5b757727499589fdc20a4071dcdfd">fb0684a10b1a278e</code><br><code title="fb0684a10b1a278e3cf94e3abf4865fb3cd5b757727499589fdc20a4071dcdfd">fb0684a10b1a278e</code></td></tr><tr><td>core_ed25519.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="4b320c78b16bf5265b4b9e20ffbd4366d6ced45992ced3ce1ad00240d19c1051">4b320c78b16bf526</code><br><code title="4b320c78b16bf5265b4b9e20ffbd4366d6ced45992ced3ce1ad00240d19c1051">4b320c78b16bf526</code></td></tr><tr><td>core_h2c.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="656daf12af58b15c053725a2ac5e7c1759ce597c2a0367d2c29f2d6e9ac52e8e">656daf12af58b15c</code><br><code title="656daf12af58b15c053725a2ac5e7c1759ce597c2a0367d2c29f2d6e9ac52e8e">656daf12af58b15c</code></td></tr><tr><td>core_h2c.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="656daf12af58b15c053725a2ac5e7c1759ce597c2a0367d2c29f2d6e9ac52e8e">656daf12af58b15c</code><br><code title="656daf12af58b15c053725a2ac5e7c1759ce597c2a0367d2c29f2d6e9ac52e8e">656daf12af58b15c</code></td></tr><tr><td>core_hsalsa20_ref2.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6ae74efe9c2cfcee03850ed0f9a51ccec08185f02859238ce551843e1b7d3469">6ae74efe9c2cfcee</code><br><code title="6ae74efe9c2cfcee03850ed0f9a51ccec08185f02859238ce551843e1b7d3469">6ae74efe9c2cfcee</code></td></tr><tr><td>core_hsalsa20_ref2.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6ae74efe9c2cfcee03850ed0f9a51ccec08185f02859238ce551843e1b7d3469">6ae74efe9c2cfcee</code><br><code title="6ae74efe9c2cfcee03850ed0f9a51ccec08185f02859238ce551843e1b7d3469">6ae74efe9c2cfcee</code></td></tr><tr><td>core_ristretto255.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="28731f78d7f416e2eae67d1e454fc13ad9d4822fd66914c779cf3af5e912a7e6">28731f78d7f416e2</code><br><code title="28731f78d7f416e2eae67d1e454fc13ad9d4822fd66914c779cf3af5e912a7e6">28731f78d7f416e2</code></td></tr><tr><td>core_ristretto255.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="ea36d98a45d4a718000db179594433cf1823f00ab41f11502d2473545d332cf8">ea36d98a45d4a718</code><br><code title="ea36d98a45d4a718000db179594433cf1823f00ab41f11502d2473545d332cf8">ea36d98a45d4a718</code></td></tr><tr><td>core_salsa_ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="e9b9723684039b9ef0f75e457330d201853f8f150623c243ad5b079d071b4cf6">e9b9723684039b9e</code><br><code title="e9b9723684039b9ef0f75e457330d201853f8f150623c243ad5b079d071b4cf6">e9b9723684039b9e</code></td></tr><tr><td>core_salsa_ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="e9b9723684039b9ef0f75e457330d201853f8f150623c243ad5b079d071b4cf6">e9b9723684039b9e</code><br><code title="e9b9723684039b9ef0f75e457330d201853f8f150623c243ad5b079d071b4cf6">e9b9723684039b9e</code></td></tr><tr><td>crypto_kx.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="b1acabf143f5169b391862c5214c62ad24ef3b08b36dca203da5b77e2d1dde8d">b1acabf143f5169b</code><br><code title="b1acabf143f5169b391862c5214c62ad24ef3b08b36dca203da5b77e2d1dde8d">b1acabf143f5169b</code></td></tr><tr><td>crypto_kx.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="b1acabf143f5169b391862c5214c62ad24ef3b08b36dca203da5b77e2d1dde8d">b1acabf143f5169b</code><br><code title="b1acabf143f5169b391862c5214c62ad24ef3b08b36dca203da5b77e2d1dde8d">b1acabf143f5169b</code></td></tr><tr><td>crypto_scrypt-common.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="fc17959afd20fd3b0581c2be49155c18ccc30b6ba7abf87b12af03ccaf3d4bb7">fc17959afd20fd3b</code><br><code title="fc17959afd20fd3b0581c2be49155c18ccc30b6ba7abf87b12af03ccaf3d4bb7">fc17959afd20fd3b</code></td></tr><tr><td>crypto_scrypt-common.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f104fdf9a55bc008fe4333dd1eae53893be3dfa397114a24c17b53ea9ad435ac">f104fdf9a55bc008</code><br><code title="f104fdf9a55bc008fe4333dd1eae53893be3dfa397114a24c17b53ea9ad435ac">f104fdf9a55bc008</code></td></tr><tr><td>crypto_secretbox_easy.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="25feec721261c6d9ae8744d08a9aa674e53e2bc35552e3ef27fa8bc1449043c4">25feec721261c6d9</code><br><code title="25feec721261c6d9ae8744d08a9aa674e53e2bc35552e3ef27fa8bc1449043c4">25feec721261c6d9</code></td></tr><tr><td>crypto_secretbox_easy.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="25feec721261c6d9ae8744d08a9aa674e53e2bc35552e3ef27fa8bc1449043c4">25feec721261c6d9</code><br><code title="25feec721261c6d9ae8744d08a9aa674e53e2bc35552e3ef27fa8bc1449043c4">25feec721261c6d9</code></td></tr><tr><td>ed25519_ref10.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f93173ceac907821fca28961d68c5e066436b09a072726e8490eff85ab83843d">f93173ceac907821</code><br><code title="f93173ceac907821fca28961d68c5e066436b09a072726e8490eff85ab83843d">f93173ceac907821</code></td></tr><tr><td>ed25519_ref10.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="e7de6bad69639bf88f8bdf75adbf0826ed7f56d8eeecb1e1940a45e0bdb4ca69">e7de6bad69639bf8</code><br><code title="e7de6bad69639bf88f8bdf75adbf0826ed7f56d8eeecb1e1940a45e0bdb4ca69">e7de6bad69639bf8</code></td></tr><tr><td>hash_sha256_cp.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="24cc3d47e2f61bd86605320cbe6e1bee4390e84d870ede6e277480ff087e535d">24cc3d47e2f61bd8</code><br><code title="24cc3d47e2f61bd86605320cbe6e1bee4390e84d870ede6e277480ff087e535d">24cc3d47e2f61bd8</code></td></tr><tr><td>hash_sha256_cp.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="51b39b31a1276ae8200b09dd8d8267daf84e66bf10d5dd9f02f784788a3058aa">51b39b31a1276ae8</code><br><code title="51b39b31a1276ae8200b09dd8d8267daf84e66bf10d5dd9f02f784788a3058aa">51b39b31a1276ae8</code></td></tr><tr><td>hash_sha512_cp.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="5f547dbcf05409f50081a0513860f2474b3a0fd26ffc408f63866edbaa962465">5f547dbcf05409f5</code><br><code title="5f547dbcf05409f50081a0513860f2474b3a0fd26ffc408f63866edbaa962465">5f547dbcf05409f5</code></td></tr><tr><td>hash_sha512_cp.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="4c7756a656bf3fb7ff5c8fbe79e946ed96f0786919b0b693b1b85d3eb0b76abd">4c7756a656bf3fb7</code><br><code title="4c7756a656bf3fb7ff5c8fbe79e946ed96f0786919b0b693b1b85d3eb0b76abd">4c7756a656bf3fb7</code></td></tr><tr><td>open.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="246b0f01ae76fbbe8a5749636446c86baede4fcad074422c3fc24ed23c430d7d">246b0f01ae76fbbe</code><br><code title="246b0f01ae76fbbe8a5749636446c86baede4fcad074422c3fc24ed23c430d7d">246b0f01ae76fbbe</code></td></tr><tr><td>open.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="246b0f01ae76fbbe8a5749636446c86baede4fcad074422c3fc24ed23c430d7d">246b0f01ae76fbbe</code><br><code title="246b0f01ae76fbbe8a5749636446c86baede4fcad074422c3fc24ed23c430d7d">246b0f01ae76fbbe</code></td></tr><tr><td>pbkdf2-sha256.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="4cbb66e10efd917a534bd9f6b73e0ec1228d0b190b1dab4439e8cce741a93444">4cbb66e10efd917a</code><br><code title="4cbb66e10efd917a534bd9f6b73e0ec1228d0b190b1dab4439e8cce741a93444">4cbb66e10efd917a</code></td></tr><tr><td>pbkdf2-sha256.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="4cbb66e10efd917a534bd9f6b73e0ec1228d0b190b1dab4439e8cce741a93444">4cbb66e10efd917a</code><br><code title="4cbb66e10efd917a534bd9f6b73e0ec1228d0b190b1dab4439e8cce741a93444">4cbb66e10efd917a</code></td></tr><tr><td>poly1305_donna.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="110ceb9a131aeb78a9022757ea1fd7cdce0c2b648aa8876c048968557e45a09e">110ceb9a131aeb78</code><br><code title="110ceb9a131aeb78a9022757ea1fd7cdce0c2b648aa8876c048968557e45a09e">110ceb9a131aeb78</code></td></tr><tr><td>poly1305_donna.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="675913d4044083b38d361ba58e136a7acd295d664f9f3d636e8f3868f014d85c">675913d4044083b3</code><br><code title="675913d4044083b38d361ba58e136a7acd295d664f9f3d636e8f3868f014d85c">675913d4044083b3</code></td></tr><tr><td>poly1305_sse2.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="a7991861e7a9f4ae3d3f930f0b09dce80ca172d129bc25f46c3f22867e34e8b7">a7991861e7a9f4ae</code><br><code title="a7991861e7a9f4ae3d3f930f0b09dce80ca172d129bc25f46c3f22867e34e8b7">a7991861e7a9f4ae</code></td></tr><tr><td>poly1305_sse2.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="ca131519d496215b870bc616a5bf950cb0689cacdbc041b3e2ef4be5267467e4">ca131519d496215b</code><br><code title="ca131519d496215b870bc616a5bf950cb0689cacdbc041b3e2ef4be5267467e4">ca131519d496215b</code></td></tr><tr><td>pwhash_argon2i.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f3327c1a64b2662bfc52a62fc0501ecf72cef003e38fd7e50cdec1dacc15c56d">f3327c1a64b2662b</code><br><code title="f3327c1a64b2662bfc52a62fc0501ecf72cef003e38fd7e50cdec1dacc15c56d">f3327c1a64b2662b</code></td></tr><tr><td>pwhash_argon2i.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3a3383fc56ec4856b5f5fe0f30bce3c6d5d4c6fedf20d675375099f1c36cbd3e">3a3383fc56ec4856</code><br><code title="3a3383fc56ec4856b5f5fe0f30bce3c6d5d4c6fedf20d675375099f1c36cbd3e">3a3383fc56ec4856</code></td></tr><tr><td>pwhash_argon2id.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="438645ba014e25897797a43dad4cf17bf5a63dc88ad14f92399d0dd35a43f578">438645ba014e2589</code><br><code title="438645ba014e25897797a43dad4cf17bf5a63dc88ad14f92399d0dd35a43f578">438645ba014e2589</code></td></tr><tr><td>pwhash_argon2id.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="438645ba014e25897797a43dad4cf17bf5a63dc88ad14f92399d0dd35a43f578">438645ba014e2589</code><br><code title="438645ba014e25897797a43dad4cf17bf5a63dc88ad14f92399d0dd35a43f578">438645ba014e2589</code></td></tr><tr><td>pwhash_scryptsalsa208sha256.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="982c9cc19f6de10bfa30782a59a63f2dba0b87d8ed26efe40d31283b9c095194">982c9cc19f6de10b</code><br><code title="982c9cc19f6de10bfa30782a59a63f2dba0b87d8ed26efe40d31283b9c095194">982c9cc19f6de10b</code></td></tr><tr><td>pwhash_scryptsalsa208sha256.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="9a2c13aa0151cce4cce29e5b1c150d10a283ebf545e792dae1bf0c8ec1494daf">9a2c13aa0151cce4</code><br><code title="9a2c13aa0151cce4cce29e5b1c150d10a283ebf545e792dae1bf0c8ec1494daf">9a2c13aa0151cce4</code></td></tr><tr><td>pwhash_scryptsalsa208sha256_nosse.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3469b47fc96d017d517c2a5a8697934f11a55a49ea950b4204e17da82a32fad4">3469b47fc96d017d</code><br><code title="3469b47fc96d017d517c2a5a8697934f11a55a49ea950b4204e17da82a32fad4">3469b47fc96d017d</code></td></tr><tr><td>pwhash_scryptsalsa208sha256_nosse.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3469b47fc96d017d517c2a5a8697934f11a55a49ea950b4204e17da82a32fad4">3469b47fc96d017d</code><br><code title="3469b47fc96d017d517c2a5a8697934f11a55a49ea950b4204e17da82a32fad4">3469b47fc96d017d</code></td></tr><tr><td>pwhash_scryptsalsa208sha256_sse.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="def90204f4848194530d91ee876108e6ec06c7af3ed6869f90b34b755775f6ac">def90204f4848194</code><br><code title="def90204f4848194530d91ee876108e6ec06c7af3ed6869f90b34b755775f6ac">def90204f4848194</code></td></tr><tr><td>pwhash_scryptsalsa208sha256_sse.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="1c6baf6df8d5494a9a292e2f291b43adf93df40d6110b9c63aed366e95b15023">1c6baf6df8d5494a</code><br><code title="1c6baf6df8d5494a9a292e2f291b43adf93df40d6110b9c63aed366e95b15023">1c6baf6df8d5494a</code></td></tr><tr><td>randombytes_internal_random.ll</td><td>avx2-v3</td><td><span class="archive-status regressed">실패</span><details class="archive-diagnostic"><summary>A 진단 전문</summary><pre>LLVM ERROR: Cannot select: t19: i32,i32,ch = X86ISD::RDRAND t0
+In function: randombytes_internal_random
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v3 -o /private/tmp/pr228359-9i8lk8dc/before.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@randombytes_internal_random&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001041b126c llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001041ae674 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001041b1b9c SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001041099f0 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000104057638 llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x0000000104056a04 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x000000010295eb20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x000000010404d354 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x000000010404c414 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x000000010404a9d4 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000104048074 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000104046554 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x00000001032667e4 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x000000010370de5c llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000103714f30 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x000000010370e684 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x000000010462e730 llcMain + 9904
+20 llc                      0x000000010286dda4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details><details class="archive-diagnostic"><summary>B 진단 전문</summary><pre>LLVM ERROR: Cannot select: t19: i32,i32,ch = X86ISD::RDRAND t0
+In function: randombytes_internal_random
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v3 -o /private/tmp/pr228359-9i8lk8dc/after.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@randombytes_internal_random&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x0000000104255a70 llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x0000000104252e78 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001042563a0 SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001041ae1f4 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x00000001040fbe3c llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x00000001040fb208 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000102a02b20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x00000001040f1b58 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x00000001040f0c18 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x00000001040ef1d8 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x00000001040ec878 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x00000001040ead58 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x000000010330afe8 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x00000001037b2660 llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x00000001037b9734 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x00000001037b2e88 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x00000001046d2f34 llcMain + 9904
+20 llc                      0x0000000102911da4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details></td><td>-6 / -6</td><td><code title="">—</code><br><code title="">—</code></td></tr><tr><td>randombytes_internal_random.ll</td><td>avx512-v4</td><td><span class="archive-status regressed">실패</span><details class="archive-diagnostic"><summary>A 진단 전문</summary><pre>LLVM ERROR: Cannot select: t19: i32,i32,ch = X86ISD::RDRAND t0
+In function: randombytes_internal_random
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v4 -o /private/tmp/pr228359-twk8iq1l/before.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@randombytes_internal_random&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001027a926c llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001027a6674 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001027a9b9c SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x00000001027019f0 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x000000010264f638 llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x000000010264ea04 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x0000000100f56b20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x0000000102645354 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x0000000102644414 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x00000001026429d4 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000102640074 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x000000010263e554 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x000000010185e7e4 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x0000000101d05e5c llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000101d0cf30 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x0000000101d06684 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x0000000102c26730 llcMain + 9904
+20 llc                      0x0000000100e65da4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details><details class="archive-diagnostic"><summary>B 진단 전문</summary><pre>LLVM ERROR: Cannot select: t19: i32,i32,ch = X86ISD::RDRAND t0
+In function: randombytes_internal_random
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: [local-path] -O2 -mtriple=x86_64-unknown-linux-gnu -mcpu=x86-64-v4 -o /private/tmp/pr228359-twk8iq1l/after.s
+1.	Running pass &#x27;Function Pass Manager&#x27; on module &#x27;&lt;stdin&gt;&#x27;.
+2.	Running pass &#x27;X86 DAG-&gt;DAG Instruction Selection&#x27; on function &#x27;@randombytes_internal_random&#x27;
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  llc                      0x00000001060f1a70 llvm::sys::PrintStackTrace(llvm::raw_ostream&amp;, int) + 56
+1  llc                      0x00000001060eee78 llvm::sys::RunSignalHandlers() + 204
+2  llc                      0x00000001060f23a0 SignalHandler(int, __siginfo*, void*) + 328
+3  libsystem_platform.dylib 0x000000018f2a4144 _sigtramp + 56
+4  libsystem_pthread.dylib  0x000000018f29997c pthread_kill + 296
+5  libsystem_c.dylib        0x000000018f19c458 abort + 148
+6  llc                      0x000000010604a1f4 llvm::report_fatal_error(llvm::Twine const&amp;, bool) + 464
+7  llc                      0x0000000105f97e3c llvm::SelectionDAGISel::CannotYetSelect(llvm::SDNode*) + 948
+8  llc                      0x0000000105f97208 llvm::SelectionDAGISel::SelectCodeCommon(llvm::SDNode*, unsigned char const*, unsigned int, unsigned char const*) + 17836
+9  llc                      0x000000010489eb20 (anonymous namespace)::X86DAGToDAGISel::Select(llvm::SDNode*) + 23448
+10 llc                      0x0000000105f8db58 llvm::SelectionDAGISel::DoInstructionSelection() + 1304
+11 llc                      0x0000000105f8cc18 llvm::SelectionDAGISel::CodeGenAndEmitDAG() + 5556
+12 llc                      0x0000000105f8b1d8 llvm::SelectionDAGISel::SelectAllBasicBlocks(llvm::Function const&amp;) + 7012
+13 llc                      0x0000000105f88878 llvm::SelectionDAGISel::runOnMachineFunction(llvm::MachineFunction&amp;) + 656
+14 llc                      0x0000000105f86d58 llvm::SelectionDAGISelLegacy::runOnMachineFunction(llvm::MachineFunction&amp;) + 176
+15 llc                      0x00000001051a6fe8 llvm::MachineFunctionPass::runOnFunction(llvm::Function&amp;) + 620
+16 llc                      0x000000010564e660 llvm::FPPassManager::runOnFunction(llvm::Function&amp;) + 728
+17 llc                      0x0000000105655734 llvm::FPPassManager::runOnModule(llvm::Module&amp;) + 60
+18 llc                      0x000000010564ee88 llvm::legacy::PassManagerImpl::run(llvm::Module&amp;) + 1140
+19 llc                      0x000000010656ef34 llcMain + 9904
+20 llc                      0x00000001047adda4 main + 76
+21 dyld                     0x000000018eec3e80 start + 6688
+</pre></details></td><td>-6 / -6</td><td><code title="">—</code><br><code title="">—</code></td></tr><tr><td>randombytes_sysrandom.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="fa722f2bc969be6c75b3024f3a5758726ac86d82f0c7d1b1fe0be0c2723a1ef7">fa722f2bc969be6c</code><br><code title="fa722f2bc969be6c75b3024f3a5758726ac86d82f0c7d1b1fe0be0c2723a1ef7">fa722f2bc969be6c</code></td></tr><tr><td>randombytes_sysrandom.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="fa722f2bc969be6c75b3024f3a5758726ac86d82f0c7d1b1fe0be0c2723a1ef7">fa722f2bc969be6c</code><br><code title="fa722f2bc969be6c75b3024f3a5758726ac86d82f0c7d1b1fe0be0c2723a1ef7">fa722f2bc969be6c</code></td></tr><tr><td>salsa20_xmm6int-avx2.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="777bdb8a64e4e18660f96acc7e5b1d4f574395fafb11d26ca5ee5e180ec13b31">777bdb8a64e4e186</code><br><code title="777bdb8a64e4e18660f96acc7e5b1d4f574395fafb11d26ca5ee5e180ec13b31">777bdb8a64e4e186</code></td></tr><tr><td>salsa20_xmm6int-avx2.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="54014ae39f7c8cf80c63a0059f2b0051de30f8a7fcab209875f16b696fefa27f">54014ae39f7c8cf8</code><br><code title="54014ae39f7c8cf80c63a0059f2b0051de30f8a7fcab209875f16b696fefa27f">54014ae39f7c8cf8</code></td></tr><tr><td>scalarmult_ed25519_ref10.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="c751bb0c6b4c24065a150c32527acebefc2235600b51ba4d3228e85b4b8c59bb">c751bb0c6b4c2406</code><br><code title="c751bb0c6b4c24065a150c32527acebefc2235600b51ba4d3228e85b4b8c59bb">c751bb0c6b4c2406</code></td></tr><tr><td>scalarmult_ed25519_ref10.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="1a955068241a78da4ab35ce39fd2b7f9e32895c50e5375be8f6a17e48736b0f9">1a955068241a78da</code><br><code title="1a955068241a78da4ab35ce39fd2b7f9e32895c50e5375be8f6a17e48736b0f9">1a955068241a78da</code></td></tr><tr><td>secretbox_xchacha20poly1305.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f3af561b0e8ac2c6fb658afd9cf46eca7f41c312ac021ed7ae539a2d5db2d832">f3af561b0e8ac2c6</code><br><code title="f3af561b0e8ac2c6fb658afd9cf46eca7f41c312ac021ed7ae539a2d5db2d832">f3af561b0e8ac2c6</code></td></tr><tr><td>secretbox_xchacha20poly1305.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="f3af561b0e8ac2c6fb658afd9cf46eca7f41c312ac021ed7ae539a2d5db2d832">f3af561b0e8ac2c6</code><br><code title="f3af561b0e8ac2c6fb658afd9cf46eca7f41c312ac021ed7ae539a2d5db2d832">f3af561b0e8ac2c6</code></td></tr><tr><td>secretbox_xsalsa20poly1305.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="c7d98fe800a14ff0cf1709bccec04fc7ef746622701cc74166c5b92d4db32ba3">c7d98fe800a14ff0</code><br><code title="c7d98fe800a14ff0cf1709bccec04fc7ef746622701cc74166c5b92d4db32ba3">c7d98fe800a14ff0</code></td></tr><tr><td>secretbox_xsalsa20poly1305.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="c7d98fe800a14ff0cf1709bccec04fc7ef746622701cc74166c5b92d4db32ba3">c7d98fe800a14ff0</code><br><code title="c7d98fe800a14ff0cf1709bccec04fc7ef746622701cc74166c5b92d4db32ba3">c7d98fe800a14ff0</code></td></tr><tr><td>secretstream_xchacha20poly1305.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3abbb0ebee240b9bc1cdef3a311a5f0d7789d2698e9d758151d8dd6629755298">3abbb0ebee240b9b</code><br><code title="3abbb0ebee240b9bc1cdef3a311a5f0d7789d2698e9d758151d8dd6629755298">3abbb0ebee240b9b</code></td></tr><tr><td>secretstream_xchacha20poly1305.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="3abbb0ebee240b9bc1cdef3a311a5f0d7789d2698e9d758151d8dd6629755298">3abbb0ebee240b9b</code><br><code title="3abbb0ebee240b9bc1cdef3a311a5f0d7789d2698e9d758151d8dd6629755298">3abbb0ebee240b9b</code></td></tr><tr><td>shorthash_siphash24_ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="d1bf5a1e9cc5b25b5952759caab62a68e1b03fda5f24df55c80c284f70153868">d1bf5a1e9cc5b25b</code><br><code title="d1bf5a1e9cc5b25b5952759caab62a68e1b03fda5f24df55c80c284f70153868">d1bf5a1e9cc5b25b</code></td></tr><tr><td>shorthash_siphash24_ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="d1bf5a1e9cc5b25b5952759caab62a68e1b03fda5f24df55c80c284f70153868">d1bf5a1e9cc5b25b</code><br><code title="d1bf5a1e9cc5b25b5952759caab62a68e1b03fda5f24df55c80c284f70153868">d1bf5a1e9cc5b25b</code></td></tr><tr><td>shorthash_siphashx24_ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="59a967398da79ceafae40f9b8a157f11dfd0fc315db6d80031172931bd8bc191">59a967398da79cea</code><br><code title="59a967398da79ceafae40f9b8a157f11dfd0fc315db6d80031172931bd8bc191">59a967398da79cea</code></td></tr><tr><td>shorthash_siphashx24_ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="59a967398da79ceafae40f9b8a157f11dfd0fc315db6d80031172931bd8bc191">59a967398da79cea</code><br><code title="59a967398da79ceafae40f9b8a157f11dfd0fc315db6d80031172931bd8bc191">59a967398da79cea</code></td></tr><tr><td>softaes.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6edc791cb1ec99885657b1722f32fb5486ed0ae6ac258e6adcd5e221d772a8b5">6edc791cb1ec9988</code><br><code title="6edc791cb1ec99885657b1722f32fb5486ed0ae6ac258e6adcd5e221d772a8b5">6edc791cb1ec9988</code></td></tr><tr><td>softaes.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="5d01a56dcefb277cee1cf5a2d767a124cb92e8adfe4c43168ed4f116abbf50b2">5d01a56dcefb277c</code><br><code title="5d01a56dcefb277cee1cf5a2d767a124cb92e8adfe4c43168ed4f116abbf50b2">5d01a56dcefb277c</code></td></tr><tr><td>stream_salsa2012_ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="1b7f4efe75ea6354e1cdb4d7595b01000d2c22b4cd7bc598e178cb265f3ffa60">1b7f4efe75ea6354</code><br><code title="1b7f4efe75ea6354e1cdb4d7595b01000d2c22b4cd7bc598e178cb265f3ffa60">1b7f4efe75ea6354</code></td></tr><tr><td>stream_salsa2012_ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="1b7f4efe75ea6354e1cdb4d7595b01000d2c22b4cd7bc598e178cb265f3ffa60">1b7f4efe75ea6354</code><br><code title="1b7f4efe75ea6354e1cdb4d7595b01000d2c22b4cd7bc598e178cb265f3ffa60">1b7f4efe75ea6354</code></td></tr><tr><td>stream_salsa208_ref.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6ab6f2d9ba636b9063da5e8cc474ccf7335bdba7408513a067ccd27c85f351bd">6ab6f2d9ba636b90</code><br><code title="6ab6f2d9ba636b9063da5e8cc474ccf7335bdba7408513a067ccd27c85f351bd">6ab6f2d9ba636b90</code></td></tr><tr><td>stream_salsa208_ref.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="6ab6f2d9ba636b9063da5e8cc474ccf7335bdba7408513a067ccd27c85f351bd">6ab6f2d9ba636b90</code><br><code title="6ab6f2d9ba636b9063da5e8cc474ccf7335bdba7408513a067ccd27c85f351bd">6ab6f2d9ba636b90</code></td></tr><tr><td>utils.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="e2dc111e9dc07e01779422e30dbb98d420dea7fc8b45c96b3c70e6f8659a8b93">e2dc111e9dc07e01</code><br><code title="e2dc111e9dc07e01779422e30dbb98d420dea7fc8b45c96b3c70e6f8659a8b93">e2dc111e9dc07e01</code></td></tr><tr><td>utils.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="e2dc111e9dc07e01779422e30dbb98d420dea7fc8b45c96b3c70e6f8659a8b93">e2dc111e9dc07e01</code><br><code title="e2dc111e9dc07e01779422e30dbb98d420dea7fc8b45c96b3c70e6f8659a8b93">e2dc111e9dc07e01</code></td></tr><tr><td>verify.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="04459c7b75e7a2b797b5f07f231f0b1d77faa6caab965761e01ef63e662e2d99">04459c7b75e7a2b7</code><br><code title="04459c7b75e7a2b797b5f07f231f0b1d77faa6caab965761e01ef63e662e2d99">04459c7b75e7a2b7</code></td></tr><tr><td>verify.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="4c2187505cde2454e6edaa5d133abfa9961834c0bd84eb5db392a0f4bf85f304">4c2187505cde2454</code><br><code title="4c2187505cde2454e6edaa5d133abfa9961834c0bd84eb5db392a0f4bf85f304">4c2187505cde2454</code></td></tr><tr><td>x25519_ref10.ll</td><td>avx2-v3</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="49167ced5b5dce696229d03a331f0b45cbce881284362d7e5d9d184f05b0d33b">49167ced5b5dce69</code><br><code title="49167ced5b5dce696229d03a331f0b45cbce881284362d7e5d9d184f05b0d33b">49167ced5b5dce69</code></td></tr><tr><td>x25519_ref10.ll</td><td>avx512-v4</td><td><span class="archive-status uncertain">동일</span></td><td>0 / 0</td><td><code title="7e0928ee15d3cee195ae17c8d9c312f3ae0a1546de26272efa1c874004d11fd6">7e0928ee15d3cee1</code><br><code title="7e0928ee15d3cee195ae17c8d9c312f3ae0a1546de26272efa1c874004d11fd6">7e0928ee15d3cee1</code></td></tr></tbody></table></div></article><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../../about.html">편집 기준과 출처</a><br><a href="../../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

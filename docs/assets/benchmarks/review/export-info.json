@@ -1,0 +1,49 @@
+{
+  "reviewed": "2026-10-18",
+  "source": "benchmark-detail-log",
+  "scope": "원시 파일에서 측정 수치와 입력·순서·반환 코드 열을 그대로 옮겼습니다. 서버 경로·명령·태그·환경 및 실행 로그 본문은 포함하지 않았습니다.",
+  "units": {
+    "user_cpu_seconds": "초",
+    "system_cpu_seconds": "초",
+    "elapsed_seconds": "초",
+    "max_rss_kib": "KiB",
+    "reduction_percent": "100 × (1 − B/A 쌍 비율의 산술평균)"
+  },
+  "pair_number": "CSV의 pair는 0부터 시작합니다. 웹 표와 차트는 같은 순서에 1을 더해 표시합니다.",
+  "AA": "동일한 A 실행 파일끼리의 대조입니다. side A/B는 쌍에서의 역할이며 코드 변형을 뜻하지 않습니다.",
+  "trim": "retained_in_main_trim은 원보고에서 비율이 가장 작은 쌍과 가장 큰 쌍을 각각 하나 제외한 주 집계의 포함 여부입니다. 재검토는 전체 쌍을 사용했습니다.",
+  "source_sha256": [
+    {
+      "name": "paired-ratios.csv",
+      "sha256": "8aeb162a102215ca705e21b2c8ccc2883b5ccb4a33b9301e2fb8751a9fc9d3dd"
+    },
+    {
+      "name": "raw-observations.csv",
+      "sha256": "cdf532ab9ad60088b4527c1771af3ba6ec8258264d90c54325aeaeacc69a771d"
+    },
+    {
+      "name": "case-results.csv",
+      "sha256": "7944fcdb3cf405cb82a6a5fd31959a1cd03b1635050c66d48038bb8c9f0725c4"
+    },
+    {
+      "name": "AA-results.csv",
+      "sha256": "0d363d653b9e619a16de7375be537e11f9e11aee54c2cbe6d8200cda30f98eb7"
+    },
+    {
+      "name": "summary.json",
+      "sha256": "7da1787b267464276d005fbeab799c7aae98430d1fc977ed60c9b7b331372793"
+    },
+    {
+      "name": "hardware-summary.json",
+      "sha256": "1b09e066b0ee62b263bacf5a33e27f0c2f15c23fcb64123b1f9e1aa106905314"
+    }
+  ],
+  "exports": {
+    "contribution-links.csv": "5d781964cbadbf6aeeb197870da33b3db511b6f85d0f017d16d8de9c53179ed6",
+    "contribution-links.json": "0f2df9232ccc9a14db8562666136334d4aa3299c9eb93c64d9bc1f201d092a71",
+    "paired-observations.csv": "b89df767232810990363d568eb25fd2e2f820b0963669b038161b0834e6a3233",
+    "raw-measurements.csv": "977537054b554896115f1596f6ac2c273d7b67693717eeb829837e20678fb79a",
+    "repeat-analysis.json": "84a308435af74fcb510932b96bfada0150015e8690de6c8fd177044207717561",
+    "repeat-summary.csv": "2a15419c3311eb92f2180a95c6cbb709e19ef2b5c55b6cf9ff2e49ac5ae9e0e0"
+  }
+}

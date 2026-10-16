@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="NaN 검사 결합을 분석하며 poison의 전파와 refinement의 방향을 구분한다."><meta name="theme-color" content="#fbfaf7"><title>fcmp ord 결합에서 freeze가 필요한 이유 · LLVM 멘티 기술 문서</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css?v=41429de5fd03"><script defer src="../assets/site.js?v=28009b539b2a"></script></head><body id="top"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../index.html" class="nav-articles active" aria-current="page">문서</a><a href="../results.html" class="nav-results">기여 결과</a><a href="../benchmarks.html" class="nav-benchmarks">벤치마크</a><a href="../sources/index.html" class="nav-sources">자료</a><a href="../glossary.html" class="nav-glossary">용어</a><a href="../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details open><summary>라민우<span class="count">02</span></summary><ul><li><a href="../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../articles/fcmp-ord-refinement.html" aria-current="page">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details><summary>이하동<span class="count">03</span></summary><ul><li><a href="../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main source-page article-main"><div class="breadcrumb"><a href="../index.html">문서</a><span>/</span>라민우</div><div class="article-layout"><article class="article"><header class="article-header"><div class="eyebrow">COMPLETE DOCUMENT / PDF</div><h1>fcmp ord 결합에서 freeze가 필요한 이유</h1><p class="article-lead">NaN 검사 결합을 분석하며 poison의 전파와 refinement의 방향을 구분한다.</p><div class="article-meta"><strong>자료 라민우</strong><span>기존 패치 분석</span><span>PDF 원자료 · 25쪽</span><span>전문 수록</span></div><div class="article-tools"><button type="button" data-font aria-pressed="false">글자 크게</button><button type="button" data-print><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V9h18v8h-4M7 14h10v7H7z"/></svg>인쇄 / PDF</button><a href="#source-materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 15 6-6M7 11l-3 3a4 4 0 0 0 6 6l3-3M11 7l3-3a4 4 0 0 1 6 6l-3 3"/></svg>다른 버전 보기</a></div></header><p class="complete-notice">LLVM_Issue_49175.pdf의 전체 내용입니다. 설명·코드·표·검증 기록을 생략하지 않고 옮겼습니다. 그림 안의 문자 인식 결과에는 기호 오류가 있을 수 있어 이미지도 함께 제공합니다.</p><div class="reading-mode" role="group" aria-label="문서 읽기 방식"><span>읽기 방식</span><button type="button" data-reading="text" aria-pressed="true">본문과 그림</button><button type="button" data-reading="layout" aria-pressed="false">원래 페이지 배치</button><small>두 보기 모두 이 페이지에서 확인할 수 있습니다.</small></div><details class="mobile-toc"><summary>이 문서의 목차</summary><nav aria-label="이 문서의 목차"><a href="#page-1">01 · LLVM Issue 분석 (#49175) / Missing FP …</a><a href="#page-2">02 · Background : fcmp ordered / unordere…</a><a href="#page-3">03 · Issue (1)</a><a href="#page-4">04 · Issue (2) - alive2</a><a href="#page-5">05 · Issue (2) - alive2 / ninf ? -&gt; ‘만약 I…</a><a href="#page-6">06 · Issue (2) - alive2 / %c, 0.0 둘 다 NaN…</a><a href="#page-7">07 · Issue (2) - alive2 / %d, 0.0 둘 다 NaN…</a><a href="#page-8">08 · Issue (2) - alive2 / %d, 0.0 둘 다 NaN…</a><a href="#page-9">09 · Issue (2) - alive2 / “%c 와 %d 가 NaN …</a><a href="#page-10">10 · Issue (2) - alive2 / %c, %d 가 NaN 이 …</a><a href="#page-11">11 · Analysis / 1. src 에서 ‘ninf’ 유/무가 어떤 …</a><a href="#page-12">12 · Analysis(1) / src 에서 ‘ninf’ 유/무가 어떤 …</a><a href="#page-13">13 · Analysis(2) / tgt 의 fcmp 에선 ninf 가 왜…</a><a href="#page-14">14 · Analysis(2) / Poison(P),NaN(N),Inf(I…</a><a href="#page-15">15 · Analysis(2)</a><a href="#page-16">16 · Analysis(3) - 왜 최적화인가? / WHY? / -&gt; F…</a><a href="#page-17">17 · Analysis(4) / 왜 freeze 는 %c 에 대해서만 ?…</a><a href="#page-18">18 · Analysis(4) / 왜 freeze 는 %c 에 대해서만 ?…</a><a href="#page-19">19 · Analysis(4) / ???? %d 가 poison 인 경우,…</a><a href="#page-20">20 · Analysis(5) - Refinement / AI 에게 표를 …</a><a href="#page-21">21 · Analysis(5) - Refinement / 컴파일러 정확성은…</a><a href="#page-22">22 · Patch / 이미 fold 는 / 존재함.</a><a href="#page-23">23 · Patch / 이미 fold 는 / 존재함.</a><a href="#page-24">24 · Patch / 기존 fold 를 막는 !IsLogicalSelec…</a><a href="#page-25">25 · Reference / Issue https://github.com…</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav></details><section class="doc-section full-source-section" data-source="s013" data-page="1" id="page-1"><div class="page-marker"><span>PDF · 01 / 25</span></div><h2 class="page-title">LLVM Issue 분석 (#49175) / Missing FP optimization opportunities for fcmp ord operations / and refinement</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>LLVM Issue 분석 (#49175) Missing FP optimization opportunities for fcmp ord operations and reﬁnement</p></div><div class="pdf-region"><p>라민우</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/001.webp" aria-label="LLVM_Issue_49175.pdf 1쪽 확대"><img src="../assets/pages/s013/001.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 1쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 1/25</span><a href="../assets/pages/s013/001.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="2" id="page-2"><div class="page-marker"><span>PDF · 02 / 25</span></div><h2 class="page-title">Background : fcmp ordered / unordered / fcmp ord : 둘 다 NaN 이 아니다. / fcmp uno : 하나라도 NaN 이다.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Background : fcmp ordered / unordered</p></div><div class="pdf-region"><p>fcmp ord : 둘 다 NaN 이 아니다.</p></div><div class="pdf-region"><p>fcmp uno : 하나라도 NaN 이다.</p></div><div class="pdf-region"><p>예) fcmp ord x, 0.0</p></div><div class="pdf-region"><p>“x 와 0.0 둘 다 NaN 이 아니다”</p></div><div class="pdf-region"><p>= “x 가 NaN 이 아니다.”</p></div><div class="pdf-region"><p>https://llvm.org/doxygen/InstrTypes_8h_source.html#l00750</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-002-01.webp"><img src="../assets/figures/s013-002-01.webp" width="896" height="581" alt="라민우 자료 2쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>2쪽 · 그림 1 <a href="../assets/figures/s013-002-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>class CmpInst : public Instruction {
+729
+constexpr static IntrusiveOperandsA1locMarker AllocMarker{2};
+730
+731
+public:
+732
+/// This enumeration lists the possible predicates for CmpInst subclasses.
+Values in the range 0-31 are reserved for FCmpInst, while values in the
+733
+734
+range 32-64 are reserved for Icmpinst. This is necessary to ensure the
+735
+predicate values are not overlapping between the classes.
+736
+737
+// Some passes (e.g. InstCombine) depend on the bit-wise characteristics o
+738
+/// FCMP_* values. Changing the bit patterns requires a potential change to
+739
+// / those passes-
+enum Predicate : unsigned {
+740 년
+741
+// Opcode
+ULGE
+Intuitive operation
+742
+FCMP_FALSE = 0, 1//&lt;0000
+Always false (always folded)
+1&lt; 00 0 1
+743
+FCMP_OEQ = 1,
+True if ondered and equal
+744
+FCMP_OGT = 2,
+&lt;0 0 1 0
+True if ordered and greater than
+745
+FCMP_OGE = 3,
+0 0 1 1
+True if ordered and greater than on equal
+746
+FCMP_OLT = 4,
+True if ondered and less than
+0 9
+747
+FCMP OLE
+5
+&lt;0101
+True
+if ordered and less than on &#x27;eaual
+748
+FCMP
+ONE
+;ㄷ
+ondened and onerands ane uneaual
+True if ordered (no nans)
+74g
+FCMP_ORD = 7,
+///&lt; 011
+if unordered: isnan(x) | isnan(y)
+750
+FCMP UNO
+8,
+1//&lt; 10 0 0
+True
+751
+FCMP_UEQ =
+9,
+/&lt;10 0 1
+Tnue
+if unondered or equal
+FCMP UGT
+10,
+True
+if unordered or greater than</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><div class="page-links"><h3>이 페이지에 연결된 자료</h3><ul><li><a href="https://llvm.org/doxygen/InstrTypes_8h_source.html#l00750" rel="noopener noreferrer">https://llvm.org/doxygen/InstrTypes_8h_source.html#l00750</a></li></ul></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/002.webp" aria-label="LLVM_Issue_49175.pdf 2쪽 확대"><img src="../assets/pages/s013/002.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 2쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 2/25</span><a href="../assets/pages/s013/002.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="3" id="page-3"><div class="page-marker"><span>PDF · 03 / 25</span></div><h2 class="page-title">Issue (1)</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (1)</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-003-01.webp"><img src="../assets/figures/s013-003-01.webp" width="839" height="890" alt="라민우 자료 3쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>3쪽 · 그림 1 <a href="../assets/figures/s013-003-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Extended Description
+: Excerpted from llvm/test/Transforms/InstCombine/and-fcmp.ll
+define 11 e_commute_Jogical(11 %z, f1oat 8c, f1oat 8d) {
+%ordl = fcmp ninf ord float %c, 0.0
+%and = select 11 %ordl, 11 %, 11 false
+%ord2 = fcmp ninf reassoc ord float %d, 0.0
+%r = select 11 %ord2, 11 %and, 11 false
+ret i1 %r
+This can be optimized to
+%c.fr = freeze float %c
+%ord1 = fcmp ond float %c.fr, %d
+%r = Select 11 %ord1, 11 %z, 11 false
+Alive2 link https://alive2.llvm.org/ce/z/QfkJak</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s013-003-02.webp"><img src="../assets/figures/s013-003-02.webp" width="538" height="69" alt="라민우 자료 3쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>3쪽 · 그림 2 <a href="../assets/figures/s013-003-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>aqjune opened on Apr 4, 2021</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/003.webp" aria-label="LLVM_Issue_49175.pdf 3쪽 확대"><img src="../assets/pages/s013/003.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 3쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 3/25</span><a href="../assets/pages/s013/003.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="4" id="page-4"><div class="page-marker"><span>PDF · 04 / 25</span></div><h2 class="page-title">Issue (2) - alive2</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (2) - alive2</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-004-01.webp"><img src="../assets/figures/s013-004-01.webp" width="912" height="674" alt="라민우 자료 4쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>4쪽 · 그림 1 <a href="../assets/figures/s013-004-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 asrc(i1 %, float %c, float %d) {
+%ordl = fcmp ninf ord float %C, 0.0
+%and = select i1 %ordl, i1 %, i1 false
+%ord2 = fcmp ninf ord float %d, 0.0
+%r = select i1 %ord2, 11 %and, i1 false
+ret i1 %r
+define i1 @tgt (11 %, float %c, float %d) {
+9
+%c.fr = freeze float %c
+10
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %z, i1 false
+13
+ret i1 %r
+14
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/004.webp" aria-label="LLVM_Issue_49175.pdf 4쪽 확대"><img src="../assets/pages/s013/004.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 4쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 4/25</span><a href="../assets/pages/s013/004.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="5" id="page-5"><div class="page-marker"><span>PDF · 05 / 25</span></div><h2 class="page-title">Issue (2) - alive2 / ninf ? -&gt; ‘만약 Inf라면, 이 명령의 결과는 / poison이 된다’</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s013-p5-heading-1">Issue (2) - alive2</h3></div><div class="pdf-region"><p>ninf ? -&gt; ‘만약 Inf라면, 이 명령의 결과는 poison이 된다’</p></div><div class="pdf-region"><p>float -&gt; 32B.</p></div><div class="pdf-region"><p>tmi#1) type 엔 float 뿐만 아니라 half,bfloat,double,... 그리고 Vector 도 올 수 있음.</p></div><div class="pdf-region"><p>tmi#2) fast-math flags 는 왜 필요한가?</p></div><div class="pdf-region"><p>부동소수엔 특수값 ±Inf, NaN, ±0 이 존재함.</p></div><div class="pdf-region"><p>=&gt; 컴파일러는 위 특수 Case 를 전부 보존해야 함 =&gt; 최적화가 어려워짐.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-005-01.webp"><img src="../assets/figures/s013-005-01.webp" width="1162" height="192" alt="라민우 자료 5쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>5쪽 · 그림 1 <a href="../assets/figures/s013-005-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>&#x27; fcmp &#x27; Instruction
+Syntax:
+sult〉= fcmp [fast-math flagsj* &lt;condy &lt;ty&gt; &lt;op1&gt;, &lt;op2&gt;
+j yields i1 or &lt;N x i1&gt;: result</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s013-005-02.webp"><img src="../assets/figures/s013-005-02.webp" width="912" height="674" alt="라민우 자료 5쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>5쪽 · 그림 2 <a href="../assets/figures/s013-005-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(i1 %2, float %c, fluat %d) {
+1
+2
+%ord1 = fcmp ninf ord float %c, 0.6
+%and = select 11 %ord1, 11 %Z, 11 false
+%ord2 =fcmp ninf ord float %d, 0.0
+%r = Select 11 %ord2, i1 %and, i1 false
+ret 11 %r
+9
+define i1 atgt(i1 %z, float %c, float %d) {
+10
+%c.fr = freeze float %c
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %z, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/005.webp" aria-label="LLVM_Issue_49175.pdf 5쪽 확대"><img src="../assets/pages/s013/005.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 5쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 5/25</span><a href="../assets/pages/s013/005.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="6" id="page-6"><div class="page-marker"><span>PDF · 06 / 25</span></div><h2 class="page-title">Issue (2) - alive2 / %c, 0.0 둘 다 NaN 이 아니면 ord1 은 / true. =&gt; %and 는 곧 %z.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (2) - alive2</p></div><div class="pdf-region"><p>%c, 0.0 둘 다 NaN 이 아니면 ord1 은 true. =&gt; %and 는 곧 %z.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-006-01.webp"><img src="../assets/figures/s013-006-01.webp" width="912" height="674" alt="라민우 자료 6쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>6쪽 · 그림 1 <a href="../assets/figures/s013-006-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(11 %, float %c, float %d) {
+1
+%ord1 = fcmp ninf ord float %c, 0.0
+%and= select 11 %ord1, 11 %Z, i1 false
+%ord2 = fcmp ninf ord float %d, 0.0
+%r = Select i1 %ord2, 11 %and, i1 false
+ret 11 %r
+9
+define i1 Otgt(11 %z, float %c, float %d) {
+10
+%c.fr = freeze float %c
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %z, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/006.webp" aria-label="LLVM_Issue_49175.pdf 6쪽 확대"><img src="../assets/pages/s013/006.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 6쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 6/25</span><a href="../assets/pages/s013/006.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="7" id="page-7"><div class="page-marker"><span>PDF · 07 / 25</span></div><h2 class="page-title">Issue (2) - alive2 / %d, 0.0 둘 다 NaN 이 아니면 ord2 는 / true.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (2) - alive2</p></div><div class="pdf-region"><p>%d, 0.0 둘 다 NaN 이 아니면 ord2 는 true.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-007-01.webp"><img src="../assets/figures/s013-007-01.webp" width="912" height="674" alt="라민우 자료 7쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>7쪽 · 그림 1 <a href="../assets/figures/s013-007-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(11 %, float %c, float %d) {
+1
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select 11 %ord1, 11 %, i1 false
+%0rd2 = fcmp ninf ord float %d, 0.0
+%r = select 11 %ord2, 11 %and, i1 false
+ret 11 %r
+9
+define i1 @tgt(11 %z, float %c, float %d) {
+10
+%c.fr = freeze float %c
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/007.webp" aria-label="LLVM_Issue_49175.pdf 7쪽 확대"><img src="../assets/pages/s013/007.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 7쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 7/25</span><a href="../assets/pages/s013/007.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="8" id="page-8"><div class="page-marker"><span>PDF · 08 / 25</span></div><h2 class="page-title">Issue (2) - alive2 / %d, 0.0 둘 다 NaN 이 아니면 ord2 는 / true. =&gt; %r 은 %and</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (2) - alive2</p></div><div class="pdf-region"><p>%d, 0.0 둘 다 NaN 이 아니면 ord2 는 true. =&gt; %r 은 %and</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-008-01.webp"><img src="../assets/figures/s013-008-01.webp" width="912" height="674" alt="라민우 자료 8쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>8쪽 · 그림 1 <a href="../assets/figures/s013-008-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(11 %, float %c, float %d) {
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select 11 %ord1, 11 %, i1 false
+%ord2 =fcmp ninf ord float %d, 0.0
+%r = select i1 %ord2, i1 %and, i1 false
+ret 11 %r
+9
+define i1 Otgt(11 %z, float %c, float %d) {
+10
+%c.fr = freeze float %c
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/008.webp" aria-label="LLVM_Issue_49175.pdf 8쪽 확대"><img src="../assets/pages/s013/008.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 8쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 8/25</span><a href="../assets/pages/s013/008.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="9" id="page-9"><div class="page-marker"><span>PDF · 09 / 25</span></div><h2 class="page-title">Issue (2) - alive2 / “%c 와 %d 가 NaN 이 / 아니라면, %z 를</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (2) - alive2</p></div><div class="pdf-region"><p>“%c 와 %d 가 NaN 이 아니라면, %z 를 반환한다.” (아닌경우 false 를 반환)</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-009-01.webp"><img src="../assets/figures/s013-009-01.webp" width="912" height="674" alt="라민우 자료 9쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>9쪽 · 그림 1 <a href="../assets/figures/s013-009-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(11 %z, float %c, float %d)
+1
+bordl = fcmp ninf ord float %c, 0.0
+%and = select 11 %ord1, 11 %, i1 false
+%ord2 =fcmp ninf ord float %d, 0.0
+%r = Select i1 %ord2, i1 %and, i1 false
+ret 11 %r
+9
+define i1 atgt(i1 %z, float %c, float %d) {
+%c.fr = freeze float %c
+10
+%ordl = fcmp ord float %c.fr, %d
+11
+12
+%r = select 11 %ord1, 11 %z, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/009.webp" aria-label="LLVM_Issue_49175.pdf 9쪽 확대"><img src="../assets/pages/s013/009.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 9쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 9/25</span><a href="../assets/pages/s013/009.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="10" id="page-10"><div class="page-marker"><span>PDF · 10 / 25</span></div><h2 class="page-title">Issue (2) - alive2 / %c, %d 가 NaN 이 아니라면 %z 를 / 반환한다.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (2) - alive2</p></div><div class="pdf-region"><p>%c, %d 가 NaN 이 아니라면 %z 를 반환한다.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-010-01.webp"><img src="../assets/figures/s013-010-01.webp" width="789" height="268" alt="라민우 자료 10쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>10쪽 · 그림 1 <a href="../assets/figures/s013-010-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>freeze&#x27; Instruction
+Syntax;
+&lt;result&gt;=
+ireezel
+ty &lt;val&gt; j yields ty:result
+Overview:
+The &#x27; freeze &quot; instruction is used to stop propagation of undef and poison values.</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s013-010-02.webp"><img src="../assets/figures/s013-010-02.webp" width="912" height="674" alt="라민우 자료 10쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>10쪽 · 그림 2 <a href="../assets/figures/s013-010-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(11 %z, float %c, float %d) {
+bordl = fcmp ninf ord float %c, 0.0
+%and = select 11 %ordl, 11 %, i1 false
+%ord2 =fcmp ninf ord float %d, 0.0
+%r = select 11 %ord2, 11 %and, i1 false
+ret 11 %r
+}
+9
+define il @tgt(i1 %z, float %c, float %d) {
+10
+%c.fr = freeze float %c
+%ord1 = fcmp ord float %c.fr, %d
+11
+12
+%r = select 11 %ord1, 11 %z, i1 false
+13
+ret 11 %r
+14
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s013-010-03.webp"><img src="../assets/figures/s013-010-03.webp" width="789" height="78" alt="라민우 자료 10쪽의 코드·설명 그림 3" loading="lazy" decoding="async"></a><figcaption>10쪽 · 그림 3 <a href="../assets/figures/s013-010-03.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Semantics:
+If the argument is undef or poison, &#x27;freeze&#x27; returns an arbitrary, but fixed, value of type &#x27;ty :</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/010.webp" aria-label="LLVM_Issue_49175.pdf 10쪽 확대"><img src="../assets/pages/s013/010.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 10쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 10/25</span><a href="../assets/pages/s013/010.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="11" id="page-11"><div class="page-marker"><span>PDF · 11 / 25</span></div><h2 class="page-title">Analysis / 1. src 에서 ‘ninf’ 유/무가 어떤 차이를 / 만드는가?</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis</p></div><div class="pdf-region"><p class="source-bullet">1. src 에서 ‘ninf’ 유/무가 어떤 차이를</p><p>만드는가?</p></div><div class="pdf-region"><p class="source-bullet">2. tgt 의 fcmp 에선 ninf 가 왜</p><p>빠졌는가? 넣으면 의미가 달라지는가?</p></div><div class="pdf-region"><p class="source-bullet">3. 왜 tgt 가 최적화인것인가?</p></div><div class="pdf-region"><p class="source-bullet">4. 왜 freeze 는 %c 에 대해서만 ?</p></div><div class="pdf-region"><p class="source-bullet">5. Refinement</p><h3 id="s013-p11-heading-1">🤔</h3></div></div><figure class="source-figure"><a href="../assets/figures/s013-011-01.webp"><img src="../assets/figures/s013-011-01.webp" width="912" height="674" alt="라민우 자료 11쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>11쪽 · 그림 1 <a href="../assets/figures/s013-011-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(i1 %, float %c, float %d) {
+1
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select 11 %ordl, 11 %, i1 false
+%ord2 =fcmp ninf ord float %d, 0.0
+%r = select 11 %ord2, 11 %and, i1 false
+ret 11 %r
+9
+define i1 @tgt(i1 %z, float %c, float %d) {
+10
+%c.tr = freeze float %c
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %z, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s013-011-02.webp"><img src="../assets/figures/s013-011-02.webp" width="152" height="144" alt="라민우 자료 11쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>11쪽 · 그림 2 <a href="../assets/figures/s013-011-02.webp">확대해서 보기 ↗</a></figcaption></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/011.webp" aria-label="LLVM_Issue_49175.pdf 11쪽 확대"><img src="../assets/pages/s013/011.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 11쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 11/25</span><a href="../assets/pages/s013/011.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="12" id="page-12"><div class="page-marker"><span>PDF · 12 / 25</span></div><h2 class="page-title">Analysis(1) / src 에서 ‘ninf’ 유/무가 어떤 차이를 / 만드는가?</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(1)</p></div><div class="pdf-region"><p>src 에서 ‘ninf’ 유/무가 어떤 차이를 만드는가?</p></div><div class="pdf-region"><p>가정 : ‘%c 가 무한대인 경우’</p></div><div class="pdf-region"><p>‘ninf’가 있다면…  =&gt; %ord1 은 poison</p></div><div class="pdf-region"><p>‘ninf’ 가 없다면… =&gt; %ord1 은 true (무한대는 NaN 이 아니기 때문)</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-012-01.webp"><img src="../assets/figures/s013-012-01.webp" width="912" height="674" alt="라민우 자료 12쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>12쪽 · 그림 1 <a href="../assets/figures/s013-012-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 asrc(i1 %z, float %c, float %d) {
+1
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select 11 %ordl, 11 %, i1 false
+%ord2 = fcmp ninf ord float %d, 0.0
+%r = Select 11 %ord2, 11 %and, i1 false
+ret 11 %r
+9
+define i1 atgt(11 %z, float %c, float %d) {
+10
+%c.tr = freeze float %c
+%ordl = fcmp ord float %c.fr, %d
+11
+12
+%r = select 11 %ord1, 11 %z, i1 false
+ret 11 %r
+13
+14
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/012.webp" aria-label="LLVM_Issue_49175.pdf 12쪽 확대"><img src="../assets/pages/s013/012.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 12쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 12/25</span><a href="../assets/pages/s013/012.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="13" id="page-13"><div class="page-marker"><span>PDF · 13 / 25</span></div><h2 class="page-title">Analysis(2) / tgt 의 fcmp 에선 ninf 가 왜 빠졌는가? / 넣으면 의미가 달라지는가?</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(2)</p></div><div class="table-wrap"><table><tr><th><p>tgt</p></th><th><p>의</p></th><th><p>fcmp</p></th><th><p>에선</p></th><th><p>ninf</p></th><th><p>가</p></th><th></th><th><p>왜</p></th><th></th><th><p>빠졌는가</p></th><th><p>?</p></th><th></th></tr><tr><td><p>넣으면</p></td><td></td><td><p>의미가</p></td><td></td><td><p>달라지는가</p></td><td><p>?</p></td></tr></table></div><div class="pdf-region"><p>-&gt; src 의 인자 경우의 수를 확인해야 함.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-013-01.webp"><img src="../assets/figures/s013-013-01.webp" width="912" height="674" alt="라민우 자료 13쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>13쪽 · 그림 1 <a href="../assets/figures/s013-013-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 asrc(i1 %z, float %c, float %d) {
+1
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select 11 %ordl, 11 %, i1 false
+%ord2 =fcmp ninf ord float %d, 0.0
+%r = Select 11 %ord2, 11 %and, i1 false
+ret 11 %r
+}
+define i1 Otgt(11 %z, float %c, float %d) {
+10
+%c.fr = freeze float %c
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/013.webp" aria-label="LLVM_Issue_49175.pdf 13쪽 확대"><img src="../assets/pages/s013/013.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 13쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 13/25</span><a href="../assets/pages/s013/013.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="14" id="page-14"><div class="page-marker"><span>PDF · 14 / 25</span></div><h2 class="page-title">Analysis(2) / Poison(P),NaN(N),Inf(I),f(F) 라고 / 가정.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(2)</p></div><div class="pdf-region"><p>Poison(P),NaN(N),Inf(I),f(F) 라고 가정.</p></div><div class="pdf-region"><p>c(P)d(P) -&gt; ret 는 P</p></div><div class="pdf-region"><p>c(P/I)d(NaN) -&gt; ret 는 false</p></div><div class="pdf-region"><p>d(P/I) -&gt; ret 는 P</p></div><div class="table-wrap"><table><tr><th><p>src</p></th><th><p>에서</p></th><th><p>c</p></th><th><p>또는</p></th><th><p>d</p></th><th><p>가</p></th><th><p>Inf</p></th><th><p>면</p></th><th></th><th><p>결과는</p></th><th></th></tr><tr><td><p>poison</p></td><td><p>이다</p></td><td><p>.</p></td><td><p>단</p></td><td><p>, &quot;c=Inf</p></td><td><p>이고</p></td><td><p>d=NaN&quot;</p></td></tr><tr><td><p>인</p></td><td></td><td><p>경우만</p></td><td></td><td><p>예외로</p></td><td><p>false</p></td><td><p>가</p></td><td></td><td><p>된다</p></td><td><p>.”</p></td></tr></table></div></div><figure class="source-figure"><a href="../assets/figures/s013-014-01.webp"><img src="../assets/figures/s013-014-01.webp" width="912" height="674" alt="라민우 자료 14쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>14쪽 · 그림 1 <a href="../assets/figures/s013-014-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 asrc(11 %z, float %c, float %d) {
+1
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select 11 %ord1, 11 %, i1 false
+%ord2 = fcmp ninf ord float %d, 0.0
+%r = Select 11 %ord2, 11 %and, i1 false
+ret 11 %r
+9
+define i1 @tgt(i1 %, float %c, float %d) {
+10
+%c.fr = freeze float %c
+%ord1 = fcmp ord float %c.fr, %d
+11
+12
+%r = select 11 %ord1, 11 %z, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/014.webp" aria-label="LLVM_Issue_49175.pdf 14쪽 확대"><img src="../assets/pages/s013/014.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 14쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 14/25</span><a href="../assets/pages/s013/014.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="15" id="page-15"><div class="page-marker"><span>PDF · 15 / 25</span></div><h2 class="page-title">Analysis(2)</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(2)</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-015-01.webp"><img src="../assets/figures/s013-015-01.webp" width="608" height="910" alt="라민우 자료 15쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>15쪽 · 그림 1 <a href="../assets/figures/s013-015-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>detine 11 @tgt(11 %z, float %C, float %d) t
+#O:
+%C.fr = freeze float %c
+%ord1 = fcmp ninf ord float %c.fr, %d
+%r = select i1 %ord1, 11 %z, 110
+ret i1 %r
+}
+Transformation doesn &#x27;t verify!
+ERROR: Target is more poisonous than source
+Example:
+i1 %z = poison
+float %C = #x7f800000 (+00)
+float %d = #x7fc00000 (ONaN)
+Source:
+11 %ord1 = poison
+i1 %and= poi.son
+i1 %ord2 = #x0 (0)
+i1 %r = #×0 (0)
+Target:
+float %c.fr = #1f800000 (+00)
+i1 %ordl = poisan
+i1 %r = poison
+source value: #Xo (o)
+Target value: poison</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s013-015-02.webp"><img src="../assets/figures/s013-015-02.webp" width="790" height="752" alt="라민우 자료 15쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>15쪽 · 그림 2 <a href="../assets/figures/s013-015-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>COMPILER
+Add... ~
+More-
+•EXPLORER
+LLVM IR source #1 X
+A~
+a Save/Load + Add new....- V Vim
+define i1 @src(11 %2, float %c, float %d) {
+1
+234
+%ordl = fcmp ninf ord float %c, 0.0
+%and= Select 11 %ord1, i1 %z, i1 false
+%ord2 = fcmp ninf ord float %d, 0.0
+%r = select i1 %ord2, 11 %and, i1 false
+5
+ret i1 %r
+6
+7
+8
+define i1 @tgt (11 %, float %c, float %d) {
+9
+%c.fr = freeze
+Float %c
+10
+%ordi= fcmp hinf ord float %c.fr, %d
+11
+%r = select 11 %ord1, 11 %, i1 false
+12
+ret i1 %r
+13
+14</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/015.webp" aria-label="LLVM_Issue_49175.pdf 15쪽 확대"><img src="../assets/pages/s013/015.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 15쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 15/25</span><a href="../assets/pages/s013/015.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="16" id="page-16"><div class="page-marker"><span>PDF · 16 / 25</span></div><h2 class="page-title">Analysis(3) - 왜 최적화인가? / WHY? / -&gt; Freeze 는 기계어 명령을 하나도</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(3) - 왜 최적화인가?</p></div><div class="pdf-region"><p>WHY?</p></div><div class="pdf-region"><p>-&gt; Freeze 는 기계어 명령을 하나도 안 만든다. (uninitialized)</p></div><div class="pdf-region"><p>-&gt; 2개의 NaN 검사가 하나로 합쳐짐 (ucomiss xmm0,xmm0 VS ucomiss xmm0,xmm1)</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-016-01.webp"><img src="../assets/figures/s013-016-01.webp" width="913" height="717" alt="라민우 자료 16쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>16쪽 · 그림 1 <a href="../assets/figures/s013-016-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre># @src
+SrC:
+al, dil
+mOV
+ucomisS Xmme, xmme
+setnp CI
+and
+cl, al
+ucomiSS xmml, xmm
+setnp
+al
+and
+al, c1
+8
+9
+ret
+# @tgt
+10
+tgt:
+cl, dil
+11
+mOV
+12
+ucomiss xmmQ, xmml
+13
+setnp
+al
+14
+and
+al, d
+15
+ret</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/016.webp" aria-label="LLVM_Issue_49175.pdf 16쪽 확대"><img src="../assets/pages/s013/016.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 16쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 16/25</span><a href="../assets/pages/s013/016.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="17" id="page-17"><div class="page-marker"><span>PDF · 17 / 25</span></div><h2 class="page-title">Analysis(4) / 왜 freeze 는 %c 에 대해서만 ? / src 를 보면, %d 의 undef/poison 은</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(4)</p></div><div class="pdf-region"><p>왜 freeze 는 %c 에 대해서만 ?</p></div><div class="pdf-region"><p>src 를 보면, %d 의 undef/poison 은 그대로 ret poison 으로 전파된다.</p></div><div class="pdf-region"><p>만약 tgt 의 %d 의 freeze 가 수행될 경우, %ord1 이 poison 되는 경우는 존재하지 않게 된다.</p></div><div class="pdf-region"><p>-&gt; 의미론적으로 달라서 위 형태가 올바름!</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-017-01.webp"><img src="../assets/figures/s013-017-01.webp" width="912" height="674" alt="라민우 자료 17쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>17쪽 · 그림 1 <a href="../assets/figures/s013-017-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(i1 %2, float %c, float %d) {
+1
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select 11 %ord1, 11 %, 11 false
+%ord2 = fcmp ninf ord float %d, 0.0
+%r = select i1 %ord2, i1 %and, i1 false
+ret i1 %r
+}
+9
+define i1 Otgt(i1%, float %c, float %d) {
+10
+%c.tr = freeze float %c
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %z, i1 false
+ret 11 %r
+13
+14
+}
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/017.webp" aria-label="LLVM_Issue_49175.pdf 17쪽 확대"><img src="../assets/pages/s013/017.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 17쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 17/25</span><a href="../assets/pages/s013/017.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="18" id="page-18"><div class="page-marker"><span>PDF · 18 / 25</span></div><h2 class="page-title">Analysis(4) / 왜 freeze 는 %c 에 대해서만 ? / src 를 보면, %d 의 undef/poison 은</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(4)</p></div><div class="pdf-region"><p>왜 freeze 는 %c 에 대해서만 ?</p></div><div class="pdf-region"><p>src 를 보면, %d 의 undef/poison 은 그대로 ret poison 으로 전파된다. 라고 생각했으나… 뭔가 이상한 부분을 발견. 만약 tgt 의 %d 의 freeze 가 수행될 경우, %ord1 이 poison 되는 경우는 존재하지 않게 된다.</p></div><div class="pdf-region"><p>-&gt; 의미론적으로 달라서 위 형태가 올바름!</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-018-01.webp"><img src="../assets/figures/s013-018-01.webp" width="912" height="674" alt="라민우 자료 18쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>18쪽 · 그림 1 <a href="../assets/figures/s013-018-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(i1 %2, float %c, float %d) {
+1
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select 11 %ordl, 11 %z, 11 false
+%ord2 = fcmp ninf ord float %d, 0.0
+%r = select i1 %ord2, i1 %and, i1 false
+ret 11 %r
+9
+define il @tgt(i1 %z, float %c, float %d) {
+10
+%c.fr = freeze float %c
+11
+%ord1 = fcmp ord float %c.fr, %d
+12
+%r = select 11 %ord1, 11 %z, i1 false
+13
+ret 11 %r
+14
+15</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/018.webp" aria-label="LLVM_Issue_49175.pdf 18쪽 확대"><img src="../assets/pages/s013/018.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 18쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 18/25</span><a href="../assets/pages/s013/018.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="19" id="page-19"><div class="page-marker"><span>PDF · 19 / 25</span></div><h2 class="page-title">Analysis(4) / ???? %d 가 poison 인 경우, src 와 tgt 의 / 결과가 달라질 수 있는 지점이 발생한다.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s013-p19-heading-1">Analysis(4)</h3></div><div class="pdf-region"><p>????  %d 가 poison 인 경우, src 와 tgt 의 결과가 달라질 수 있는 지점이 발생한다. 그런데 alive2 는 여전히 올바르다고 판단함.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-019-01.webp"><img src="../assets/figures/s013-019-01.webp" width="1800" height="609" alt="라민우 자료 19쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>19쪽 · 그림 1 <a href="../assets/figures/s013-019-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(11 %2, float %c, float %d) {
+%ord1 = fcmp ninf ord float %c, 0.0
+%and = select i1 %ord1, 11 %z, il false
+%ord2 = fcmp ninf ord float %d, 0.0
+%r = select i1 %ord2, i1 %and, il false
+ret i1 %r
+define i1 @tgt(11 %, float %c, float %d) {
+10
+%c.fr = freeze float %c
+11
+%d.frl= freeze float %d
+12
+%ord1 = fcmp ord float %c.fr,
+Mi.fr
+13
+%r = select i1 %ord1, i1 %z, i1 falst
+14
+ret i1 %r
+15
+16
+???? %d 가 poison 인 경우, Src 와 tgt 의
+결과가 달라질 수 있는 지점이 발생한다.
+그런데 alive2 는 여전히 올바르다고
+* Output... ~
+= Libraries
++ Add new... ~
+• Add tool... ~
+Filter... *
+define i1 @src(i1 %, float %c, float %d) {
+#0:
+%ordl = fcmp ninf ord float %c, 0.000000
+%and = select i1 %ord1, i1 %z, 110
+%ord2 = fcmp ninf ord float %d, 0.000000
+%r = select i1 %ord2, i1 %and, i1 0
+ret i1 %r
+}
+=&gt;
+define i1 otgt(i1 %z, float %c, float %d) {
+#0:
+%c.fr = freeze float %c
+%d.fr = freeze float %d
+%ordl = fcmp ord float %c.fr, %d.fr
+%r = select i1%ord1, i1 %z, 110
+ret i1 %r
+}
+Transformation seems to be correct!</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/019.webp" aria-label="LLVM_Issue_49175.pdf 19쪽 확대"><img src="../assets/pages/s013/019.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 19쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 19/25</span><a href="../assets/pages/s013/019.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="20" id="page-20"><div class="page-marker"><span>PDF · 20 / 25</span></div><h2 class="page-title">Analysis(5) - Refinement / AI 에게 표를 만들어달라고 했다. 그리고 / ‘Refine’ 이라고 하며 이는 문제가 없다고</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(5) - Refinement</p></div><div class="pdf-region"><p>AI 에게 표를 만들어달라고 했다. 그리고 ‘Refine’ 이라고 하며 이는 문제가 없다고 말한다. (‘%d 에 대해서 freeze 는 왜 사용하지 않냐’ 라는 질문에 ‘불필요하다’ 고 답변. - ‘의미가 다르다’ 라는 답변을 기대했다)</p></div><div class="pdf-region"><p>=&gt; src 와 tgt 식 의미가 달라지면 안된다고 생각했기 때문 !!</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-020-01.webp"><img src="../assets/figures/s013-020-01.webp" width="727" height="937" alt="라민우 자료 20쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>20쪽 · 그림 1 <a href="../assets/figures/s013-020-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>전수표 (c, dEtValid, NaN, Inf, poisont, z=true)
+SrC
+Valid
+VaLid
+true
+Valid
+false
+NaN
+VaLid
+Inf
+poison
+poison
+Valid
+poison
+NaN
+Valid
+false
+NaN
+NaN
+false
+NaN
+Inf
+poison
+NaN
+poison
+poison
+Inf
+valid
+poison
+Inf
+NaN
+false
+Inf
+Inf
+poison
+Inf
+poison
+poison
+poison
+Valid
+poison
+poison
+NaN
+false
+poison
+Inf
+poison
+poison
+poison
+poison
+tgt
+true
+false
+true
+poison
+false
+false
+false
+false
+true
+false
+true
+poison
+false 또는
+true
+false
+false 또는
+true
+false 또는
+poison
+관계
+동일 ✓
+동일 V
+refine V
+(poison+값)
+동 일
+&quot;
+동 일
+&quot;
+동일 ✓
+refine V
+refine V
+refine V
+동이스
+(그 유명한
+refine
+V
+동 일
+refine y
+동일
+(freeze가
+지킴)
+refine
+&lt;
+refine
+V</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/020.webp" aria-label="LLVM_Issue_49175.pdf 20쪽 확대"><img src="../assets/pages/s013/020.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 20쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 20/25</span><a href="../assets/pages/s013/020.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="21" id="page-21"><div class="page-marker"><span>PDF · 21 / 25</span></div><h2 class="page-title">Analysis(5) - Refinement / 컴파일러 정확성은 &quot;같음&quot;이 아닌 “poison -&gt; / 구체값 방향의 refinement만 지키면 됨”.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Analysis(5) - Refinement</p></div><div class="pdf-region"><p>컴파일러 정확성은 &quot;같음&quot;이 아닌 “poison -&gt; 구체값 방향의 refinement만 지키면 됨”.</p></div><div class="pdf-region"><p>즉, %d 의 freeze는 그 허용된 방향으로 더 정의되게 만들 뿐이라 correct지만, c만으로 이미 correct하므로 불필요해서 뺀 것.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-021-01.webp"><img src="../assets/figures/s013-021-01.webp" width="1304" height="704" alt="라민우 자료 21쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>21쪽 · 그림 1 <a href="../assets/figures/s013-021-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Ilvm.org/docs/UndetinedBehavior.html
+is for). The test above should use a dummy function argument instea
+컴파일러 정확성은 &quot;같음&quot;이 아닌 &quot;poison -&gt;
+define 132 @fn(18 %a, 18 %dummy) {
+%div = udiv 18 %a, %dummy
+구체값 방향의 refinement만 지키면 됨&quot;.
+Questions
+utorials
+tributes
+d Guide
+ect-limit to
+ation errors
+rkup Format
+Common sources of immediate UB in tests include branching on una
+즉, %d 의 freeze는 그 허용된 방향으로 더
+pointers.
+• Note
+정의되게 만들 뿐이라 correct지만, c만으로
+If you need a placeholder value to pass as an argument to an instruction that may
+poison.
+이미 correct하므로 불필요해서 뺀 것.
+Summary
+Undefined behavior (UB) in LLVM IR consists of two well-defined concepts: immediate and deferred UB (undef and poison values).
+Passing deferred UB values to certain operations leads to immediate UB. This can be avoided in some cases through the use of the
+freeze instruction.
+The lattice of values in LLVM is: immediate UB &gt; poison &gt; undef &gt; freeze(poison) &gt; concrete value. It is only valid to transform values
+from the left to the right (e.q., a poison value can be replaced with a concrete value, but not the other way around).
+Undef is now deprecated and should be used only to represent loads of uninitialized memory.</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/021.webp" aria-label="LLVM_Issue_49175.pdf 21쪽 확대"><img src="../assets/pages/s013/021.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 21쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 21/25</span><a href="../assets/pages/s013/021.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="22" id="page-22"><div class="page-marker"><span>PDF · 22 / 25</span></div><h2 class="page-title">Patch / 이미 fold 는 / 존재함.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s013-p22-heading-1">Patch</h3></div><div class="pdf-region"><p>이미 fold 는 존재함.</p></div><div class="pdf-region"><p>기존 src 에 따르면 first(%d) 가 NaN 인 경우, second(%c) 가 무엇이든 false ret 을 갖는다.</p></div><div class="pdf-region"><p>만약 tgt 의 동시 fcmp ord 직전에 freeze 를 하지 않는 경우, Poison(c) - NaN(d) 경우엔 false 가 아닌 poison ret 을 갖는다.</p></div><div class="pdf-region"><p>이는 이전의 ‘한쪽 방향의 Refinement 에 위배되는 방향’ 으로, freeze 가 필요하다는 맥락이다.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-022-01.webp"><img src="../assets/figures/s013-022-01.webp" width="1244" height="752" alt="라민우 자료 22쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>22쪽 · 그림 1 <a href="../assets/figures/s013-022-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Commit b23ba29
+SubashBoopathi1605 authored on Jun 27 - X 85/94
+Verified
+[Instcombine] optimize fcmp ord/uno logical select operations using freeze (#205076)
+This pull request optimizes logical select sequences checking ordered or
+unordered floating point operations.
+이미 fold 는
+Currently, InstCombine canonicalizes:
+존재학
+fcmp ord x, 8.0 AND fcmp ord y, 0.0 to fcmp ord x, y
+fcmp uno x, 0.0 OR fcmp uno y, 0.0 to fcmp uno x, y
+However, this canonicalization is blocked for 1ogical selects because it
+무엇이든 false ret 을 갖는다.
+is not poison safe if the second operand evaluates to poison when the
+first evaluates to Na.
+This patch enables the transformation for logical selects by inserting a
+갖는다.
+freeze on the second evaluated operand to guarantee poison safety.
+Fixes #49175</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s013-022-02.webp"><img src="../assets/figures/s013-022-02.webp" width="434" height="423" alt="라민우 자료 22쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>22쪽 · 그림 2 <a href="../assets/figures/s013-022-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Q Filter files...
+livm
+lib/Transforms/InstCombine
+InstCombineAndOrXor.cpp
+test/Transforms/InstCombine
+| and-fcmp:ll
+t or-fcmp:ll</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/022.webp" aria-label="LLVM_Issue_49175.pdf 22쪽 확대"><img src="../assets/pages/s013/022.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 22쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 22/25</span><a href="../assets/pages/s013/022.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="23" id="page-23"><div class="page-marker"><span>PDF · 23 / 25</span></div><h2 class="page-title">Patch / 이미 fold 는 / 존재함.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s013-p23-heading-1">Patch</h3></div><div class="pdf-region"><p>이미 fold 는 존재함.</p></div><div class="pdf-region"><p>동시에 ‘canonicalization is blocked for …’ 는 기존 최적화를 막는다는 늬앙스.</p></div><div class="pdf-region"><p>패치 코드에서 확인할 수 있다.</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-023-01.webp"><img src="../assets/figures/s013-023-01.webp" width="1244" height="752" alt="라민우 자료 23쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>23쪽 · 그림 1 <a href="../assets/figures/s013-023-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Commit b23ba29
+SubashBoopathi1605 authored on Jun 27 - X 85 /94
+Verified
+[Instcombine] optimize fcmp ord/uno logical select operations using freeze (#205076)
+This pull request optimizes logical select sequences checking ordered or
+unordered floating point operations.
+이미 fold 는
+Currently, InstCombine canonicalizes:
+조대학
+fcmp ord x, 8.0 AND fcmp ord y, 0.0 to fcmp ord x, y
+fcmp uno x, 0.0 OR fcmp uno y, 0.0 to fcmp uno x, y
+However, this canonicalization is blocked for 10gical selects because it
+is not poison safe if the second operand evaluates to poison when the
+first evaluates to NaN.
+막는다는 늬앙스.
+This patch enables the transformation for logical selects by inserting a
+freeze on the second evaluated operand to guarantee poison safety.
+패치 코드에서 확인할 수 있다.
+Fixes
+#49175</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/023.webp" aria-label="LLVM_Issue_49175.pdf 23쪽 확대"><img src="../assets/pages/s013/023.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 23쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 23/25</span><a href="../assets/pages/s013/023.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="24" id="page-24"><div class="page-marker"><span>PDF · 24 / 25</span></div><h2 class="page-title">Patch / 기존 fold 를 막는 !IsLogicalSelect 를 제거함. / LHS, RHS : fcmp ord c,0 / fcmp ord d,0</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s013-p24-heading-1">Patch</h3></div><div class="pdf-region"><p>기존 fold 를 막는 !IsLogicalSelect 를 제거함.</p></div><div class="pdf-region"><p>LHS, RHS :  fcmp ord c,0 / fcmp ord d,0</p></div><div class="pdf-region"><p>LHS0, RHS0 : c,d</p></div><div class="pdf-region"><p>LHS1, RHS1 : 0.0, 0.0</p></div><div class="pdf-region"><p>freeze(Y=RHS0=d) =&gt; poison 을 확정값으로 처리!</p></div><div class="pdf-region"><p>FMF = LHS-&gt;getFastMathFlags() &amp; RHS-&gt;getFastMathFlags() 에서 nInf 를 가져왔다.</p></div><div class="pdf-region"><p>즉, FMF 에 여전히 nInf 가 남아있을 수 있으며 만약 c 가 Poison 이 아닌 Inf 값이라면,fcmp ord LHS0, Y 는 반드시 Poison 이 되고, 기존 src 의 의미에서 벗어난다. fcmp ord LHS0, Y 생성!</p></div></div><figure class="source-figure"><a href="../assets/figures/s013-024-01.webp"><img src="../assets/figures/s013-024-01.webp" width="1004" height="782" alt="라민우 자료 24쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>24쪽 · 그림 1 <a href="../assets/figures/s013-024-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>7 Top
+• Search within code
+다
+1lvm/11b/Transforms/InstCombine/InstCombineAndOrxor.cpp
+1475
+1476
+1477
+1478
+1479
+1475
+1476
+1480
+1477
+1481
+1478
+1482
+1479
+1486
+1483
+187
+1484
+1488
+1485
+1489
+1490
+1486
+1487
+1488
+18g
+1490
+1491
+1492
+1493
+// This transfonm is not valid fon .a
+if(!IsLogicalSelect &amp;&amp;
+((PredL - FCmpInst::FCMP_ORD &amp;&amp; PredR
+FCmpInst: :FCMP_ORD &amp;&amp; IsAnd) II
+(PredL -- FCmpInst::FCMP_UNO &amp;&amp; PredR -- FCmpInst::FCMP_UNO &amp;&amp;
+!IsAnd))) {
+if ((PredL a FCmpInst::FCMP_ORD &amp;&amp; PredR == FCmpInst::FCMP ORD &amp;&amp; IsAnd) ||
+(PredL -- FCmpinst::FCMP_UNO &amp;&amp; PredR -- FCmpinst::FCMP_UNO &amp;&amp; !IsAnd》){
+if (LHSO-&gt;getType() I-RHS0-&gt;getType())
+return nullptr;
+e -1486,8 +1483,14 Value *InstCombinenimpl: :foldLogicOfFCmps(FCmpInst *LHS, FCmpInst *RHS,
+// Ignore the constants because they are obviously not NANs:
+// (fcmp ord x, 0.0) &amp; (fcmp ond y, 0.0) -&gt; (fcmp ond x, y)
+// (fcmp uno x, 0.0) | (fcmp uno y, 0.0)
+-&gt; (fcmp uno x, y)
+retunn Builder.CreateFCmpFMF(PredL, LHSO, RHSO,
+FMFSource::intersect(LHS, RHS));
+Value *Y - RHSO;
+FastMathrlags FMF - LHS-&gt;getFastMathFlags() &amp; RHS-&gt;getFast
+cnFlags();
+if(IsLogicalselect) {
+ze(Y, Y-&gt;getName() +
+fr&quot;);
+=MF.setNoNaNs(false):
+MF.setNoTnfs(false)
+return Builder.CreateFCmpFMF(PredL, LHSO, Y, FMF);</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/024.webp" aria-label="LLVM_Issue_49175.pdf 24쪽 확대"><img src="../assets/pages/s013/024.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 24쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 24/25</span><a href="../assets/pages/s013/024.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s013" data-page="25" id="page-25"><div class="page-marker"><span>PDF · 25 / 25</span></div><h2 class="page-title">Reference / Issue https://github.com/llvm/llvm-project/issues/49175 / Patch Commit https://github.com/llvm/llv</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s013-p25-heading-1">Reference</h3></div><div class="pdf-region"><p>Issue https://github.com/llvm/llvm-project/issues/49175 Patch Commit https://github.com/llvm/llvm-project/pull/205076/commits PR https://github.com/llvm/llvm-project/commit/b23ba298af84d56be149350bf6 17dc869c1fb42c LangRef https://llvm.org/docs/LangRef.html</p></div></div><div class="page-links"><h3>이 페이지에 연결된 자료</h3><ul><li><a href="https://github.com/llvm/llvm-project/issues/49175" rel="noopener noreferrer">https://github.com/llvm/llvm-project/issues/49175</a></li><li><a href="https://github.com/llvm/llvm-project/pull/205076/commits" rel="noopener noreferrer">https://github.com/llvm/llvm-project/pull/205076/commits</a></li><li><a href="https://github.com/llvm/llvm-project/commit/b23ba298af84d56be149350bf617dc869c1fb42c" rel="noopener noreferrer">https://github.com/llvm/llvm-project/commit/b23ba298af84d56be149350bf617dc869c1fb42c</a></li><li><a href="https://llvm.org/docs/LangRef.html" rel="noopener noreferrer">https://llvm.org/docs/LangRef.html</a></li></ul></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s013/025.webp" aria-label="LLVM_Issue_49175.pdf 25쪽 확대"><img src="../assets/pages/s013/025.webp" alt="fcmp ord 결합에서 freeze가 필요한 이유 · 25쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_49175.pdf · 25/25</span><a href="../assets/pages/s013/025.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section" id="editor-notes"><details class="editor-notes"><summary>핵심 원리와 편집 주석</summary><div><h3 id="background">ord와 uno</h3><p><code>fcmp ord</code>는 두 입력이 모두 NaN이 아닐 때 참이다. <code>fcmp uno</code>는 하나라도 NaN이면 참이다. 따라서 <code>fcmp ord x, 0.0</code>은 x의 NaN 여부를 검사한다.</p><p>여러 비교와 논리적 선택을 하나의 비교로 합치려면 NaN뿐 아니라 poison과 fast-math 조건도 확인해야 한다.</p><h3 id="poison">선택이 가리는 poison</h3><p><code>select</code>는 선택하지 않은 값의 poison을 결과로 전달하지 않는다. 원래 식이 한쪽 비교를 건너뛰는 구조라면, 두 입력을 바로 비교하는 새 식이 poison을 새로 노출할 수 있다.</p><p><code>freeze</code>는 poison 또는 undef를 고정된 값으로 바꾼다. 새 비교 전에 적절한 입력을 freeze하면 원래 정의된 결과를 보존할 수 있다.</p><h3 id="refinement">같음과 refinement 구분</h3><p>최적화는 원본이 정의한 동작을 새 식에서도 보존해야 한다. 원본이 poison인 경우에 새 식이 더 구체적인 값을 반환하는 것은 허용될 수 있다.</p><p>반대 방향은 다르다. 원본이 false처럼 정의된 값을 반환하는 입력에서 새 식이 poison을 만들면 정확성을 위반한다.</p><p>자료에는 처음의 등식 중심 설명을 수정하고 이 방향성을 이해한 과정이 남아 있다.</p><h3 id="flags">freeze와 플래그를 함께 검토하기</h3><ul><li>원래 select가 어느 입력의 poison을 가리는지 확인한다.</li><li>어느 피연산자를 freeze하는지 실제 matcher의 순서와 대조한다.</li><li>두 비교의 fast-math flags를 결합할 때 ninf가 남는지 확인한다.</li><li>NaN·Inf·poison 조합에서 src가 정의된 값을 내는 경우를 우선 확인한다.</li></ul><aside class="note"><strong>읽을 때 확인할 점</strong>원자료는 분석 도중의 가설과 후반 패치 해석을 함께 담고 있다. 앞부분의 freeze 설명을 최종 구현의 피연산자 선택과 같은 결론으로 읽으면 안 된다.</aside></div></details></section><section class="doc-section" id="source-materials"><h2>문서 전문과 버전</h2><ul class="source-list"><li><span class="format">PDF</span><div><a href="../sources/s013.html">PDF 원자료 · 25쪽</a><small>LLVM_Issue_49175.pdf</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></section><section class="doc-section" id="references"><h2>관련 이슈와 PR</h2><ul class="reference-list"><li><a href="https://github.com/llvm/llvm-project/issues/49175" rel="noopener noreferrer">Issue #49175</a></li><li><a href="https://github.com/llvm/llvm-project/pull/205076" rel="noopener noreferrer">PR #205076</a></li></ul><p class="small-note">구현·병합 상태와 측정값은 해당 제출 자료의 작성 시점 기준입니다.</p></section></article><aside class="article-toc"><strong>이 문서에서</strong><nav aria-label="이 문서의 목차"><a href="#page-1">01 · LLVM Issue 분석 (#49175) / Missing FP …</a><a href="#page-2">02 · Background : fcmp ordered / unordere…</a><a href="#page-3">03 · Issue (1)</a><a href="#page-4">04 · Issue (2) - alive2</a><a href="#page-5">05 · Issue (2) - alive2 / ninf ? -&gt; ‘만약 I…</a><a href="#page-6">06 · Issue (2) - alive2 / %c, 0.0 둘 다 NaN…</a><a href="#page-7">07 · Issue (2) - alive2 / %d, 0.0 둘 다 NaN…</a><a href="#page-8">08 · Issue (2) - alive2 / %d, 0.0 둘 다 NaN…</a><a href="#page-9">09 · Issue (2) - alive2 / “%c 와 %d 가 NaN …</a><a href="#page-10">10 · Issue (2) - alive2 / %c, %d 가 NaN 이 …</a><a href="#page-11">11 · Analysis / 1. src 에서 ‘ninf’ 유/무가 어떤 …</a><a href="#page-12">12 · Analysis(1) / src 에서 ‘ninf’ 유/무가 어떤 …</a><a href="#page-13">13 · Analysis(2) / tgt 의 fcmp 에선 ninf 가 왜…</a><a href="#page-14">14 · Analysis(2) / Poison(P),NaN(N),Inf(I…</a><a href="#page-15">15 · Analysis(2)</a><a href="#page-16">16 · Analysis(3) - 왜 최적화인가? / WHY? / -&gt; F…</a><a href="#page-17">17 · Analysis(4) / 왜 freeze 는 %c 에 대해서만 ?…</a><a href="#page-18">18 · Analysis(4) / 왜 freeze 는 %c 에 대해서만 ?…</a><a href="#page-19">19 · Analysis(4) / ???? %d 가 poison 인 경우,…</a><a href="#page-20">20 · Analysis(5) - Refinement / AI 에게 표를 …</a><a href="#page-21">21 · Analysis(5) - Refinement / 컴파일러 정확성은…</a><a href="#page-22">22 · Patch / 이미 fold 는 / 존재함.</a><a href="#page-23">23 · Patch / 이미 fold 는 / 존재함.</a><a href="#page-24">24 · Patch / 기존 fold 를 막는 !IsLogicalSelec…</a><a href="#page-25">25 · Reference / Issue https://github.com…</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav><p class="small-note"><a href="../glossary.html">기술 용어 확인하기 ↗</a></p></aside></div><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../about.html">편집 기준과 출처</a><br><a href="../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

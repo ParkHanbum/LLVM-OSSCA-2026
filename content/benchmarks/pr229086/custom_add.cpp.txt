@@ -1,0 +1,41 @@
+#define ORT_API_MANUAL_INIT
+#include "onnxruntime_cxx_api.h"
+#include <atomic>
+#include <vector>
+#include <algorithm>
+#include <type_traits>
+extern "C" void MlasQLinearAddS8KernelAvx2(const int8_t*,float,int32_t,const int8_t*,float,int32_t,float,int32_t,int8_t*,size_t,bool);
+extern "C" void MlasQLinearAddU8KernelAvx2(const uint8_t*,float,int32_t,const uint8_t*,float,int32_t,float,int32_t,uint8_t*,size_t,bool);
+static std::atomic<uint64_t> calls{0},elements{0},scalar_calls{0};
+extern "C" __attribute__((visibility("default"))) void ResetBenchCounters(){calls=0;elements=0;scalar_calls=0;}
+extern "C" __attribute__((visibility("default"))) uint64_t GetBenchCalls(){return calls.load();}
+extern "C" __attribute__((visibility("default"))) uint64_t GetBenchElements(){return elements.load();}
+extern "C" __attribute__((visibility("default"))) uint64_t GetBenchScalarCalls(){return scalar_calls.load();}
+template<typename T> struct Kernel {
+ Kernel(const OrtApi&,const OrtKernelInfo*){}
+ void Compute(OrtKernelContext*raw){
+  Ort::KernelContext ctx(raw);auto a=ctx.GetInput(0),b=ctx.GetInput(3);auto ai=a.GetTensorTypeAndShapeInfo(),bi=b.GetTensorTypeAndShapeInfo();auto ash=ai.GetShape(),bsh=bi.GetShape();size_t an=ai.GetElementCount(),bn=bi.GetElementCount();
+  size_t ndim=std::max(ash.size(),bsh.size());std::vector<int64_t> shape(ndim,1);for(size_t k=0;k<ndim;++k){int64_t ad=k<ash.size()?ash[ash.size()-1-k]:1,bd=k<bsh.size()?bsh[bsh.size()-1-k]:1;if(ad!=bd&&ad!=1&&bd!=1)throw std::runtime_error("incompatible broadcast");shape[ndim-1-k]=std::max(ad,bd);}
+  size_t n=1;for(auto x:shape)n*=x;if(an!=n||(bn!=n&&bn!=1))throw std::runtime_error("benchmark adapter only supports full tensors or scalar B");
+  auto out=ctx.GetOutput(0,shape);float sa=*ctx.GetInput(1).GetTensorData<float>(),sb=*ctx.GetInput(4).GetTensorData<float>(),sc=*ctx.GetInput(6).GetTensorData<float>();int za=*ctx.GetInput(2).GetTensorData<T>(),zb=*ctx.GetInput(5).GetTensorData<T>(),zc=*ctx.GetInput(7).GetTensorData<T>();
+#ifdef INSTRUMENT
+  calls.fetch_add(1,std::memory_order_relaxed);elements.fetch_add(n,std::memory_order_relaxed);scalar_calls.fetch_add(bn==1,std::memory_order_relaxed);
+#endif
+  if constexpr(std::is_same_v<T,int8_t>)MlasQLinearAddS8KernelAvx2(a.GetTensorData<T>(),sa,za,b.GetTensorData<T>(),sb,zb,sc,zc,out.GetTensorMutableData<T>(),n,bn==1);
+  else MlasQLinearAddU8KernelAvx2(a.GetTensorData<T>(),sa,za,b.GetTensorData<T>(),sb,zb,sc,zc,out.GetTensorMutableData<T>(),n,bn==1);
+ }
+};
+template<typename T> struct AddOp:Ort::CustomOpBase<AddOp<T>,Kernel<T>>{
+ void*CreateKernel(const OrtApi&api,const OrtKernelInfo*info)const{return new Kernel<T>(api,info);}
+ const char*GetName()const{return std::is_same_v<T,int8_t>?"AddS8":"AddU8";}
+ const char*GetExecutionProviderType()const{return "CPUExecutionProvider";}
+ size_t GetInputTypeCount()const{return 8;}size_t GetOutputTypeCount()const{return 1;}
+ ONNXTensorElementDataType GetInputType(size_t i)const{return i==1||i==4||i==6?ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT:GetOutputType(0);}
+ ONNXTensorElementDataType GetOutputType(size_t)const{return std::is_same_v<T,int8_t>?ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8:ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8;}
+};
+extern "C" __attribute__((visibility("default"))) OrtStatus* ORT_API_CALL RegisterCustomOps(OrtSessionOptions*options,const OrtApiBase*base){
+ const OrtApi*api=base->GetApi(ORT_API_VERSION);Ort::InitApi(api);
+ static AddOp<int8_t>s8;static AddOp<uint8_t>u8;static Ort::CustomOpDomain domain("local.llvmbench");static bool initialized=false;
+ if(!initialized){domain.Add(&s8);domain.Add(&u8);initialized=true;}
+ return api->AddCustomOpDomain(options,domain);
+}

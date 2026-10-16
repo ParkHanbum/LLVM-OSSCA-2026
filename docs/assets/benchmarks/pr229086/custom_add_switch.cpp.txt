@@ -1,0 +1,23 @@
+// Same adapter for both variants; only function pointer changes outside timed blocks.
+#define MlasQLinearAddS8KernelAvx2 BenchDispatchS8
+#define MlasQLinearAddU8KernelAvx2 BenchDispatchU8
+#include "custom_add.cpp"
+#undef MlasQLinearAddS8KernelAvx2
+#undef MlasQLinearAddU8KernelAvx2
+extern "C" void MlasBeforeS8(const int8_t*,float,int32_t,const int8_t*,float,int32_t,float,int32_t,int8_t*,size_t,bool);
+extern "C" void MlasAfterS8(const int8_t*,float,int32_t,const int8_t*,float,int32_t,float,int32_t,int8_t*,size_t,bool);
+extern "C" void MlasBeforeU8(const uint8_t*,float,int32_t,const uint8_t*,float,int32_t,float,int32_t,uint8_t*,size_t,bool);
+extern "C" void MlasAfterU8(const uint8_t*,float,int32_t,const uint8_t*,float,int32_t,float,int32_t,uint8_t*,size_t,bool);
+static decltype(&MlasBeforeS8) s8target=&MlasBeforeS8;
+static decltype(&MlasBeforeU8) u8target=&MlasBeforeU8;
+static int variant=0;
+extern "C" __attribute__((visibility("default"))) int SetBenchVariant(int value){
+ if(value!=0&&value!=1)return -1;
+ s8target=value?&MlasAfterS8:&MlasBeforeS8;
+ u8target=value?&MlasAfterU8:&MlasBeforeU8;
+ variant=value;return 0;
+}
+extern "C" __attribute__((visibility("default"))) int GetBenchVariant(){return variant;}
+extern "C" __attribute__((visibility("default"))) uintptr_t GetBenchSelectedAddressU8(){return reinterpret_cast<uintptr_t>(u8target);}
+extern "C" void BenchDispatchS8(const int8_t*a,float sa,int32_t za,const int8_t*b,float sb,int32_t zb,float sc,int32_t zc,int8_t*c,size_t n,bool scalar){s8target(a,sa,za,b,sb,zb,sc,zc,c,n,scalar);}
+extern "C" void BenchDispatchU8(const uint8_t*a,float sa,int32_t za,const uint8_t*b,float sb,int32_t zb,float sc,int32_t zc,uint8_t*c,size_t n,bool scalar){u8target(a,sa,za,b,sb,zb,sc,zc,c,n,scalar);}

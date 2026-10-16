@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="중첩 select·PHI로 고른 문자열의 길이를 미리 계산하고 런타임 strlen 호출을 제거한다."><meta name="theme-color" content="#fbfaf7"><title>문자열 주소 대신 상수 길이를 선택하기 · 성능 측정·회귀 분석 브리핑 · LLVM 멘티 기술 문서</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css?v=41429de5fd03"><script defer src="../assets/site.js?v=28009b539b2a"></script></head><body id="top"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../index.html" class="nav-articles">문서</a><a href="../results.html" class="nav-results">기여 결과</a><a href="../benchmarks.html" class="nav-benchmarks">벤치마크</a><a href="../sources/index.html" class="nav-sources active" aria-current="page">자료</a><a href="../glossary.html" class="nav-glossary">용어</a><a href="../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details><summary>라민우<span class="count">02</span></summary><ul><li><a href="../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details><summary>이하동<span class="count">03</span></summary><ul><li><a href="../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details open><summary>정하람<span class="count">03</span></summary><ul><li><a href="../articles/strlen-constant-selection.html" aria-current="page">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main source-page article-main"><div class="breadcrumb"><a href="../index.html">문서</a><span>/</span>정하람</div><div class="article-layout"><article class="article"><header class="article-header"><div class="eyebrow">COMPLETE DOCUMENT / MD</div><h1>문자열 주소 대신 상수 길이를 선택하기</h1><p class="article-lead">중첩 select·PHI로 고른 문자열의 길이를 미리 계산하고 런타임 strlen 호출을 제거한다.</p><div class="article-meta"><strong>자료 정하람</strong><span>기여 과정</span><span>성능 측정·회귀 분석 브리핑</span><span>전문 수록</span></div><div class="article-tools"><button type="button" data-font aria-pressed="false">글자 크게</button><button type="button" data-print><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V9h18v8h-4M7 14h10v7H7z"/></svg>인쇄 / PDF</button><a href="#source-materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 15 6-6M7 11l-3 3a4 4 0 0 0 6 6l3-3M11 7l3-3a4 4 0 0 1 6 6l-3 3"/></svg>다른 버전 보기</a></div></header><p class="complete-notice">223246.md의 전체 내용입니다. 설명·코드·표·검증 기록을 생략하지 않고 옮겼습니다.</p><div class="version-nav"><strong>같은 주제의 문서 4개</strong><ul class="source-list"><li><span class="format">MD</span><div><a href="../sources/s025.html">성능 측정·회귀 분석 브리핑</a><small>223246.md</small></div></li><li><span class="format">PPTX</span><div><a href="../sources/s027.html">발표자료 · 16장 A</a><small>LLVM_PR223246__strlen.pptx</small></div></li><li><span class="format">PPTX</span><div><a href="../sources/s028.html">발표자료 · 16장 B</a><small>LLVM_PR_.pptx</small></div></li><li><span class="format">PPTX</span><div><a href="../sources/s030.html">발표자료 · 11장</a><small>llvm_strlen_pr_presentation.pptx</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></div><details class="mobile-toc"><summary>이 문서의 목차</summary><nav aria-label="이 문서의 목차"><a href="#s025-p1-heading-1">PR #223246 검토 및 성능 측정 브리핑</a><a href="#s025-p1-heading-2">결론</a><a href="#s025-p1-heading-3">1. 확인한 PR과 브랜치</a><a href="#s025-p1-heading-4">2. 무엇이 빨라지는가</a><a href="#s025-p1-heading-5">3. 발견한 회귀와 수정</a><a href="#s025-p1-heading-6">재현</a><a href="#s025-p1-heading-7">원인</a><a href="#s025-p1-heading-8">수정</a><a href="#s025-p1-heading-9">검증 결과</a><a href="#s025-p1-heading-10">4. 공정하게 비교한 방법</a><a href="#s025-p1-heading-11">5. 최종 결과 — C, O2</a><a href="#s025-p1-heading-12">6. 최종 결과 — 실제 C++ 타입을 쓰는 합성 작업, O2</a><a href="#s025-p1-heading-13">7. O3 교차 확인</a><a href="#s025-p1-heading-14">8. 측정 중 발견한 배치 효과</a><a href="#s025-p1-heading-15">9. 발표에서 말할 수 있는 것과 한계</a><a href="#s025-p1-heading-16">10. 재현 및 산출물</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav></details><section class="doc-section full-source-section" data-source="s025" data-page="1" id="page-1"><div class="reading-text"><div class="source-body"><h2 id="s025-p1-heading-1">PR #223246 검토 및 성능 측정 브리핑</h2>
+<p>측정일: 2026-09-15 · 환경: macOS arm64 · 결과는 이 머신에서 측정한 합성 벤치마크입니다.</p>
+<h2 id="s025-p1-heading-2">결론</h2>
+<p>멘토님이 제안한 측정은 의미가 있습니다. <strong>새롭게 제거되는 중첩 select/PHI의 문자열 길이 호출에는 큰 국소적 효과가 있고, 문자열 생성과 해시까지 포함한 C++ 합성 작업에서는 실행 시간이 8.8% 감소했습니다.</strong> 일반적인 동적 문자열의 <code>strlen</code>을 전부 빠르게 만드는 변경은 아닙니다.</p>
+<p>동시에 원본 PR의 기존 테스트 회귀를 발견해 로컬에서 수정했습니다. 원본 PR은 핵심 4개 테스트를 통과했지만 관련 19개 전체 중 8개에서 fixpoint 오류가 났습니다. 수정 후 19개 모두 통과했고, 범위를 넓힌 2,355개 중 2,263개 통과 / 92개 미지원 / 실패 0개입니다.</p>
+<h2 id="s025-p1-heading-3">1. 확인한 PR과 브랜치</h2>
+<ul>
+<li><a href="https://github.com/llvm/llvm-project/pull/223246" rel="noopener noreferrer">PR #223246</a></li>
+<li>브랜치: <code>instcombine-fold-strlen-select-phi-main</code></li>
+<li>원본 PR HEAD: <code>ae605b914df994b7cfb0b1b98c5469bdc9093389</code></li>
+<li>비교 기준: 바로 이전 커밋 <code>d283a555109576cd92b35a88b4d110166043fb77</code></li>
+<li>조회 시 PR 상태 OPEN, 리뷰 제출 내역 없음. 자동 댓글 2개가 있었습니다.</li>
+<li>처음부터 로컬 브랜치와 GitHub HEAD가 일치했고, 시작 시 작업 트리는 깨끗했습니다.</li>
+<li>최종 로컬 수정 파일: <code>llvm/lib/Transforms/InstCombine/InstructionCombining.cpp</code>.</li>
+<li>커밋·push·GitHub 댓글은 작성하지 않았습니다. 아래 자료와 수정은 로컬에 있습니다.</li>
+</ul>
+<h2 id="s025-p1-heading-4">2. 무엇이 빨라지는가</h2>
+<pre><code class="language-cpp">const char *label = x &amp; 1 ? "ok" : x &amp; 2 ? "missing" : "cancelled";
+return strlen(label);
+</code></pre>
+<p>기존에는 문자열 포인터를 고른 뒤 런타임에 문자열을 읽어 길이를 계산합니다. PR은 모든 분기에서 길이를 미리 알 수 있으면 길이 2, 7, 9 자체를 고르게 바꿉니다.</p>
+<pre><code class="language-llvm">; 이전: 문자열 주소 선택 → strlen
+%inner = select i1 %c2, ptr @missing, ptr @cancelled
+%p = select i1 %c1, ptr @ok, ptr %inner
+%len = call i64 @strlen(ptr %p)
+
+; 이후: 상수 길이 선택
+%inner.len = select i1 %c2, i64 7, i64 9
+%len = select i1 %c1, i64 2, i64 %inner.len
+</code></pre>
+<ul>
+<li><strong>단순한 두 리터럴 select는 기존에도 최적화됩니다.</strong> PR의 새 기여를 보여 주는 대표 예시는 중첩 select와 PHI입니다.</li>
+<li>PHI는 서로 다른 제어 흐름에서 들어온 값 중 실제 실행 경로의 값을 선택합니다.</li>
+<li><code>wcslen</code>에는 모듈의 <code>wchar_size</code> 정보가 필요합니다. 이번 C/C++ frontend가 필요한 정보를 생성합니다.</li>
+<li>동적 포인터, 변경 가능한 전역, 가변 offset 등 길이를 결정하지 못하는 값이 있으면 호출을 보존합니다.</li>
+<li>구현에는 깊이 16 제한, 순환 감지, 캐시가 있습니다. 제한 밖 구조나 순환 PHI까지 모두 최적화한다는 뜻은 아닙니다.</li>
+<li>구현의 진입 조건은 단항 constant-foldable libcall이므로 코드 수준의 영향 범위는 <code>strlen</code>/<code>wcslen</code> 이름만으로 제한되어 있지는 않습니다.</li>
+</ul>
+<h2 id="s025-p1-heading-5">3. 발견한 회귀와 수정</h2>
+<h3 id="s025-p1-heading-6">재현</h3>
+<pre><code class="language-sh">build/benchmarks/pr223246/opt-pr -passes=instcombine -S \
+  llvm/test/Transforms/InstCombine/strlen-1.ll -o /dev/null
+</code></pre>
+<p>원본 PR은 <code>test_simplify1</code>에서 <code>did not reach a fixpoint after 1 iterations</code> 오류를 냅니다. 부모 커밋의 <code>opt-base</code>는 같은 기존 테스트를 통과합니다. 기대값을 바꿔야 하는 단순 테스트 차이가 아니라 pass의 실제 오류입니다.</p>
+<h3 id="s025-p1-heading-7">원인</h3>
+<p><code>prepareWorklist()</code>에서 <code>ConstantFoldInstruction()</code>이 호출의 반환값을 상수로 바꿉니다. 그런데 선언에 속성이 충분하지 않으면 사용자가 사라진 호출이라도 즉시 죽은 명령으로 판단되지 않습니다. 원래 코드는 이 경우에도 <code>continue</code>해서 호출을 작업 목록에서 누락시켰습니다. 따라서 다음 pass 실행 때 추가 정리가 일어나 fixpoint 검사에 실패했습니다.</p>
+<p><code>strlen</code>/<code>wcslen</code>을 새롭게 상수 접기 가능하게 등록하면서 이 경로가 드러났습니다. <code>visitCallInst()</code>에 있는 사용 중인 호출의 직접 제거만으로는, 그 전에 반환값이 접힌 호출을 처리할 수 없습니다.</p>
+<h3 id="s025-p1-heading-8">수정</h3>
+<p>실제로 삭제한 명령만 <code>continue</code>하고, 삭제되지 않은 명령은 계속 처리하여 작업 목록에 넣습니다. 호출의 속성 추론과 제거가 같은 pass 실행 안에서 끝나게 합니다. 수정 패치는 <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">worklist-fix.patch<small> [미첨부]</small></span>에 보관했습니다.</p>
+<p>기존 테스트가 회귀를 직접 검출하므로 기대값을 완화하거나 fixpoint 검사를 끄지 않았습니다. 같은 내용을 중복하는 새 테스트 대신 기존 회귀 테스트 전체와 인접 pass 테스트를 실행했습니다.</p>
+<h3 id="s025-p1-heading-9">검증 결과</h3>
+<table>
+<thead>
+<tr>
+<th>검증</th>
+<th>원본 PR</th>
+<th>로컬 수정 후</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PR 설명에 적힌 핵심 4개</td>
+<td>4 통과</td>
+<td>관련 19개에 포함되어 통과</td>
+</tr>
+<tr>
+<td>strlen/wcslen + optimization remarks 19개</td>
+<td>11 통과 / 8 실패</td>
+<td>19 통과</td>
+</tr>
+<tr>
+<td>InstCombine + InstSimplify + SCCP + remarks</td>
+<td>미실행</td>
+<td>2,263 통과 / 92 미지원 / 실패 0</td>
+</tr>
+<tr>
+<td>벤치마크 <code>-verify-each</code></td>
+<td>통과</td>
+<td>통과</td>
+</tr>
+<tr>
+<td>벤치마크 최적화 IR, 원본 PR 대 로컬 수정</td>
+<td>기준</td>
+<td>C O2/O3와 C++ O2에서 바이트 단위 동일</td>
+</tr>
+</tbody></table>
+<p>원본 실패 목록: <code>strlen-1</code>, <code>strlen-5</code>, <code>strlen-6</code>, <code>strlen-7</code>, <code>strlen-9</code>, <code>wcslen-1</code>, <code>wcslen-3</code>, <code>wcslen-4</code>.</p>
+<p>로그: <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">원본<small> [미첨부]</small></span>, <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">수정 후 19개<small> [미첨부]</small></span>, <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">확장 테스트<small> [미첨부]</small></span>.</p>
+<h2 id="s025-p1-heading-10">4. 공정하게 비교한 방법</h2>
+<ol>
+<li>같은 PR 커밋과 바로 이전 커밋의 production source로 <code>opt-pr</code> / <code>opt-base</code>를 생성했습니다. 빌드 설정은 같은 Release, assertions OFF, AArch64/X86입니다. 초기 비교는 PR에서 바뀐 두 production 파일만 부모 버전으로 바꾸어 빌드했고, 원래 소스와 빌드를 복구했습니다. 재현 스크립트는 로컬 수정 파일도 포함해 세 파일을 명시적으로 복원합니다.</li>
+<li>Homebrew Clang 22.1.8의 동일 frontend로 C/C++를 LLVM IR로 생성했습니다. <code>-O2 -Xclang -disable-llvm-passes</code>로 frontend의 LLVM 최적화를 끕니다.</li>
+<li>각각의 LLVM 24 개발 버전 <code>opt</code>로 <strong>전체 <code>default&lt;O2&gt;</code> / <code>default&lt;O3&gt;</code> 파이프라인</strong>을 실행했습니다. C++ 추가 실험은 O2입니다.</li>
+<li>동일한 현재 브랜치 <code>llc -O2</code>로 기계어를 생성하고 같은 Clang으로 링크했습니다. 서로 다른 clang 버전끼리 비교한 실험이 아닙니다. 설치된 Clang은 LLVM 24의 새 IR 속성을 읽지 못해 backend에는 저장소에서 빌드한 llc를 사용했습니다.</li>
+<li>전체 최적화 이후 각 함수를 <code>internalize,globaldce</code>로 분리하여 별도 실행 파일을 만들었습니다. 분리 단계는 두 변형에 동일합니다.</li>
+<li>드라이버는 별도 translation unit, LTO 없이 컴파일했습니다. 함수는 noinline이며 입력은 런타임의 4,096개 xorshift 값입니다. 계산 결과를 checksum으로 출력합니다.</li>
+<li>프로세스마다 100,000회 warmup 후 20,000,000회 측정, 변형 순서를 고정 seed로 섞어 15회 반복했습니다. C++ 메시지 생성은 회당 비용이 커 2,000,000회씩 측정했습니다.</li>
+<li>모든 측정의 checksum을 Python으로 따로 계산한 기대값과 대조했습니다. 단순히 두 바이너리의 값이 같다는 검사에 그치지 않았습니다.</li>
+<li>빌드와 대규모 테스트를 시간 측정 중에 함께 실행하지 않았습니다. 다만 CPU 고정·클록 고정·다른 앱 종료는 하지 않았습니다.</li>
+</ol>
+<p>호스트는 <code>opt --version</code>에서 apple-m1로 보고되는 macOS arm64입니다. 시간은 드라이버 루프와 함수 호출 비용을 포함한 회당 ns의 15회 중앙값입니다. 원본 PR과 수정 버전의 최적화 IR이 같으므로 아래 성능은 로컬 회귀 수정에도 동일한 생성 코드를 나타냅니다.</p>
+<p>전체 앱의 최적화 빌드 두 개를 비교하거나 LLVM 소스 전체의 컴파일 시간을 측정한 결과는 아닙니다. libc++와 OS libc는 시스템에 설치된 동일 버전을 사용했습니다.</p>
+<h2 id="s025-p1-heading-11">5. 최종 결과 — C, O2</h2>
+<table>
+<thead>
+<tr>
+<th>사례</th>
+<th>이전 ns/회</th>
+<th>PR ns/회</th>
+<th>배속</th>
+<th>시간 감소</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>리터럴 2개 선택 (대조군)</td>
+<td>1.233</td>
+<td>1.230</td>
+<td>1.00×</td>
+<td>0.2%</td>
+</tr>
+<tr>
+<td>리터럴 3개 중첩 선택</td>
+<td>5.086</td>
+<td>1.233</td>
+<td>4.13×</td>
+<td>75.8%</td>
+</tr>
+<tr>
+<td>상태 코드 switch / PHI</td>
+<td>7.306</td>
+<td>1.233</td>
+<td>5.92×</td>
+<td>83.1%</td>
+</tr>
+<tr>
+<td>중첩 wcslen</td>
+<td>9.681</td>
+<td>1.233</td>
+<td>7.85×</td>
+<td>87.3%</td>
+</tr>
+<tr>
+<td>64 / 128 / 256바이트 리터럴</td>
+<td>14.047</td>
+<td>1.229</td>
+<td>11.43×</td>
+<td>91.2%</td>
+</tr>
+<tr>
+<td>동적 포인터가 포함된 선택 (대조군)</td>
+<td>7.033</td>
+<td>6.992</td>
+<td>1.01×</td>
+<td>0.6%</td>
+</tr>
+<tr>
+<td>동적 문자열 strlen (대조군)</td>
+<td>5.336</td>
+<td>5.332</td>
+<td>1.00×</td>
+<td>0.1%</td>
+</tr>
+<tr>
+<td>로그 길이 계산 + 숫자 자릿수 + 동적 strlen</td>
+<td>17.976</td>
+<td>14.391</td>
+<td>1.25×</td>
+<td>19.9%</td>
+</tr>
+</tbody></table>
+<p>직접 select, 동적 포인터, 일반 동적 strlen 대조군의 작은 차이는 개선으로 주장하지 않습니다. 동적 사례들의 생성 어셈블리는 두 변형에서 동일했습니다.</p>
+<h2 id="s025-p1-heading-12">6. 최종 결과 — 실제 C++ 타입을 쓰는 합성 작업, O2</h2>
+<table>
+<thead>
+<tr>
+<th>사례</th>
+<th>이전 ns/회</th>
+<th>PR ns/회</th>
+<th>배속</th>
+<th>시간 감소</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C++ std::string_view 생성 후 길이</td>
+<td>5.478</td>
+<td>1.229</td>
+<td>4.46×</td>
+<td>77.6%</td>
+</tr>
+<tr>
+<td>C++ std::string 메시지 생성·append·전체 해시</td>
+<td>102.283</td>
+<td>93.260</td>
+<td>1.10×</td>
+<td>8.8%</td>
+</tr>
+</tbody></table>
+<p><code>cpp_view</code>는 선택된 <code>const char *</code>로 <code>std::string_view</code>를 생성할 때 생기는 길이 계산을 측정합니다. 멘토님의 C++ 리터럴 예측과 직접 연결됩니다.</p>
+<p><code>cpp_message</code>는 레벨 리터럴로 <code>std::string</code>을 만들고, <code>": "</code>와 동적 메시지를 append한 뒤 전체 문자를 해시합니다. 문자열 생성·할당·복사·해시가 포함됩니다. prefix의 길이 호출 제거는 확인했으며, 동적 메시지의 길이를 미리 안다는 가정은 하지 않았습니다. 서버 I/O나 실제 로그 서비스 전체 성능은 측정하지 않았습니다.</p>
+<h2 id="s025-p1-heading-13">7. O3 교차 확인</h2>
+<table>
+<thead>
+<tr>
+<th>사례</th>
+<th>이전 ns/회</th>
+<th>PR ns/회</th>
+<th>배속</th>
+<th>시간 감소</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>리터럴 2개 선택 (대조군)</td>
+<td>1.236</td>
+<td>1.234</td>
+<td>1.00×</td>
+<td>0.1%</td>
+</tr>
+<tr>
+<td>리터럴 3개 중첩 선택</td>
+<td>5.103</td>
+<td>1.231</td>
+<td>4.14×</td>
+<td>75.9%</td>
+</tr>
+<tr>
+<td>상태 코드 switch / PHI</td>
+<td>7.165</td>
+<td>1.237</td>
+<td>5.79×</td>
+<td>82.7%</td>
+</tr>
+<tr>
+<td>중첩 wcslen</td>
+<td>9.651</td>
+<td>1.229</td>
+<td>7.85×</td>
+<td>87.3%</td>
+</tr>
+<tr>
+<td>64 / 128 / 256바이트 리터럴</td>
+<td>14.121</td>
+<td>1.233</td>
+<td>11.45×</td>
+<td>91.3%</td>
+</tr>
+<tr>
+<td>동적 포인터가 포함된 선택 (대조군)</td>
+<td>7.077</td>
+<td>6.975</td>
+<td>1.01×</td>
+<td>1.4%</td>
+</tr>
+<tr>
+<td>동적 문자열 strlen (대조군)</td>
+<td>5.351</td>
+<td>5.329</td>
+<td>1.00×</td>
+<td>0.4%</td>
+</tr>
+<tr>
+<td>로그 길이 계산 + 숫자 자릿수 + 동적 strlen</td>
+<td>18.005</td>
+<td>14.344</td>
+<td>1.26×</td>
+<td>20.3%</td>
+</tr>
+</tbody></table>
+<p>O2와 O3에서 같은 호출 제거 양상이 나타났습니다. 새로 사라진 정적 길이 호출은 <code>nested</code>, <code>status</code>, <code>wide</code>, <code>long_nested</code> 각각 1개, <code>log_size</code>의 2개 중 1개입니다. C++ 함수 본문에서는 <code>cpp_view</code>, <code>cpp_message</code>의 prefix 호출이 각각 1개에서 0개가 됩니다. 호출 수 자료는 <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">static.json<small> [미첨부]</small></span>, <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">C++ static.json<small> [미첨부]</small></span>에 있습니다.</p>
+<h2 id="s025-p1-heading-14">8. 측정 중 발견한 배치 효과</h2>
+<p>처음 모든 kernel을 같은 실행 파일에 넣었을 때, 코드는 같은 동적 대조군이 PR에서 약 25% 느려졌습니다. 이 숫자를 PR의 알고리즘 회귀라고 단정하지 않았습니다. 함수별 어셈블리는 같았고, 각 kernel을 분리한 재측정에서는 차이가 사실상 사라졌습니다.</p>
+<p>따라서 코드·상수 배치 등 측정 맥락의 영향으로 해석했습니다. 구체적인 마이크로아키텍처 원인을 확정한 것은 아닙니다. 최초 로그와 원시 데이터도 <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">raw.csv<small> [미첨부]</small></span>, <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">summary.json<small> [미첨부]</small></span>에 남겼고, <strong>최종 발표에는 <code>isolated/</code> 결과를 사용</strong>합니다. 로그 길이 계산 결과 역시 최초 32% 대신 최종 약 20%를 사용합니다.</p>
+<h2 id="s025-p1-heading-15">9. 발표에서 말할 수 있는 것과 한계</h2>
+<ul>
+<li>말할 수 있음: 같은 소스·같은 파이프라인에서 PR 하나로 호출이 제거되고, 해당 경로에서 실행 시간이 줄어듭니다.</li>
+<li>말할 수 있음: C++ string_view 사례 4.46배, 문자열 생성·append·해시 합성 작업의 시간 8.8% 감소를 관측했습니다.</li>
+<li>말할 수 없음: LLVM으로 컴파일한 일반 프로그램 전체가 4~11배 빨라진다는 주장.</li>
+<li>말할 수 없음: <code>strlen</code>을 많이 호출하는 모든 프로그램이 빨라진다는 주장. 이 PR은 상수 선택 패턴의 빈도와 실행 비중에 좌우됩니다.</li>
+<li>아직 측정하지 않은 것: 실제 서비스/오픈소스 앱 전체 처리량, Linux/glibc 및 x86-64, 컴파일 시간 변화, 모든 LLVM 프로젝트의 전체 테스트.</li>
+<li>JSON에는 반복 쌍을 bootstrap한 95% 구간도 있습니다. 이 구간은 이 실험의 반복 변동만 나타내며 다른 기기나 실제 앱에 대한 보장을 뜻하지 않습니다.</li>
+</ul>
+<p>예를 들어 이 패턴이 원래 총 실행 시간의 1%이고 그 구간이 4.1배 빨라져도, 전체 배속은 <code>1 / (0.99 + 0.01 / 4.1)</code>로 약 1.008배입니다. 따라서 opt-benchmark에서 변화가 작더라도 해당 최적화의 가치와 모순되지 않습니다.</p>
+<h2 id="s025-p1-heading-16">10. 재현 및 산출물</h2>
+<p>저장소 루트에서 실행합니다. <code>build_baseline.py</code>는 작업 파일을 잠시 바꾸고 finally에서 복구하므로, 실행 중 다른 작업에서 이 세 source 파일을 수정하지 마세요.</p>
+<pre><code class="language-sh">python3 build/benchmarks/pr223246/build_baseline.py
+ninja -C build -j 4 opt llc FileCheck llvm-dis llvm-as split-file
+# 공통 C IR 생성 및 탐색 측정
+python3 build/benchmarks/pr223246/run.py
+# 발표에 쓰는 함수별 C 측정 (15회)
+python3 build/benchmarks/pr223246/run_isolated.py
+# C++ 측정 (15회)
+python3 build/benchmarks/pr223246/run_cpp.py
+# 문서의 표 재생성
+python3 build/benchmarks/pr223246/write_report.py
+</code></pre>
+<p>이 스크립트들은 이번 macOS/Homebrew 환경의 경로를 사용합니다. 다른 환경에서는 clang 경로·타깃·빌드 설정을 맞춰야 합니다. parent 바이너리의 생성된 VCS 버전 표시는 PR HEAD로 남을 수 있어, 버전 문자열 대신 <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">revisions.json<small> [미첨부]</small></span>과 소스 및 바이너리 해시를 기준으로 삼았습니다.</p>
+<ul>
+<li>소스: <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">kernels.c<small> [미첨부]</small></span>, <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">kernels.cpp<small> [미첨부]</small></span>, <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">driver.c<small> [미첨부]</small></span></li>
+<li>최종 C 원시값/요약: <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">isolated/raw.csv<small> [미첨부]</small></span>, <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">isolated/summary.json<small> [미첨부]</small></span></li>
+<li>C++ 원시값/요약: <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">cpp/raw.csv<small> [미첨부]</small></span>, <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">cpp/summary.json<small> [미첨부]</small></span></li>
+<li>IR·어셈블리: <code>base-O2.ll</code>, <code>pr-O2.ll</code>, <code>isolated/*.ll</code>, <code>isolated/*.s</code>, <code>cpp/*.ll</code>, <code>cpp/*.s</code></li>
+<li>수정 패치: <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">worklist-fix.patch<small> [미첨부]</small></span></li>
+<li>발표 대본 및 멘토님 공유 초안: <span class="unavailable-link" title="원자료에 연결되어 있지만 이 자료 묶음에는 없는 파일입니다.">TALK_KO.md<small> [미첨부]</small></span></li>
+</ul>
+<p>이 디렉터리는 git에서 무시되는 <code>build/</code> 아래에 있습니다. 산출물은 로컬에 저장되어 있으며 PR에 포함시키려면 필요한 문서만 별도로 옮기면 됩니다.</p>
+</div></div></section><section class="doc-section" id="editor-notes"><details class="editor-notes"><summary>핵심 원리와 편집 주석</summary><div><h3 id="pattern">어떤 호출을 없애는가</h3><p>후보 문자열이 모두 상수면 각 후보의 길이를 컴파일할 때 구할 수 있다. 실행 중에는 문자열을 스캔하는 대신 길이 값 자체를 선택한다.</p><div class="code-wrap"><div class="code-label">LLVM</div><pre><code>; Before: 주소를 선택한 뒤 길이를 계산한다.
+%inner = select i1 %c2, ptr @missing, ptr @cancelled
+%p = select i1 %c1, ptr @ok, ptr %inner
+%len = call i64 @strlen(ptr %p)
+
+; After: 이미 아는 길이를 선택한다.
+%inner.len = select i1 %c2, i64 7, i64 9
+%len = select i1 %c1, i64 2, i64 %inner.len</code></pre></div><p>단순한 두 리터럴의 select는 기존에도 최적화된다. 이 자료는 중첩 select와 PHI가 새로 처리되는 예제를 구분한다.</p><h3 id="design">구현과 보존 조건</h3><p>상수 문자열의 평가는 ConstantFolding에서 수행한다. InstCombine은 select·PHI 입력을 따라 결과를 구성한다. strlen 전용 예외 처리보다 기존 상수 접기 체계를 사용하는 설계다.</p><ul><li>길이를 알 수 없는 동적 입력이 있으면 호출을 유지한다.</li><li>변경 가능한 전역 문자열은 상수 문자열로 가정하지 않는다.</li><li>순환을 감지하고 탐색 깊이를 제한한다.</li><li>평가 결과를 캐시해 중복 탐색을 줄인다.</li><li>wcslen에는 필요한 wchar 크기 정보가 있어야 한다.</li><li>musttail의 직접 반환 조건을 보존한다.</li></ul><h3 id="regression">서로 다른 오류의 수정</h3><p>자료는 Archer의 musttail 크래시 보고와 별도로 발견한 fixpoint 회귀를 구분한다. 핵심 사례 몇 개만 통과한 상태에서도 인접 테스트는 실패할 수 있었다.</p><p>호출 결과를 접은 뒤 남은 호출을 작업 목록에서 계속 처리하도록 수정했다. 자료는 19개 관련 테스트 통과와 확장 검증 2,263개 통과·92개 미지원을 기록한다.</p><p>8개 테스트 실패는 같은 fixpoint 문제를 검출한 것이다. 이를 독립적인 버그 8개로 세지 않는다. 초기 Markdown의 로컬 수정 상태와 후속 발표의 브랜치 반영 상태도 구분한다.</p><h3 id="measurement">측정 방법</h3><p>자료의 측정일은 2026년 9월 15일이다. macOS arm64에서 같은 frontend IR, 부모·PR opt, 같은 llc를 사용했다. O2와 O3는 전체 최적화 파이프라인으로 비교했다.</p><ul><li>10만 회 준비 실행 뒤 15회 측정의 중앙값을 사용했다.</li><li>실행 순서를 무작위화했다.</li><li>런타임 입력과 독립적으로 계산한 checksum을 사용했다.</li><li>함수별 실행 파일과 별도 드라이버를 사용했다.</li><li>LTO를 사용하지 않고 noinline 조건을 유지했다.</li></ul><h3 id="results">보고된 O2 결과</h3><div class="table-wrap"><table><thead><tr><th scope="col">합성 사례</th><th scope="col">이전 ns/호출</th><th scope="col">PR ns/호출</th><th scope="col">시간 감소</th></tr></thead><tbody><tr><td>중첩 select</td><td>5.086</td><td>1.233</td><td>75.8%</td></tr><tr><td>switch / PHI</td><td>7.306</td><td>1.233</td><td>83.1%</td></tr><tr><td>C++ string_view</td><td>5.478</td><td>1.229</td><td>77.6%</td></tr><tr><td>C++ 문자열 생성·append·해시</td><td>102.283</td><td>93.260</td><td>8.8%</td></tr></tbody></table></div><aside class="note"><strong>읽을 때 확인할 점</strong>위 값은 I/O가 없는 합성 작업의 보고값이다. 실제 서비스 전체의 성능이나 모든 strlen 호출의 개선을 뜻하지 않는다. 동적 문자열 대조군의 작은 차이는 개선으로 주장하지 않았다.</aside><h3 id="limits">측정과 자료의 한계</h3><p>처음 한 실행 파일에 모은 측정에서는 같은 기계어의 대조군도 느려졌다. 함수를 분리해 다시 측정하자 차이가 줄었다. 작성자는 배치 효과의 원인을 확정하지 않고 최종 발표에 분리 측정값을 사용했다.</p><p>벤치마크 원시값과 스크립트의 상대 링크는 첨부 자료에 없는 파일을 가리킨다. 이 사이트는 그 파일을 제공한다고 표시하지 않는다. PR의 현재 상태도 원자료 작성 시점과 구분한다.</p></div></details></section><section class="doc-section" id="source-materials"><h2>문서 전문과 버전</h2><ul class="source-list"><li><span class="format">MD</span><div><a href="../sources/s025.html">성능 측정·회귀 분석 브리핑</a><small>223246.md</small></div></li><li><span class="format">PPTX</span><div><a href="../sources/s027.html">발표자료 · 16장 A</a><small>LLVM_PR223246__strlen.pptx</small></div></li><li><span class="format">PPTX</span><div><a href="../sources/s028.html">발표자료 · 16장 B</a><small>LLVM_PR_.pptx</small></div></li><li><span class="format">PPTX</span><div><a href="../sources/s030.html">발표자료 · 11장</a><small>llvm_strlen_pr_presentation.pptx</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></section><section class="doc-section" id="references"><h2>관련 이슈와 PR</h2><ul class="reference-list"><li><a href="https://github.com/llvm/llvm-project/issues/217529" rel="noopener noreferrer">Issue #217529</a></li><li><a href="https://github.com/llvm/llvm-project/pull/223246" rel="noopener noreferrer">PR #223246</a></li></ul><p class="small-note">구현·병합 상태와 측정값은 해당 제출 자료의 작성 시점 기준입니다.</p></section></article><aside class="article-toc"><strong>이 문서에서</strong><nav aria-label="이 문서의 목차"><a href="#s025-p1-heading-1">PR #223246 검토 및 성능 측정 브리핑</a><a href="#s025-p1-heading-2">결론</a><a href="#s025-p1-heading-3">1. 확인한 PR과 브랜치</a><a href="#s025-p1-heading-4">2. 무엇이 빨라지는가</a><a href="#s025-p1-heading-5">3. 발견한 회귀와 수정</a><a href="#s025-p1-heading-6">재현</a><a href="#s025-p1-heading-7">원인</a><a href="#s025-p1-heading-8">수정</a><a href="#s025-p1-heading-9">검증 결과</a><a href="#s025-p1-heading-10">4. 공정하게 비교한 방법</a><a href="#s025-p1-heading-11">5. 최종 결과 — C, O2</a><a href="#s025-p1-heading-12">6. 최종 결과 — 실제 C++ 타입을 쓰는 합성 작업, O2</a><a href="#s025-p1-heading-13">7. O3 교차 확인</a><a href="#s025-p1-heading-14">8. 측정 중 발견한 배치 효과</a><a href="#s025-p1-heading-15">9. 발표에서 말할 수 있는 것과 한계</a><a href="#s025-p1-heading-16">10. 재현 및 산출물</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav><p class="small-note"><a href="../glossary.html">기술 용어 확인하기 ↗</a></p></aside></div><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../about.html">편집 기준과 출처</a><br><a href="../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

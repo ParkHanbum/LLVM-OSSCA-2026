@@ -1,0 +1,43 @@
+case_id,project,feature,PRs,mean_role,user_A_s,user_B_s,ratio_B_over_A,speedup_A_over_B,reduction_percent,pairs,used_pairs,pair_cv_percent,status,sensitivity_0_pairs_percent,sensitivity_1_pairs_percent,sensitivity_2_pairs_percent
+sqlite-json,SQLite,speedtest1-json-size200,"2,219103",project mean,1.821233,1.787768,0.9816624,1.01868,1.834,60,58,0.91,uncertain,1.8261,1.8338,1.8367
+brotli-q11-source,Brotli,q11-sqlite-source,"216072,215073,2",project mean,18.480257,18.4302,0.9973117,1.002696,0.269,60,58,0.347,uncertain,0.2693,0.2688,0.2695
+opencv-median-26,OpenCV medianBlur,640x480-16SC1-k3,218688,feature appendix,1.399951,1.400356,1.000301,0.999699,-0.03,60,58,0.507,uncertain,-0.033,-0.0301,-0.0222
+opencv-median-36,OpenCV medianBlur,1280x720-16SC1-k3,218688,feature appendix,1.845952,1.849351,1.0018426,0.998161,-0.184,60,58,0.264,uncertain,-0.1816,-0.1843,-0.1825
+png-photo-gray4-aloe-1282x1110,libpng,photo-gray4-aloe-1282x1110,2,project mean,3.537241,3.241952,0.9165206,1.091083,8.348,20,18,0.258,improved,8.3637,8.3479,8.3427
+bzip2-source-decode,bzip2,SQLite C source / bzip2 -9,2,project mean,1.345773,1.373684,1.0207512,0.979671,-2.075,60,58,0.633,uncertain,-2.0744,-2.0751,-2.0748
+ffmpeg-vp9-decode,FFmpeg,Foreman QCIF / native VP9 decode,"221531,2",project mean,1.075114,1.087209,1.0113796,0.988748,-1.138,60,58,2.052,uncertain,-1.1529,-1.138,-1.1077
+libvpx-vp9-decode,libvpx,Foreman QCIF / VP9 decode,2,project mean,1.11495,1.120374,1.0048704,0.995153,-0.487,60,58,0.451,uncertain,-0.4817,-0.487,-0.4854
+aom-av1,AOM,"Foreman QCIF AV1 48 frames, cpu-used 4","2,215073",project mean,1.893838,1.887366,0.9965896,1.003422,0.341,60,58,0.414,uncertain,0.3467,0.341,0.3334
+openh264-bframes,OpenH264,"Cisco Main CABAC 144 frames, default SIMD",2,project mean,1.272699,1.271809,0.9993139,1.000687,0.069,60,58,0.788,uncertain,0.0598,0.0686,0.0796
+jpegxl-lossless,JPEG XL,"Aloe RGB 1282x1110, lossless effort 1 AVX2",215073,project mean,1.239505,1.290917,1.0415653,0.960093,-4.157,60,58,1.283,regressed,-4.1367,-4.1565,-4.1739
+gmp-sqrt-1024,GMP,"16 deterministic integers, 1024 bits",2,project mean,1.690013,1.695076,1.0030021,0.997007,-0.3,60,58,0.568,uncertain,-0.3209,-0.3002,-0.2847
+gmp-sqrt-8192,GMP,"16 deterministic integers, 8192 bits",2,project mean,1.848413,1.844504,0.9978871,1.002117,0.211,60,58,0.367,uncertain,0.2296,0.2113,0.2084
+wabt-writec,WABT,Official Dhrystone wasm2c WriteC API,223246,project mean,1.230501,1.250676,1.0164426,0.983823,-1.644,60,58,1.735,uncertain,-1.6413,-1.6443,-1.6459
+duckdb-datepart,DuckDB,"1M rows, 12 dynamic calendar specifiers",223246,project mean,1.209863,1.196868,0.9894783,1.010634,1.052,60,58,2.065,uncertain,1.0255,1.0522,1.0768
+hermes-deltablue,Hermes,"Official Octane DeltaBlue, 20 fixed calls, upstream chain/projection checks",214970,project mean,1.875818,1.874189,0.9991576,1.000843,0.084,60,58,0.715,uncertain,0.0703,0.0842,0.0903
+darktable-dither,darktable,"Aloe full RGBA, Floyd-Steinberg 4-bit RGB export module",213690,project mean,1.398825,1.39756,0.9991034,1.000897,0.09,60,58,0.426,uncertain,0.0883,0.0897,0.0885
+hyperscan-compile,Hyperscan,"173 official compiler expressions, block API","214108,223246,215073",project mean,1.183304,1.181903,0.9988302,1.001171,0.117,60,58,0.487,uncertain,0.1206,0.117,0.119
+pcre2-compile-upstream-and,PCRE2,Four exact upstream extended character class intersection patterns; full compilation,2,project mean,1.295821,1.290596,0.9959868,1.004029,0.401,60,58,0.75,uncertain,0.4123,0.4013,0.4024
+cmake-preset-conditions,CMake,Official preset condition listing,214970,project mean,1.624045,1.613148,0.9933297,1.006715,0.667,60,58,2.587,uncertain,0.6467,0.667,0.6698
+cmake-message-checks,CMake,Normal upstream nested progress check messages,223246,project mean,1.544823,1.562105,1.012204,0.987943,-1.22,60,58,3.847,uncertain,-1.1868,-1.2204,-1.2408
+ruff-pyupgrade-fixes,Ruff,Official pyupgrade fix preview corpus,"2,219103",project mean,1.186955,1.181017,0.995156,1.004868,0.484,60,58,1.903,uncertain,0.4991,0.4844,0.4751
+libarchive-fd-list,libarchive,Public fd API source archive header listing,214933,project mean,1.388329,1.400554,1.0090523,0.991029,-0.905,60,58,2.252,uncertain,-0.9338,-0.9052,-0.8886
+uutils-ptx,uutils,Permuted index of official project README,214108,project mean,1.083233,1.082108,0.9990774,1.000923,0.092,60,58,1.717,uncertain,0.0721,0.0923,0.0868
+uutils-base32,uutils,Base32 encoding of official source archive,214933,project mean,1.19308,1.195982,1.0026358,0.997371,-0.264,60,58,2.344,uncertain,-0.2278,-0.2636,-0.2777
+php-dechex,PHP,Normal 64-bit integer hexadecimal conversion,215073,project mean,1.447126,1.44639,0.9995047,1.000496,0.05,60,58,0.955,uncertain,0.0563,0.0495,0.0694
+php-reflection,PHP,Official ReflectionClass serialization,223246,project mean,1.186052,1.191674,1.0047467,0.995276,-0.475,60,58,0.634,uncertain,-0.469,-0.4747,-0.4914
+qemu-copy-on-read,QEMU,QCOW2 copy-on-read of a real source archive payload,219103,project mean,1.431423,1.433654,1.0017928,0.99821,-0.179,60,58,2.83,uncertain,-0.1944,-0.1793,-0.1825
+qemu-compat-downgrade,QEMU,QCOW2 v3 to v2 compatibility conversion,214933,project mean,1.693125,1.693031,1.0002789,0.999721,-0.028,60,58,2.798,uncertain,-0.0343,-0.0279,-0.0302
+yara-compile,YARA-X,Rule compilation using the math module,"214108,219103",project mean,1.505508,1.496878,0.9945454,1.005485,0.545,60,58,2.595,uncertain,0.516,0.5455,0.5673
+yara-scan-pi,YARA-X,Real benign ELF scan using common compiled math rules,"214108,214933,219103",project mean,1.274305,1.27356,0.9994512,1.000549,0.055,60,58,1.109,uncertain,0.0294,0.0549,0.0706
+libarchive-create-ustar,libarchive,USTAR archive creation from official source files,2,feature appendix,1.15627,1.149487,0.9949282,1.005098,0.507,60,58,4.078,uncertain,0.4765,0.5072,0.5145
+openssl-pkcs12-kdf,OpenSSL,Official PKCS12 KDF known-answer,"214933,223246",project mean,1.485039,1.475815,0.9942702,1.005763,0.573,60,58,2.638,uncertain,0.5803,0.573,0.5733
+openssl-crl-verify,OpenSSL,Official CRL verification at the upstream fixed time,"2,223246",project mean,1.239229,1.235478,0.9974129,1.002594,0.259,60,58,2.927,uncertain,0.261,0.2587,0.2567
+libgit2-filter,libgit2,Public worktree CRLF filter API,2,project mean,1.628994,1.619568,0.9943044,1.005728,0.57,60,58,1.547,uncertain,0.5678,0.5696,0.5802
+libgit2-config,libgit2,Public conditional configuration API,223246,project mean,1.566356,1.558715,0.9955614,1.004458,0.444,60,58,3.312,uncertain,0.429,0.4439,0.4657
+polars-contains,Polars,Official per-row literal contains arrays,214108,project mean,1.456263,1.452588,0.9975302,1.002476,0.247,60,58,1.245,uncertain,0.2351,0.247,0.25
+polars-parquet,Polars,Brotli Parquet write of real source lines,219103,project mean,1.361714,1.366139,1.0032586,0.996752,-0.326,60,58,0.447,uncertain,-0.3294,-0.3259,-0.3213
+duckdb-sample,DuckDB,Fixed-seed reservoir sample of the existing events table,214108,project mean,1.11786,1.117551,0.9999938,1.000006,0.001,60,58,2.59,uncertain,0.0118,0.0006,0.0075
+duckdb-parquet,DuckDB,Parquet Brotli write of real source text at default quality 11,"215073,216072",project mean,1.354193,1.336274,0.9867891,1.013388,1.321,60,58,0.699,uncertain,1.3198,1.3211,1.3223
+node-brotli,Node.js,Public synchronous Brotli compression of real source text,"215073,216072",project mean,1.113709,1.125501,1.0106078,0.989504,-1.061,60,58,0.616,uncertain,-1.061,-1.0608,-1.06
+node-pfx,Node.js,TLS context creation from the official agent1 PKCS12 fixture,214933,project mean,1.313406,1.309599,0.9971152,1.002893,0.288,60,58,0.631,uncertain,0.2869,0.2885,0.2944

@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="선택 조건을 분석하지 않고도 equality 비교가 원래 x의 0 여부와 같다는 점을 사용한다."><meta name="theme-color" content="#fbfaf7"><title>x와 -x 중 선택한 값의 0 비교를 줄이기 · LLVM 멘티 기술 문서</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css?v=41429de5fd03"><script defer src="../assets/site.js?v=28009b539b2a"></script></head><body id="top"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../index.html" class="nav-articles active" aria-current="page">문서</a><a href="../results.html" class="nav-results">기여 결과</a><a href="../benchmarks.html" class="nav-benchmarks">벤치마크</a><a href="../sources/index.html" class="nav-sources">자료</a><a href="../glossary.html" class="nav-glossary">용어</a><a href="../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details><summary>라민우<span class="count">02</span></summary><ul><li><a href="../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details><summary>이하동<span class="count">03</span></summary><ul><li><a href="../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details open><summary>전의정<span class="count">01</span></summary><ul><li><a href="../articles/floating-zero-compare.html" aria-current="page">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main source-page article-main"><div class="breadcrumb"><a href="../index.html">문서</a><span>/</span>전의정</div><div class="article-layout"><article class="article"><header class="article-header"><div class="eyebrow">COMPLETE DOCUMENT / PDF</div><h1>x와 -x 중 선택한 값의 0 비교를 줄이기</h1><p class="article-lead">선택 조건을 분석하지 않고도 equality 비교가 원래 x의 0 여부와 같다는 점을 사용한다.</p><div class="article-meta"><strong>자료 전의정</strong><span>기존 패치 분석</span><span>PDF 원자료 · 16쪽</span><span>전문 수록</span></div><div class="article-tools"><button type="button" data-font aria-pressed="false">글자 크게</button><button type="button" data-print><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V9h18v8h-4M7 14h10v7H7z"/></svg>인쇄 / PDF</button><a href="#source-materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 15 6-6M7 11l-3 3a4 4 0 0 0 6 6l3-3M11 7l3-3a4 4 0 0 1 6 6l-3 3"/></svg>다른 버전 보기</a></div></header><p class="complete-notice">Issue85250_.pdf의 전체 내용입니다. 설명·코드·표·검증 기록을 생략하지 않고 옮겼습니다. 그림 안의 문자 인식 결과에는 기호 오류가 있을 수 있어 이미지도 함께 제공합니다.</p><div class="reading-mode" role="group" aria-label="문서 읽기 방식"><span>읽기 방식</span><button type="button" data-reading="text" aria-pressed="true">본문과 그림</button><button type="button" data-reading="layout" aria-pressed="false">원래 페이지 배치</button><small>두 보기 모두 이 페이지에서 확인할 수 있습니다.</small></div><details class="mobile-toc"><summary>이 문서의 목차</summary><nav aria-label="이 문서의 목차"><a href="#page-1">01 · ❓ / [Issue #85250] Missed FP Fold ,(…</a><a href="#page-2">02 · 1️⃣ 선택한 Issue / 이슈 정보 / 항목 내용</a><a href="#page-3">03 · 형태의 LLVM IR instruction 조합을 / fcmp /…</a><a href="#page-4">04 · %oeq = fcmp oeq float %0, 0.000000e+…</a><a href="#page-5">05 · Compiler Explorer / 이 단계에서는 다음을 분리해서…</a><a href="#page-6">06 · 󾠱 / 로컬 성능 평가 / llvm-project &gt; oss 라는…</a><a href="#page-7">07 · # %bb.0: # %entry / - vbroadcastss _…</a><a href="#page-8">08 · Total Cycles: 3005 / Total uOps: 700…</a><a href="#page-9">09 · fcsel / 핵심 연산만 세면 5개 → 2개이고, ret 까지 …</a><a href="#page-10">10 · 항목 최적화 전 최적화 후 변화 / 명령어 수 9 5 약 44% …</a><a href="#page-11">11 · 초기 PatternMatch / case Instruction::…</a><a href="#page-12">12 · m_FNeg(m_Value(Y)) false arm이 -Y 인지 …</a><a href="#page-13">13 · 기본 테스트 / define i1 @fcmp_ueq_sel_x_n…</a><a href="#page-14">14 · predicate별 테스트 / 패치에서는 다음 네 predicat…</a><a href="#page-15">15 · define i1 @fcmp_sel_x_negx_with_any_…</a><a href="#page-16">16 · 리뷰에서는 denormal-fp-math=&quot;dynamic,dyna…</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav></details><section class="doc-section full-source-section" data-source="s022" data-page="1" id="page-1"><div class="page-marker"><span>PDF · 01 / 16</span></div><h2 class="page-title">❓ / [Issue #85250] Missed FP Fold ,(x ≥ 0 ? x : -x / == 0) ⇒ x == 0</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s022-p1-heading-1">❓</h3><h3 id="s022-p1-heading-2">[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x</h3><h3 id="s022-p1-heading-3">== 0) ⇒ x == 0</h3></div><div class="table-wrap"><table><tr><th><p>Category</p></th><th><p>Issue PR Task 분석</p></th></tr><tr><td><p>URL</p></td><td><p>https://github.com/llvm/llvm-project/issues/85250</p></td></tr><tr><td><p>날짜</p></td><td><p>July 19, 2026</p></td></tr></table></div><div class="pdf-region"><p>󾠮 선택한 Issue</p><p>이슈 정보</p><pre><code>       missed FP fold, (x ≥ 0)? x : -x ==0 ⇒ x == 0</code></pre><p>FP</p></div><div class="pdf-region"><p>직관적인 이해</p><p>왜 InstCombine 문제인가?</p><p>󾠯 핵심 패턴 및 src/tgt IR</p><p>기존 code와 fold한 code</p><p>src</p></div><div class="pdf-region"><pre><code>%1 = fcmp oge float %0, 0.000000e+00</code></pre></div><div class="pdf-region"><pre><code>%2 = fneg float %0</code></pre></div><div class="pdf-region"><pre><code>%3 = select i1 %1, float %0, float %2</code></pre></div><div class="pdf-region"><pre><code>%4 = fcmp oeq float %3, 0.000000e+00</code></pre></div><div class="pdf-region"><pre><code>ret i1 %4</code></pre></div><div class="pdf-region"><p>tgt</p></div><div class="pdf-region"><p>패턴</p><p>󾠰 Alive2 검증 &amp; Compiler Explorer</p><p>Alive2</p></div><div class="pdf-region"><p>Compiler Explorer</p></div><div class="pdf-region"><p>src Assembly</p></div><div class="pdf-region"><p>tgt Assembly</p></div><div class="pdf-region"><p>󾠱 로컬 성능 평가</p><p>4.1 X86 Assembly</p></div><div class="pdf-region"><p>Assembly diff</p></div><div class="pdf-region"><p>X86 llvm-mca 실행</p><p>lvm-mca</p></div><div class="pdf-region"><p>4.2 AArch64 Assembly</p></div><div class="pdf-region"><p>4.3 RISCV Assembly</p></div><div class="pdf-region"><p>결과</p><p>󾠲  실제 merged patch</p><p>초기 변환 방식</p><p>리뷰에서 발견된 문제</p></div><div class="pdf-region"><p>해결법</p><p>󾠳 테스트 패치</p></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 1</p></div></div><div class="page-links"><h3>이 페이지에 연결된 자료</h3><ul><li><a href="https://github.com/llvm/llvm-project/issues/85250" rel="noopener noreferrer">https://github.com/llvm/llvm-project/issues/85250</a></li></ul></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/001.webp" aria-label="Issue85250_.pdf 1쪽 확대"><img src="../assets/pages/s022/001.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 1쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 1/16</span><a href="../assets/pages/s022/001.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="2" id="page-2"><div class="page-marker"><span>PDF · 02 / 16</span></div><h2 class="page-title">1️⃣ 선택한 Issue / 이슈 정보 / 항목 내용</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>기본 테스트</p><p>predicate별 테스트</p><p>scalar와 vector 테스트</p><p>select 조건은 중요하지 않다는 테스트</p><p>0.0 테스트 추가</p><p>denormal 0에 아주 가까운 수 ) 설정 테스트</p><p>Fast-Math Flags 테스트</p></div><div class="pdf-region"><h3 id="s022-p2-heading-1">󾠮 선택한 Issue</h3></div><div class="pdf-region"><h3 id="s022-p2-heading-2">이슈 정보</h3></div><div class="table-wrap"><table><tr><th><p>항목</p></th><th><p>내용</p></th></tr><tr><td><p>Issue</p></td><td><pre><code>#85250 — missed FP fold, (x &gt;= 0) ? x : -x == 0 =&gt; x ==
+0</code></pre></td></tr><tr><td><p>상태</p></td><td><p>Closed</p></td></tr><tr><td><p>Labels</p></td><td><pre><code>floating-point , good first issue , llvm:instcombine ,
+missed-optimization</code></pre></td></tr><tr><td><p>연결 PR</p></td><td><pre><code>#85673 — [InstCombine] fold cond ? x : -x == 0 into x
+== 0</code></pre></td></tr><tr><td><p>PR 상태</p></td><td><p>Merged, 20240420</p></td></tr><tr><td><p>구현 파일</p></td><td><pre><code>llvm/lib/Transforms/InstCombine/InstCombineCompares.cpp</code></pre></td></tr><tr><td><p>테스트 파일</p></td><td><pre><code>llvm/test/Transforms/InstCombine/fcmp.ll</code></pre></td></tr></table></div><div class="pdf-region"><pre><code>missed FP fold, (x ≥ 0)? x : -x ==0 ⇒ x == 0</code></pre><p class="source-bullet">→ 부동소수점(Floating Point)에 대해 가능한 fold(최적화)를 놓쳤다</p></div><div class="pdf-region"><p>FP</p></div><div class="pdf-region"><p>LLVM에서는 Integer와 Floating Point의 규칙이 다르다.</p></div><div class="pdf-region"><p>부동소수점에는 NaN, +0.0, 0.0, Infinity같은 특별한 값들이 있기 때문에 최적화를 조심해야 함.</p><p>✅ missed integer fold, missed FP fold 처럼 구분해서 적음</p></div><div class="pdf-region"><p>직관적인 이해</p><pre><code> (x &gt;= 0) ? x : -x == 0 는 fabs(x) == 0 와 같은 의미</code></pre><p class="source-bullet">→ 그런데 최종 비교는 그 값이 0인지 확인하는 것이다.</p><p class="source-bullet">→ x와 -x는 부호는 다르지만 0인지 여부는 같다.</p><p class="source-bullet">→ 따라서 x == 0으로 바꿀 수 있다.</p></div><div class="pdf-region"><p>왜 InstCombine 문제인가? 이 이슈는 CFG를 바꾸거나 특정 target의 assembly instruction을 직접 선택하는 문제가 아니다.</p></div><div class="pdf-region"><pre><code>fcmp → fneg → select → fcmp</code></pre></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 2</p></div></div><div class="page-links"><h3>이 페이지에 연결된 자료</h3><ul><li><a href="https://github.com/llvm/llvm-project/issues/85250" rel="noopener noreferrer">https://github.com/llvm/llvm-project/issues/85250</a></li><li><a href="https://github.com/llvm/llvm-project/pull/85673" rel="noopener noreferrer">https://github.com/llvm/llvm-project/pull/85673</a></li></ul></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/002.webp" aria-label="Issue85250_.pdf 2쪽 확대"><img src="../assets/pages/s022/002.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 2쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 2/16</span><a href="../assets/pages/s022/002.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="3" id="page-3"><div class="page-marker"><span>PDF · 03 / 16</span></div><h2 class="page-title">형태의 LLVM IR instruction 조합을 / fcmp / 하나로 단순화하는 문제이므로 InstCombine에 해당한다.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>형태의 LLVM IR instruction 조합을</p></div><div class="pdf-region"><pre><code>fcmp</code></pre></div><div class="pdf-region"><p>하나로 단순화하는 문제이므로 InstCombine에 해당한다.</p></div><div class="pdf-region"><h3 id="s022-p3-heading-1">󾠯 핵심 패턴 및 src/tgt IR</h3></div><div class="pdf-region"><h3 id="s022-p3-heading-2">기존 code와 fold한 code</h3></div><div class="pdf-region"><pre><code>define i1 @src(float %0) {
+entry:
+%1 = fcmp oge float %0, 0.000000e+00
+%2 = fneg float %0
+%3 = select i1 %1, float %0, float %2
+%4 = fcmp oeq float %3, 0.000000e+00
+ret i1 %4
+}</code></pre></div><div class="pdf-region"><pre><code>define i1 @tgt(float %0) {
+entry:
+%oeq = fcmp oeq float %0, 0.000000e+00
+ret i1 %oeq
+}</code></pre></div><div class="pdf-region"><p>src</p></div><div class="pdf-region"><pre><code>%1 = fcmp oge float %0, 0.000000e+00</code></pre><p>fcmp oge = Ordered Greater or Equal = x &gt;= 0</p></div><div class="pdf-region"><p>입력 %0이 0.000000e+00보다 크거나 같은지 비교하고 결과를 %1에 저장한다.</p></div><div class="pdf-region"><p>%1 의 타입은 i1 , 즉 boolean이다.</p></div><div class="pdf-region"><pre><code>%2 = fneg float %0</code></pre><p>fneg 는 floating-point 값의 부호를 뒤집는다.</p></div><div class="pdf-region"><p>즉 %0의 부호를 반전한 값을 %2에 저장한다.</p></div><div class="pdf-region"><pre><code>%3 = select i1 %1, float %0, float %2
+    select = 삼항 연산자 = (condition) ? A : B</code></pre></div><div class="pdf-region"><p>%1 이 true면 %0 , false면 %2 , 즉 %0 을 선택한다.</p></div><div class="pdf-region"><pre><code>%4 = fcmp oeq float %3, 0.000000e+00</code></pre><p>%3이 0인지 비교한다.</p><p>즉 절댓값과 비슷한 결과가 0인지 확인한다.</p></div><div class="pdf-region"><pre><code> ret i1 %4</code></pre><p>최종 비교 결과를 반환한다.</p></div><div class="pdf-region"><p>tgt</p></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 3</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/003.webp" aria-label="Issue85250_.pdf 3쪽 확대"><img src="../assets/pages/s022/003.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 3쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 3/16</span><a href="../assets/pages/s022/003.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="4" id="page-4"><div class="page-marker"><span>PDF · 04 / 16</span></div><h2 class="page-title">%oeq = fcmp oeq float %0, 0.000000e+00 / ret i1 %oeq / 즉 다음과 같다.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><pre><code>%oeq = fcmp oeq float %0, 0.000000e+00
+ret i1 %oeq</code></pre></div><div class="pdf-region"><p>즉 다음과 같다.</p></div><div class="pdf-region"><pre><code>return x == 0;</code></pre></div><div class="pdf-region"><h3 id="s022-p4-heading-1">패턴</h3></div><div class="pdf-region"><pre><code>fcmp oge
+     ↓
+fneg
+     ↓
+select
+     ↓
+fcmp oeq 0</code></pre></div><div class="pdf-region"><pre><code>fcmp oeq x, 0</code></pre></div><div class="pdf-region"><p>일반화하면 다음 패턴이다.</p></div><div class="pdf-region"><pre><code>fcmp eq (select cond, x, -x), 0</code></pre></div><div class="pdf-region"><pre><code>fcmp eq x, 0</code></pre></div><div class="pdf-region"><p>&quot;절댓값을 만든 뒤 0과 비교하는 패턴&quot;을 &quot;원래 값이 0인지 비교하는 패턴&quot; 으로 단순화가 가능하다.</p></div><div class="pdf-region"><p>실제 패치가 처리하는 predicate는 다음 네 가지다.</p></div><div class="pdf-region"><pre><code>ueq</code></pre></div><div class="pdf-region"><pre><code>une
+oeq</code></pre></div><div class="pdf-region"><pre><code>one</code></pre></div><div class="pdf-region"><p>“X와 X 중 하나를 선택한 뒤 0과 비교하는 패턴”을 원래 값 X가 0인지 비교하는 패턴”으로 단순화한다.</p></div><div class="pdf-region"><h3 id="s022-p4-heading-2">󾠰 Alive2 검증 &amp; Compiler Explorer</h3></div><div class="pdf-region"><p>Alive2</p></div><div class="pdf-region"><p>src와 tgt가 LLVM IR 의미상 동일한지 먼저 확인한다.</p></div><div class="pdf-region"><p>Issue Alive2: https://alive2.llvm.org/ce/z/NFEKjp</p></div><div class="pdf-region"><p>PR Alive2: https://alive2.llvm.org/ce/z/7DMRCy</p></div><div class="pdf-region"><pre><code>Transformation seems to be correct! 의 결과가 나오는 것을 확인했다.</code></pre></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 4</p></div></div><div class="page-links"><h3>이 페이지에 연결된 자료</h3><ul><li><a href="https://alive2.llvm.org/ce/z/NFEKjp" rel="noopener noreferrer">https://alive2.llvm.org/ce/z/NFEKjp</a></li><li><a href="https://alive2.llvm.org/ce/z/7DMRCy" rel="noopener noreferrer">https://alive2.llvm.org/ce/z/7DMRCy</a></li></ul></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/004.webp" aria-label="Issue85250_.pdf 4쪽 확대"><img src="../assets/pages/s022/004.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 4쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 4/16</span><a href="../assets/pages/s022/004.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="5" id="page-5"><div class="page-marker"><span>PDF · 05 / 16</span></div><h2 class="page-title">Compiler Explorer / 이 단계에서는 다음을 분리해서 본다. / 1. IR이 짧아지는가?</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Compiler Explorer</p></div><div class="pdf-region"><p>이 단계에서는 다음을 분리해서 본다.</p></div><div class="pdf-region"><p>IR이 짧아지는가?</p><p>실제 codegen에서도 더 나은 형태가 되는가?</p></div><div class="pdf-region"><p>clang 12.0.1 버전으로 확인했고 아래 링크에 가보면 아래와 같은 Assembly 결과를 확인할 수 있다.</p><p>https://godbolt.org/z/K6EEbb13b</p></div><div class="pdf-region"><p>src Assembly</p></div><div class="pdf-region"><pre><code>.LCPI0_0:
+        .long   0x80000000
+        .long   0x80000000
+        .long   0x80000000
+        .long   0x80000000
+src:
+        movaps  xmm1, xmmword ptr [rip + .LCPI0_0]
+        xorps   xmm1, xmm0
+        xorps   xmm2, xmm2
+        xorps   xmm3, xmm3
+        cmpless xmm3, xmm0
+        andps   xmm0, xmm3
+        andnps  xmm3, xmm1
+        orps    xmm3, xmm0
+        cmpeqss xmm3, xmm2
+        movd    eax, xmm3
+        and     eax, 1
+        ret</code></pre></div><div class="pdf-region"><p>tgt Assembly</p></div><div class="pdf-region"><pre><code>tgt:
+        xorps   xmm1, xmm1
+        cmpeqss xmm1, xmm0
+        movd    eax, xmm1
+        and     eax, 1
+        ret</code></pre></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 5</p></div></div><figure class="source-figure"><a href="../assets/figures/s022-005-01.webp"><img src="../assets/figures/s022-005-01.webp" width="954" height="352" alt="전의정 자료 5쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>5쪽 · 그림 1 <a href="../assets/figures/s022-005-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>E EXPLORER
+Add..• More - Templates O
+Share- Policies ④ - Other-
+ㅁ oa(unt (Gats m) &gt;X
+opt (trunk
+₩503
+define i1 gsrc(float te) Tocal_unnaned_addr 1 1
+T atirioutes To - &amp; musprogress notree norecy</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><div class="page-links"><h3>이 페이지에 연결된 자료</h3><ul><li><a href="https://godbolt.org/z/K6EEbb13b" rel="noopener noreferrer">https://godbolt.org/z/K6EEbb13b</a></li></ul></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/005.webp" aria-label="Issue85250_.pdf 5쪽 확대"><img src="../assets/pages/s022/005.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 5쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 5/16</span><a href="../assets/pages/s022/005.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="6" id="page-6"><div class="page-marker"><span>PDF · 06 / 16</span></div><h2 class="page-title">󾠱 / 로컬 성능 평가 / llvm-project &gt; oss 라는 폴더를 만든다.</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s022-p6-heading-1">󾠱 로컬 성능 평가</h3><p>llvm-project &gt; oss 라는 폴더를 만든다.</p><p>src.ll 과 tgt.ll 을 각각 생성한다.</p></div><div class="pdf-region"><h3 id="s022-p6-heading-2">4.1 X86 Assembly</h3></div><div class="pdf-region"><pre><code>C:\llvm-project\build\bin\llc.exe `
+  -O2 `
+  -mtriple=x86_64-pc-windows-msvc `
+  -mcpu=x86-64-v3 `
+  src.ll `
+  -o x86-src.s</code></pre></div><div class="pdf-region"><pre><code>C:\llvm-project\build\bin\llc.exe `
+  -O2 `
+  -mtriple=x86_64-pc-windows-msvc `
+  -mcpu=x86-64-v3 `
+  tgt.ll `
+  -o x86-tgt.s</code></pre></div><div class="pdf-region"><p>원본과 최적화 코드의 Assembly를 각각 생성한다.</p></div><div class="pdf-region"><p>llc 는 .ll 을 지정한 target의 Assembly로 변환하는 LLVM 도구다.</p></div><div class="pdf-region"><p>Assembly diff</p></div><div class="pdf-region"><pre><code>&gt;&gt; git diff --no-index -- x86-src.s x86-tgt.s
+diff --git a/x86-src.s b/x86-tgt.s
+index ef1de188a..38f030277 100644
+--- a/x86-src.s
++++ b/x86-tgt.s
+@@ -5,25 +5,16 @@
+        .globl  @feat.00
+ @feat.00 = 0
+        .att_syntax
+-       .file   &quot;src.ll&quot;
++       .file   &quot;tgt.ll&quot;^M
+        .def    test;
+        .scl    2;
+        .type   32;
+        .endef
+-       .globl  __real@80000000                 # -- Begin function test
+-       .section        .rdata,&quot;dr&quot;,discard,__real@80000000
+-       .p2align        2, 0x0
+-__real@80000000:
+-       .long   0x80000000                      # float -0
+        .text
+-       .globl  test
++       .globl  test                            # -- Begin function test^M
+        .p2align        4
+ test:                                   # @test</code></pre></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 6</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/006.webp" aria-label="Issue85250_.pdf 6쪽 확대"><img src="../assets/pages/s022/006.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 6쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 6/16</span><a href="../assets/pages/s022/006.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="7" id="page-7"><div class="page-marker"><span>PDF · 07 / 16</span></div><h2 class="page-title"># %bb.0: # %entry / - vbroadcastss __real@80000000(%rip), %xmm1 # xmm1 = [-0.0E+0,-0.0E+0,-0.0E+ / 0,-0.0E+0]</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><pre><code> # %bb.0:                                # %entry
+-       vbroadcastss    __real@80000000(%rip), %xmm1 # xmm1 = [-0.0E+0,-0.0E+0,-0.0E+
+0,-0.0E+0]
+-       vxorps  %xmm1, %xmm0, %xmm1
+-       vcmpless        %xmm0, %xmm1, %xmm2
+-       vblendvps       %xmm2, %xmm0, %xmm1, %xmm0</code></pre></div><div class="pdf-region"><p>x86에서는 -x 생성과 조건 선택에 사용되던 다음 instruction들이 제거되었다.</p></div><div class="pdf-region"><pre><code>vbroadcastss</code></pre></div><div class="pdf-region"><pre><code>vxorps</code></pre></div><div class="pdf-region"><pre><code>vcmpless</code></pre></div><div class="pdf-region"><pre><code>vblendvps</code></pre></div><div class="pdf-region"><p>원본 기록에서는 핵심 instruction을 8개 → 4개로 세었고, 아래 llvm-mca 결과에서는 반복당 9개 → 5개로 집계된다. 성능 비교 표에서는 llvm-mca의 수치를 기준으로 사용한다.</p></div><div class="pdf-region"><p>X86 llvm-mca 실행</p></div><div class="pdf-region"><pre><code>C:\llvm-project\build\bin\llvm-mca.exe `
+  -mtriple=x86_64-pc-windows-msvc `
+  -mcpu=x86-64-v3 `
+  -iterations=1000 `
+  x86-src.s |
+  Tee-Object -FilePath x86-src-mca.txt</code></pre></div><div class="pdf-region"><pre><code>C:\llvm-project\build\bin\llvm-mca.exe `
+  -mtriple=x86_64-pc-windows-msvc `
+  -mcpu=x86-64-v3 `
+  -iterations=1000 `
+  x86-tgt.s |
+  Tee-Object -FilePath x86-tgt-mca.txt</code></pre></div><div class="pdf-region"><p>lvm-mca</p></div><div class="pdf-region"><p>실제 CPU에서 프로그램을 실행하는 도구가 아니라 LLVM scheduling model을 이용한 정적 성능 추정 도구다.</p><p>결과의 정확도는 해당 CPU scheduling model의 품질에 영향을 받는다.</p></div><div class="pdf-region"><p>src 결과</p></div><div class="pdf-region"><pre><code>X86 llvm-mca, x86-64-v3, 1000 iterations
+Iterations:        1000
+Instructions:      9000
+Total Cycles:      9011
+Total uOps:        12000</code></pre></div><div class="pdf-region"><pre><code>Dispatch Width:    4
+uOps Per Cycle:    1.33
+IPC:               1.00
+Block RThroughput: 3.0</code></pre></div><div class="pdf-region"><p>tgt 결과</p></div><div class="pdf-region"><pre><code>Iterations:        1000
+Instructions:      5000</code></pre></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 7</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/007.webp" aria-label="Issue85250_.pdf 7쪽 확대"><img src="../assets/pages/s022/007.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 7쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 7/16</span><a href="../assets/pages/s022/007.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="8" id="page-8"><div class="page-marker"><span>PDF · 08 / 16</span></div><h2 class="page-title">Total Cycles: 3005 / Total uOps: 7000 / Dispatch Width: 4</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><pre><code>Total Cycles:      3005
+Total uOps:        7000</code></pre></div><div class="pdf-region"><pre><code>Dispatch Width:    4
+uOps Per Cycle:    2.33
+IPC:               1.66
+Block RThroughput: 1.8</code></pre></div><div class="pdf-region"><pre><code> Total uOps , Total Cycles , Block RThroughput 을 비교할 수 있다.</code></pre><p>특히 Block RThroughput은 낮을수록 더 좋은 처리량을 의미한다.</p></div><div class="pdf-region"><h3 id="s022-p8-heading-1">4.2 AArch64 Assembly</h3></div><div class="pdf-region"><pre><code>C:\llvm-project\build\bin\llc.exe `
+  -O2 `
+  -mtriple=aarch64-unknown-linux-gnu `
+  -mcpu=neoverse-v2 `
+  src.ll `
+  -o aarch64-src.s</code></pre></div><div class="pdf-region"><pre><code>C:\llvm-project\build\bin\llc.exe `
+  -O2 `
+  -mtriple=aarch64-unknown-linux-gnu `
+  -mcpu=neoverse-v2 `
+  tgt.ll `
+  -o aarch64-tgt.s</code></pre></div><div class="pdf-region"><pre><code>&gt;&gt; git diff --no-index -- aarch64-src.s aarch64-tgt.s
+diff --git a/aarch64-src.s b/aarch64-tgt.s
+index 47f9ac8d3..48e6016b8 100644
+--- a/aarch64-src.s
++++ b/aarch64-tgt.s
+@@ -1,4 +1,4 @@
+-       .file   &quot;src.ll&quot;
++       .file   &quot;tgt.ll&quot;^M
+        .text
+        .globl  test                            // -- Begin function test
+        .p2align        2
+@@ -7,9 +7,6 @@
+ test:                                   // @test
+        .cfi_startproc
+ // %bb.0:                               // %entry
+-       fneg    s1, s0
+-       fcmp    s0, #0.0
+-       fcsel   s0, s0, s1, ge
+        fcmp    s0, #0.0
+        cset    w0, eq
+        ret</code></pre></div><div class="pdf-region"><p>제거된 instruction:</p></div><div class="pdf-region"><pre><code>fneg</code></pre></div><div class="pdf-region"><p>첫 번째 fcmp</p></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 8</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/008.webp" aria-label="Issue85250_.pdf 8쪽 확대"><img src="../assets/pages/s022/008.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 8쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 8/16</span><a href="../assets/pages/s022/008.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="9" id="page-9"><div class="page-marker"><span>PDF · 09 / 16</span></div><h2 class="page-title">fcsel / 핵심 연산만 세면 5개 → 2개이고, ret 까지 포함하면 6개 → 3개다. / 4.3 RISC-V Assembly</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><pre><code>fcsel</code></pre></div><div class="pdf-region"><p>핵심 연산만 세면 5개 → 2개이고, ret까지 포함하면 6개 → 3개다.</p></div><div class="pdf-region"><h3 id="s022-p9-heading-1">4.3 RISC-V Assembly</h3></div><div class="pdf-region"><pre><code>C:\llvm-project\build\bin\llc.exe `
+  -O2 `
+  -mtriple=riscv64-unknown-linux-gnu `
+  -mattr=&quot;+m,+a,+f,+d,+c&quot; `
+  src.ll `
+  -o riscv-src.s</code></pre></div><div class="pdf-region"><pre><code>C:\llvm-project\build\bin\llc.exe `
+  -O2 `
+  -mtriple=riscv64-unknown-linux-gnu `
+  -mattr=&quot;+m,+a,+f,+d,+c&quot; `
+  tgt.ll `
+  -o riscv-tgt.s</code></pre></div><div class="pdf-region"><pre><code>&gt;&gt; git diff --no-index -- riscv-src.s riscv-tgt.s
+diff --git a/riscv-src.s b/riscv-tgt.s
+index 75ed8d1e6..7bcbfb879 100644
+--- a/riscv-src.s
++++ b/riscv-tgt.s
+@@ -1,6 +1,6 @@
+        .attribute      4, 16
+        .attribute      5, &quot;rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zmmul1p0_zaamo1
+p0_zalrsc1p0_zca1p0_zcd1p0&quot;
+-       .file   &quot;src.ll&quot;
++       .file   &quot;tgt.ll&quot;^M
+        .text
+        .globl  test                            # -- Begin function test
+        .p2align        1
+@@ -9,11 +9,6 @@ test:                                   # @test
+        .cfi_startproc
+ # %bb.0:                                # %entry
+        fmv.w.x fa5, zero
+-       fle.s   a0, fa5, fa0
+-       bnez    a0, .LBB0_2
+-# %bb.1:                                # %entry
+-       fneg.s  fa0, fa0
+-.LBB0_2:                                # %entry
+        feq.s   a0, fa0, fa5
+        ret
+ .Lfunc_end0:</code></pre></div><div class="pdf-region"><p>6개 → 3개</p></div><div class="pdf-region"><pre><code>fle.s , bnez , fneg.s 가 삭제되었다.</code></pre></div><div class="pdf-region"><h3 id="s022-p9-heading-2">결과</h3><p>x86 llvm-mca 비교</p></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 9</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/009.webp" aria-label="Issue85250_.pdf 9쪽 확대"><img src="../assets/pages/s022/009.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 9쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 9/16</span><a href="../assets/pages/s022/009.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="10" id="page-10"><div class="page-marker"><span>PDF · 10 / 16</span></div><h2 class="page-title">항목 최적화 전 최적화 후 변화 / 명령어 수 9 5 약 44% 감소 / uOps 12 7 약 42% 감소</h2><div class="reading-text"><div class="source-body"><div class="table-wrap"><table><tr><th><p>항목</p></th><th><p>최적화 전</p></th><th><p>최적화 후</p></th><th><p>변화</p></th></tr><tr><td><p>명령어 수</p></td><td><p>9</p></td><td><p>5</p></td><td><p>약 44% 감소</p></td></tr><tr><td><p>uOps</p></td><td><p>12</p></td><td><p>7</p></td><td><p>약 42% 감소</p></td></tr><tr><td><p>총 사이클</p></td><td><p>9011</p></td><td><p>3005</p></td><td><p>약 67% 감소</p></td></tr><tr><td><p>Block RThroughput</p></td><td><p>3.0</p></td><td><p>1.8</p></td><td><p>약 40% 개선</p></td></tr><tr><td><p>IPC</p></td><td><p>1.00</p></td><td><p>1.66</p></td><td><p>증가</p></td></tr></table></div><div class="pdf-region"><p>가장 중요한 값은 Block RThroughput 3.0 → 1.8이다.</p><p>이 scheduling model에서는 같은 코드 블록을 반복 실행할 때 처리 간격이 약 3사이클에서 1.8사이클로 줄었다는 의미다.</p><p>또한 최적화 전에는 vbroadcastss가 메모리 로드를 발생시키고, vblendvps가 실행 포트를 사용한다. 최적화 후에는 이러한 instruction들이 제거되어 전체 실행 포트 압력도 감소한다.</p><p>따라서 x86에서는 단순히 instruction 수만 줄어든 것이 아니라 다음 효과가 있다.</p></div><div class="pdf-region"><p>0.0 상수 메모리 로드 제거</p><p>x 생성 제거</p></div><div class="pdf-region"><p>FP 조건 비교 제거</p><p>비교 결과를 이용한 blend 제거</p></div><div class="pdf-region"><p>uOp 수와 포트 사용량 감소</p></div><div class="pdf-region"><p>Target별 핵심 차이</p></div><div class="table-wrap"><table><tr><th><p>Target</p></th><th><p>최적화 전 절댓값 구현</p></th><th><p>제거되는 핵심 비용</p></th></tr><tr><td><p>x86</p></td><td><p>XOR로 부호 반전 + SIMD 비교 + blend</p></td><td><p>메모리 로드, 5 uOps, blend 포트 압력</p></td></tr><tr><td><p>AArch64</p></td><td><pre><code>fneg + fcmp + fcsel</code></pre></td><td><p>FP 연산 3개와 긴 데이터 의존성</p></td></tr><tr><td><p>RISCV</p></td><td><p>FP 비교 + 조건 분기 + fneg.s</p></td><td><p>실제 branch와 잠재적인 분기 예측 실패</p></td></tr></table></div><div class="pdf-region"><p>select (x &gt;= 0), x, -x의 결과가 0인지 확인하는 연산을 원래 값 x == 0 비교로 단순화하였다.</p></div><div class="pdf-region"><p>x86에서는 상수 로드·부호 반전·비교·blend가 제거되어 llvm-mca 기준 Block RThroughput이 3.0에서 1.8로 감소했다.</p><p>AArch64에서는 fneg → fcmp → fcsel 의존성 사슬이 제거되었다.</p></div><div class="pdf-region"><p>RISCV에서는 fle.s → bnez → fneg.s 가 사라져 instruction 수뿐 아니라 조건 분기도 제거되었다.</p></div><div class="pdf-region"><h3 id="s022-p10-heading-1">󾠲  실제 merged patch</h3><p>패치 분석</p></div><div class="pdf-region"><pre><code>lib/Transforms/InstCombine &gt; InstCombineCompares.cpp
+visitFCmpInst() 에 select 를 처리하는 코드를 추가했다.</code></pre></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 10</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/010.webp" aria-label="Issue85250_.pdf 10쪽 확대"><img src="../assets/pages/s022/010.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 10쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 10/16</span><a href="../assets/pages/s022/010.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="11" id="page-11"><div class="page-marker"><span>PDF · 11 / 16</span></div><h2 class="page-title">초기 PatternMatch / case Instruction::Select: / if ((Pred == FCmpInst::FCMP_UEQ || Pred == FCmpInst::FCMP_OEQ ||</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>초기 PatternMatch</p></div><div class="pdf-region"><pre><code>case Instruction::Select:
+  if ((Pred == FCmpInst::FCMP_UEQ || Pred == FCmpInst::FCMP_OEQ ||
+       Pred == FCmpInst::FCMP_UNE || Pred == FCmpInst::FCMP_ONE) &amp;&amp;
+      match(LHSI,
+            m_Select(m_Value(), m_Value(X), m_FNeg(m_Value(Y)))) &amp;&amp;
+      X == Y &amp;&amp; match(RHSC, m_AnyZeroFP()))
+    return new FCmpInst(Pred, X, RHSC);
+  break;</code></pre></div><div class="pdf-region"><p>matcher 해석</p></div><div class="table-wrap"><table><tr><th><p>코드</p></th><th><p>의미</p></th></tr><tr><td><pre><code>m_Select</code></pre></td><td><p>비교 대상이 select인지 확인</p></td></tr><tr><td><pre><code>첫 번째 m_Value()</code></pre></td><td><p>select condition은 어떤 값이든 허용</p></td></tr><tr><td><pre><code>m_Value(X)</code></pre></td><td><p>true arm의 값을 X 로 캡처</p></td></tr></table></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 11</p></div></div><figure class="source-figure"><a href="../assets/figures/s022-011-01.webp"><img src="../assets/figures/s022-011-01.webp" width="987" height="1069" alt="전의정 자료 11쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>11쪽 · 그림 1 <a href="../assets/figures/s022-011-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre># srcll
+UX
+G InstcombineCompares.cpp X
+= tgtll u
+llvm &gt; lib &gt;Cuvmi-projectlosslsrc. h Untracked nstCombineCompares.cpp &gt; ④ visitiCmplnst(ICmplnst &amp;)
+7666
+Icmpinst &amp;cxtl) t
+7806
+}
+7807
+Instruction *InstcombinerImpl: :visiticmpInst(ICmpInst &amp;I) {
+7808
+Matt Arsenault, 17 hours ago
+7809
+bool Changed = false;
+7810
+const Simplifyquery Q=SQ-getwithInstruction(&amp;I);
+7811
+Value *0p0 = I.getoperand(8), *0p1 = I.getOperand(1);
+7812
+unsigned OpeCplxity = getComplexity(Ope);
+7813
+unsigned Op1Cplxity = getComplexity(0p1);
+7814
+/// Orders the operands of the compare so that they are listed from most
+7815
+This puts constants before unary operators,
+7816
+/// complex to least complex.
+7817
+/// before binary operators.
+if (OpeCplxity &lt; Op1cplxity) t
+7818
+7819
+1.swapoperands();
+7820
+std::swap(0p8, 0p1);
+Changed = true;
+7821
+7822
+}
+7823
+7824
+If (Value *V = 5implifyIcmpInst(I-getCmpPredicate(), Op8, Op1, 2))
+7825
+return replaceInstuseswith(I, V);
+7826
+7827
+// Comparing -val or val with non-zero is the same as just comparing Val
+7828
+// le, abs(val) != 0 -&gt; val != 0
+7829
+if (I.getpredicate() == ICmpInst: :ICMP_NE &amp;&amp; match(Op1, m_Zero())) {
+7830
+Value *Cond, *SelectTrue, *SelectFalse;
+7831
+I+ (match(Ope, m_Select(m_Value(Cond), m_Value(SelectTrue),
+7832
+m_Value(SelectFalse)))) {
+7833
+if (Value *v = dyn_castNegVal(SelectTrue)) {
+7834
+if (V == SelectFalse)
+7835
+return CmpInst::Create(Instruction::Icmp, I.getpredicate(), V, Op1);
+7836
+J else if (Value *v = dyn_castNegVal(SelectFalse)){
+7837
+if (V== SelectTrue)
+7838
+return CmpInst::Create(Instruction::Icmp, I.getpredicate(), V, Op1);
+7839
+7840
+7841
+7842
+7843
+if (Instruction *Res = foldIcmpTruncwithTrunconExt(I, Q)
+7844
+return Res;
+7845
+7846
+I+(Ope-&gt;getType()-&gt;15IntorintvectorTy(1))
+if (Instruction *Res = canonicalizeIcmpBoo1(I, Builder))
+7847</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/011.webp" aria-label="Issue85250_.pdf 11쪽 확대"><img src="../assets/pages/s022/011.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 11쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 11/16</span><a href="../assets/pages/s022/011.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="12" id="page-12"><div class="page-marker"><span>PDF · 12 / 16</span></div><h2 class="page-title">m_FNeg(m_Value(Y)) false arm이 -Y 인지 확인 / X == Y 결국 X 와 -X 를 선택하는 구조인지 확인 / m_AnyZeroFP() 비교 대상이 floating-point</h2><div class="reading-text"><div class="source-body"><div class="table-wrap"><table><tr><th><pre><code>m_FNeg(m_Value(Y))</code></pre></th><th><p>false arm이 -Y 인지 확인</p></th></tr><tr><td><pre><code>X == Y</code></pre></td><td><p>결국 X와 -X를 선택하는 구조인지 확인</p></td></tr><tr><td><pre><code>m_AnyZeroFP()</code></pre></td><td><p>비교 대상이 floating-point zero인지 확인</p></td></tr></table></div><div class="pdf-region"><p>초기 변환 방식 초기 구현은 새로운 FCmpInst를 생성했다.</p></div><div class="pdf-region"><pre><code>return new FCmpInst(Pred, X, RHSC);</code></pre></div><div class="pdf-region"><p>변환 전:</p></div><div class="pdf-region"><pre><code>%res = fcmp ueq float %sel, 0.0</code></pre></div><div class="pdf-region"><p>변환 후:</p></div><div class="pdf-region"><pre><code>%res = fcmp ueq float %x, 0.0</code></pre></div><div class="pdf-region"><p>비교의 왼쪽 피연산자를 %sel에서 %x로 교체한 새로운 fcmp instruction을 생성하는 방식이다.</p></div><div class="pdf-region"><p>리뷰에서 발견된 문제 리뷰어는 새로운 FCmpInst를 생성하면 기존 fcmp instruction에 붙어 있던 정보가 사라질 수 있다고 지적했다.</p></div><div class="pdf-region"><p>Fast-Math Flags</p></div><div class="pdf-region"><p>기존 instruction 이름</p></div><div class="pdf-region"><p>기존 instruction에 연결된 일부 메타데이터 또는 위치 정보</p></div><div class="pdf-region"><p>리뷰 링크:</p><p>https://github.com/llvm/llvm-project/pull/85673/files#diff- 45d9bc48ca662c4f70ef6d841aeef9f8cf5465414b844562e41e237888b60d8c</p></div><div class="pdf-region"><p>해결법 기존 instruction을 유지하고 첫 번째 operand만 변경하도록 수정했다.</p></div><div class="pdf-region"><pre><code>return replaceOperand(I, 0, X);</code></pre></div><div class="pdf-region"><p>즉 새 fcmp를 만드는 대신 기존 fcmp의 첫 번째 operand만 %sel에서 %x로 교체한다.</p><p>이 방식은 기존 fcmp에 설정된 속성을 보존할 수 있다는 장점이 있다.</p><p>관련 commit:</p></div><div class="pdf-region"><p>https://github.com/llvm/llvm-project/pull/85673/commits/00973c3b4fe40f06344b672efe80b009f70c74ac</p></div><div class="pdf-region"><h3 id="s022-p12-heading-1">󾠳 테스트 패치</h3><pre><code> llvm/test/Transforms/InstCombine/fcmp.ll 에 존재</code></pre></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 12</p></div></div><div class="page-links"><h3>이 페이지에 연결된 자료</h3><ul><li><a href="https://github.com/llvm/llvm-project/pull/85673/files#diff-45d9bc48ca662c4f70ef6d841aeef9f8cf5465414b844562e41e237888b60d8c" rel="noopener noreferrer">https://github.com/llvm/llvm-project/pull/85673/files#diff-45d9bc48ca662c4f70ef6d841aeef9f8cf5465414b844562e41e237888b60d8c</a></li></ul></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/012.webp" aria-label="Issue85250_.pdf 12쪽 확대"><img src="../assets/pages/s022/012.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 12쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 12/16</span><a href="../assets/pages/s022/012.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="13" id="page-13"><div class="page-marker"><span>PDF · 13 / 16</span></div><h2 class="page-title">기본 테스트 / define i1 @fcmp_ueq_sel_x_negx(float %x) { / ; CHECK-LABEL: @fcmp_ueq_sel_x_negx(</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>기본 테스트</p></div><div class="pdf-region"><pre><code>define i1 @fcmp_ueq_sel_x_negx(float %x) {
+; CHECK-LABEL: @fcmp_ueq_sel_x_negx(
+; CHECK-NEXT: [[RES:%.*]] = fcmp ueq float [[X:%.*]], 0.000000e+00
+; CHECK-NEXT: ret i1 [[RES]]
+;
+  %f = fcmp ueq float %x, 0.000000e+00
+  %neg = fneg fast float %x
+  %sel = select i1 %f, float %x, float %neg
+  %res = fcmp ueq float %sel, 0.000000e+00
+  ret i1 %res
+}</code></pre></div><div class="pdf-region"><p>위의 test는 InstCombine 최적화 후의 결과 IR이 CHECK에 적힌 형태와 일치하는지 검사하는 테스트다</p><p>fcmp → fneg → select → fcmp 형태의 IR이 InstCombine 이후 fcmp x, 0 형태로 최적화되는지 검사한다.</p></div><div class="pdf-region"><pre><code>; CHECK-NEXT: [[RES:%.*]] = fcmp ueq float [[X:%.*]], 0.000000e+00
+; CHECK-NEXT: ret i1 [[RES]]</code></pre></div><div class="pdf-region"><p>즉, %sel에 대한 비교가 %x에 대한 직접 비교로 바뀌었는지 확인한다.</p></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 13</p></div></div><figure class="source-figure"><a href="../assets/figures/s022-013-01.webp"><img src="../assets/figures/s022-013-01.webp" width="987" height="881" alt="전의정 자료 13쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>13쪽 · 그림 1 <a href="../assets/figures/s022-013-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Etgtlu
+EXPLORER
+E STCIl
+u
+= fcmpll
+×
+✓ OPEN EDITORS
+livm &gt; test &gt; Transforms &gt; InstCombine〉 폼 fcmpll
+= srcll oss
+1532
+X = fcmp.ll ltvmlte
+define i1 @fcmp_fadd_fast_zero(float %x, float %y) {
+; CHECK-LABEL: Gfcmp_fadd_fast_zero(
+= tgt.ll oss
+[[CMP:%.*]] - fcmp ugt float [[X:%.*]],[[Y:%.*]]
+1535
+; CHECK-NEXT:
+✓ LLVM-PROJECT
+1536
+; CHECK-NEXT:
+ret i1 [[CnP]]
+~ 1lhvm
+1537
+✓ test
+1538
+nadd = fadd fast float %x, 8.000000e+00
+~ Transforms
+1539
+%cmp = fcmp ugt float %add, %)
+1540
+ret i1 %cmp
+✓ InstCombine
+1541
+E fadd-fsub-factor.ll
+1542
+= fadd-maximum-minimum.Jl
+1543
+define i1 @fcmp_ueq_sel_x_negx(float %x) {
+Matt Arsenault, 17 hours ago • Cmake:
+= fadd.ll
+; CHECK-LABEL: efcmp_ueq_sel_x_negx(
+= fast-basictest.ll
+1545
+CHECK-NEXT:
+[[RES:%.*]] = fcmp ueq float [[X:%.*]], 0.000000e+00
+1546
+; CHECK-NEXT:
+ret i1 [[RES]]
+= fast-math.ll
+= fcmp-denormals-are-zeroll
+1548
+%f = femp ueq float %x, 0.000000e+08
+= fcmp-fadd-select.Jl||
+Nneg = fneg float %x
+1549
+= fcmp-range-check-idiom.l
+1550
+%sel - select i1 %f, float %x, float 8neg
+Nres - fcmp ueq float %sel, 0.0000002108
+= fcmp-select-sign.l
+1551
+1552
+ret i1 %res
+E fcmp-selectJl
+E fcmp-special.ll
+1554
+= fcmp.ll
+1555
+define i1 efcmp_une_sel_x_negx(float 8x) {
+= fdim.ll
+1556
+; CHECK-LABEL: @fcmp_une_sel_x_negx/
+= fdiv-cos-sin_ll
+1557
+•CECK-NSXS
+[[RES:%.*1] - fcmp une float [[X:%.*1], 0.000000e+08
+= fdiv-sin-cos.ll
+1558
+CHECK-NEXT:
+ret 11 [[RES]]
+F fdiv-sqrtJl
+1559
+%f - fcmp une float %x, 0.000000e+00
+= fdvv.II
+Nneg - fneg float sx
+1561
+E fts-1.l|
+1562
+%sel - select 11 %f, float xx, float xneg
+= ffs-i16.11
+&amp;res - fcmp une float %sel, 0.000000e+06
+1563
+= float-shrink-compare.ll|
+ret i1 %res
+E fls-i161|
+E flsll
+define 11 efcmp_oeq_sel_x_negx(float &amp;x) {
+를 ima.ll
+1568
+; CHECK-LABEL: @fcmp_oeq_sel_x_negx
+등 fmod.ll
+1569
+; CHECK-NEXT:
+[[RES:%.*1] - fcmp oeq float [[X:%.*]], 0.000000e+00
+= fmul-bool.il
+1570
+CHECK-NEXT:
+ret i1 [[RES]]
+E fmul-exp:ll
+1571
+E fmul-exp2.!
+1572
+%f - fcmp oeq float Xx, 0.000000e+00
+= fmul-inseltpoison.ll
+%neg - fneg float %x
+= fmul-maximum-minimum.ll
+1574
+%sel - select 11 %f, float xx, float xneg
+&amp;res-fcmp oeq float %sel, 0.000000e+80</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/013.webp" aria-label="Issue85250_.pdf 13쪽 확대"><img src="../assets/pages/s022/013.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 13쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 13/16</span><a href="../assets/pages/s022/013.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="14" id="page-14"><div class="page-marker"><span>PDF · 14 / 16</span></div><h2 class="page-title">predicate별 테스트 / 패치에서는 다음 네 predicate ( ueq , une , oeq , one 를 각각 테스트했다. / 각 테스트는 동일한 형태를 가지며, predicate만 달라진</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>predicate별 테스트</p><p>패치에서는 다음 네 predicate ( ueq , une , oeq , one 를 각각 테스트했다.</p><p>각 테스트는 동일한 형태를 가지며, predicate만 달라진다. fcmp ueq , fcmp une , fcmp oeq , fcmp one</p><p>EX une 테스트는 다음 변환을 검증</p></div><div class="pdf-region"><pre><code>%res = fcmp une float %sel, 0.0</code></pre></div><div class="pdf-region"><p class="source-bullet">→</p></div><div class="pdf-region"><pre><code>%res = fcmp une float %x, 0.</code></pre></div><div class="pdf-region"><p>scalar와 vector 테스트</p><p>패치는 scalar float 뿐 아니라 &lt;8 x float&gt; vector도 테스트했다.</p><p>이를 통해 PatternMatch 코드가 scalar에만 우연히 동작하는 것이 아니라 vector type에도 정상적으로 적용되는지 검증한 다.</p></div><div class="pdf-region"><p>EX) scalar</p></div><div class="pdf-region"><pre><code>define i1 @fcmp_ueq_sel_x_negx(float %x)</code></pre></div><div class="pdf-region"><p>EX) vector</p></div><div class="pdf-region"><pre><code>define &lt;8 x i1&gt; @fcmp_ueq_sel_x_negx_vec(&lt;8 x float&gt; %x)</code></pre></div><div class="pdf-region"><p>vector에서는 zero를 zeroinitializer 라고 표현한다. 예상 결과도 vector 비교이다.</p></div><div class="pdf-region"><p>이를 통해 PatternMatch 코드가 scalar에만 우연히 동작하는 것이 아니라 vector type에도 정상적으로 적용되는지 검증했다.</p></div><div class="pdf-region"><p>select 조건은 중요하지 않다는 테스트</p></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 14</p></div></div><figure class="source-figure"><a href="../assets/figures/s022-014-01.webp"><img src="../assets/figures/s022-014-01.webp" width="763" height="555" alt="전의정 자료 14쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>14쪽 · 그림 1 <a href="../assets/figures/s022-014-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define &lt;8 x 11&gt; @fcmp_ueq_sel_x_negx_vec(&lt;8 x float》 %x) {
+: CHECK-LABEL: @tcmp_ueq_sel_x_negx_vec(
+; CHECK-NEXT:
+[[RES:%.*1] = fcmp veq &lt;8 x float》 [[X:%.*]], zeroinitializer
+ret &lt;8 × i1&gt; [[RES]]
+; CHECK-NEXT:
+%f - fcmp ueq &lt;8 × float》 %x, Zeroinitlalizer
+%neg = fneg &lt;8 x float&gt; %x
+%sel = select &lt;8 x i1&gt; %f, &lt;8 x float&gt; %x, &lt;8 x float&gt; %neg
+%res = fcmp ueq &lt;8 x float&gt; %sel, zeroinitializer
+ret &lt;8 × i1&gt; %res
+define &lt;8 x i1&gt; @fcmp_une_sel_x_negx_vec(&lt;8 x float&gt; %x) {
+; CHECK-LABEL: @fcmp_une_sel_x_negx_vec(
+• CHECK-NEXT:
+[[RES:%.*1] = fcmp une &lt;8 x float》 [[X:%.*]], zeroinitializer
+ret &lt;8 x i1&gt; [[RES]]
+: CHECK-NEXT:
+%f = fcmp une &lt;8 × float〉 %x, Zeroinitlalizer
+%neg = fneg &lt;8 x float》 %x
+%sel = select &lt;8 x 11&gt; %f, &lt;8 x float&gt; %x, &lt;8 x float&gt; %neg
+%res = fcmp une &lt;8 x float&gt; %sel, zeroinitializer
+ret &lt;8 × i1&gt; %res</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/014.webp" aria-label="Issue85250_.pdf 14쪽 확대"><img src="../assets/pages/s022/014.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 14쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 14/16</span><a href="../assets/pages/s022/014.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="15" id="page-15"><div class="page-marker"><span>PDF · 15 / 16</span></div><h2 class="page-title">define i1 @fcmp_sel_x_negx_with_any_cond(float %x, i1 %c) { / %neg = fneg float %x / %sel = select i1 %c, floa</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><pre><code>define i1 @fcmp_sel_x_negx_with_any_cond(float %x, i1 %c) {
+  %neg = fneg float %x
+  %sel = select i1 %c, float %x, float %neg
+  %res = fcmp ueq float %sel, 0.000000e+00
+  ret i1 %res
+}</code></pre></div><div class="pdf-region"><p>select 조건 %c가 %x &gt;= 0 같은 비교 결과가 아니라, 외부에서 전달된 임의의 boolean이라는 것.</p><p>이 테스트의 의미는 이 최적화가 (x &gt;= 0) ? x : -x 와 같은 형태에만 한정되지 않는다는 것이 아니라 어떤 조건이든 cond ? x : - x 라는 것이다.</p></div><div class="pdf-region"><p>즉! 둘 중 어느 값이 선택되더라도 zero 여부는 동일하므로 조건 자체는 분석할 필요가 없다.</p><p>구현 코드에서도 조건 부분을 다음과 같이 단순히 m_Value()로 처리한다.</p></div><div class="pdf-region"><pre><code>m_Select(m_Value(), ...)</code></pre></div><div class="pdf-region"><p>✅ select condition의 구조를 제한하지 않는다.</p></div><div class="pdf-region"><p>0.0 테스트 추가</p><p>리뷰 과정에서 -0에 대한 테스트를 추가하라는 요청이 있었다.</p></div><div class="pdf-region"><p>https://github.com/llvm/llvm-project/pull/85673/commits/a5d953d73104af724a2508544b19b78b7bc33811</p></div><div class="pdf-region"><p>IEEE 부동소수점에는 다음 +0.0 -0.0  두 가지 zero가 존재한다.</p><p class="source-bullet">→ 두 값은 일반적인 equality 비교에서는 같다고 판단되지만, 비트 표현과 일부 연산에서는 구분될 수 있다.</p><p>특히 이 최적화는 x와 -x를 다루기 때문에 signed zero를 반드시 검증해야 한다.</p></div><div class="pdf-region"><p>denormal (0에 아주 가까운 수 ) 설정 테스트</p></div><div class="pdf-region"><p>🤔 denormal?</p><h3 id="s022-p15-heading-1">💡</h3><p>LLVM에는 함수마다</p></div><div class="pdf-region"><pre><code>attributes #0 = {
+  &quot;denormal-fp-math&quot;=&quot;dynamic,dynamic&quot;
+}</code></pre></div><div class="pdf-region"><p>같은 속성을 붙일 수 있다. 이건 쉽게 말하면</p></div><div class="pdf-region"><p>이 함수는 denormal을 어떻게 처리할지 지정하는 옵션</p></div><div class="pdf-region"><p>이다. 예를 들어 CPU마다</p></div><div class="pdf-region"><p>denormal을 그대로 계산할 수도 있고</p></div><div class="pdf-region"><p>0으로 처리할 수도 있고(Flush-To-Zero)</p><p>동작이 조금 다를 수 있다.</p></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 15</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/015.webp" aria-label="Issue85250_.pdf 15쪽 확대"><img src="../assets/pages/s022/015.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 15쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 15/16</span><a href="../assets/pages/s022/015.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s022" data-page="16" id="page-16"><div class="page-marker"><span>PDF · 16 / 16</span></div><h2 class="page-title">리뷰에서는 denormal-fp-math=&quot;dynamic,dynamic&quot; 와 같은 attribute 설정에 대한 테스트도 요구했다. / attribute를 붙였을 때 출력이 달라지는 것을 기대한 것</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>리뷰에서는 denormal-fp-math=&quot;dynamic,dynamic&quot; 와 같은 attribute 설정에 대한 테스트도 요구했다.</p></div><div class="pdf-region"><p>attribute를 붙였을 때 출력이 달라지는 것을 기대한 것이 아니다.</p><p>denormal 처리 설정이 달라져도 이 변환이 여전히 안전하다는 것을 테스트로 명시하라는 의미였다.</p></div><div class="pdf-region"><p>리뷰어는 결과가 달라지지 않는 것이 정상이며, 잘못된 변환이라면 Alive2가 위반을 잡아낼 것이라고 설명했다.</p></div><div class="pdf-region"><p>Fast-Math Flags 테스트</p><p>리뷰 과정에서 FMF 테스트를 추가하라는 요청도 있었다.</p></div><div class="pdf-region"><p>https://github.com/llvm/llvm-project/pull/85673/commits/e62038edbc6bb6c8d74e60814a42e8f5020a052 a</p></div><div class="pdf-region"><p>https://github.com/llvm/llvm-project/pull/85673/commits/785fe715a9344e7facebb00dc67b10631a84a542</p></div><div class="pdf-region"><p>FMF는 Fast-Math Flags의 약자로, 부동소수점 연산에 nnan, ninf, nsz, reassoc, contract, afn, fast 과 같은 추가 가정을 허용한다.</p></div><div class="pdf-region"><p>이 PR에서는 기존 fcmp instruction을 새 instruction으로 교체할 경우 FMF가 손실될 가능성이 있었다.</p><p>따라서 테스트에서는 다음을 검증해야 했다.</p></div><div class="pdf-region"><p>최적화 자체가 FMF가 있는 경우에도 적용되는가</p><p>최적화 후 기존 fcmp의 FMF가 유지되는가</p></div><div class="pdf-region"><p>nnan, ninf 등의 flag 조합에서 의미가 달라지지 않는가</p></div><div class="pdf-region"><p>[Issue #85250] Missed FP Fold , (x ≥ 0 ? x : -x == 0) ⇒ x == 0 16</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s022/016.webp" aria-label="Issue85250_.pdf 16쪽 확대"><img src="../assets/pages/s022/016.webp" alt="x와 -x 중 선택한 값의 0 비교를 줄이기 · 16쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="2037"></a><figcaption><span>Issue85250_.pdf · 16/16</span><a href="../assets/pages/s022/016.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section" id="editor-notes"><details class="editor-notes"><summary>핵심 원리와 편집 주석</summary><div><h3 id="pattern">변환의 범위</h3><p>x와 -x는 equality 관점에서 0 여부가 같다. 따라서 둘 중 하나를 선택한 결과를 0과 비교할 때 선택을 생략할 수 있다.</p><div class="code-wrap"><div class="code-label">TEXT</div><pre><code>fcmp eq (select cond, x, -x), 0
+                  ↓
+             fcmp eq x, 0</code></pre></div><p>실제 패치는 <code>ueq</code>, <code>une</code>, <code>oeq</code>, <code>one</code>을 다룬다. 위의 eq는 구조 설명용이다. ordered·unordered 의미는 원래 predicate대로 유지한다.</p><h3 id="review">기존 명령어의 속성 보존</h3><p>초안은 새 FCmpInst를 만들었다. 리뷰에서는 기존 fast-math flags 등 명령어의 속성을 잃지 않도록 기존 비교의 피연산자만 바꾸는 방향을 제시했다.</p><div class="code-wrap"><div class="code-label">CPP</div><pre><code>return replaceOperand(I, 0, X);</code></pre></div><p>select 조건은 x의 부호 검사일 필요가 없다. 어느 값이 선택되어도 0 비교의 결론이 같다는 것이 근거다.</p><h3 id="tests">검증 범위</h3><ul><li>네 가지 equality predicate를 각각 확인한다.</li><li>scalar와 vector를 확인한다.</li><li>임의의 select 조건을 확인한다.</li><li>+0과 -0을 확인한다.</li><li>denormal 처리 속성과 fast-math flags 보존을 확인한다.</li></ul><p>작성자는 Alive2와 여러 타깃의 기계어를 비교했다. 기존 패치의 작은 코드 변경과 별개로 검증 표면은 넓다.</p><h3 id="performance">자료에 기록된 성능 관찰</h3><div class="table-wrap"><table><thead><tr><th scope="col">관찰</th><th scope="col">변환 전</th><th scope="col">변환 후</th></tr></thead><tbody><tr><td>x86 llvm-mca 명령어/반복</td><td>9</td><td>5</td></tr><tr><td>x86 Block RThroughput</td><td>3.0</td><td>1.8</td></tr><tr><td>AArch64: ret 포함 명령어</td><td>6</td><td>3</td></tr><tr><td>RISC-V: 예제 명령어</td><td>6</td><td>3</td></tr></tbody></table></div><aside class="note"><strong>읽을 때 확인할 점</strong>x86 수치는 자료의 x86-64-v3 scheduling model과 1,000회 반복 조건이다. 정적 추정값이며 실제 서비스의 실행 시간 개선율은 아니다.</aside></div></details></section><section class="doc-section" id="source-materials"><h2>문서 전문과 버전</h2><ul class="source-list"><li><span class="format">PDF</span><div><a href="../sources/s022.html">PDF 원자료 · 16쪽</a><small>Issue85250_.pdf</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></section><section class="doc-section" id="references"><h2>관련 이슈와 PR</h2><ul class="reference-list"><li><a href="https://github.com/llvm/llvm-project/issues/85250" rel="noopener noreferrer">Issue #85250</a></li><li><a href="https://github.com/llvm/llvm-project/pull/85673" rel="noopener noreferrer">PR #85673</a></li><li><a href="https://alive2.llvm.org/ce/z/NFEKjp" rel="noopener noreferrer">Alive2 이슈 예제</a></li><li><a href="https://alive2.llvm.org/ce/z/7DMRCy" rel="noopener noreferrer">Alive2 PR 예제</a></li></ul><p class="small-note">구현·병합 상태와 측정값은 해당 제출 자료의 작성 시점 기준입니다.</p></section></article><aside class="article-toc"><strong>이 문서에서</strong><nav aria-label="이 문서의 목차"><a href="#page-1">01 · ❓ / [Issue #85250] Missed FP Fold ,(…</a><a href="#page-2">02 · 1️⃣ 선택한 Issue / 이슈 정보 / 항목 내용</a><a href="#page-3">03 · 형태의 LLVM IR instruction 조합을 / fcmp /…</a><a href="#page-4">04 · %oeq = fcmp oeq float %0, 0.000000e+…</a><a href="#page-5">05 · Compiler Explorer / 이 단계에서는 다음을 분리해서…</a><a href="#page-6">06 · 󾠱 / 로컬 성능 평가 / llvm-project &gt; oss 라는…</a><a href="#page-7">07 · # %bb.0: # %entry / - vbroadcastss _…</a><a href="#page-8">08 · Total Cycles: 3005 / Total uOps: 700…</a><a href="#page-9">09 · fcsel / 핵심 연산만 세면 5개 → 2개이고, ret 까지 …</a><a href="#page-10">10 · 항목 최적화 전 최적화 후 변화 / 명령어 수 9 5 약 44% …</a><a href="#page-11">11 · 초기 PatternMatch / case Instruction::…</a><a href="#page-12">12 · m_FNeg(m_Value(Y)) false arm이 -Y 인지 …</a><a href="#page-13">13 · 기본 테스트 / define i1 @fcmp_ueq_sel_x_n…</a><a href="#page-14">14 · predicate별 테스트 / 패치에서는 다음 네 predicat…</a><a href="#page-15">15 · define i1 @fcmp_sel_x_negx_with_any_…</a><a href="#page-16">16 · 리뷰에서는 denormal-fp-math=&quot;dynamic,dyna…</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav><p class="small-note"><a href="../glossary.html">기술 용어 확인하기 ↗</a></p></aside></div><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../about.html">편집 기준과 출처</a><br><a href="../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

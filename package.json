@@ -1,0 +1,14 @@
+{
+  "name": "llvm-mentee-notes",
+  "private": true,
+  "version": "1.0.0",
+  "description": "LLVM 멘티 자료를 정리한 한국어 기술 문서",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "check": "python3 tools/check_site.py",
+    "preview": "python3 -m http.server 8765 --directory docs --bind 127.0.0.1"
+  },
+  "devDependencies": {
+    "marked": "17.0.5"
+  }
+}

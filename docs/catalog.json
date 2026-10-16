@@ -1,0 +1,337 @@
+{
+  "title": "LLVM 멘티 기술 문서",
+  "edited": "2026-10-22",
+  "articles": 29,
+  "sources": 36,
+  "participants": 17,
+  "full_text": true,
+  "results": "results.html",
+  "formats": {
+    "MD": 3,
+    "PDF": 23,
+    "PPTX": 5,
+    "DOCX": 2,
+    "HTML": 3
+  },
+  "documents": [
+    {
+      "id": "s001",
+      "filename": "issue_75692.md",
+      "author": "SeokHun",
+      "article": "xor-complement",
+      "format": "MD",
+      "sha256": "92685c4bb7330020b91771b9116af83d91115981835c1886708a0cf3c72dec2f"
+    },
+    {
+      "id": "s002",
+      "filename": "LLVM-good_first_issue_173706.pdf",
+      "author": "김명석",
+      "article": "hyperbolic-symmetry",
+      "format": "PDF",
+      "sha256": "6bb6e902169df788a1471f2789514d232458d74977dafd39100922dac9cf77b0"
+    },
+    {
+      "id": "s003",
+      "filename": "CLAMP_PATCH_REPORT.md",
+      "author": "김준영",
+      "article": "clamp-nan",
+      "format": "MD",
+      "sha256": "f1ce9783117a7293826548a38da9949c2a30788e28274d9acd88967e63757f9c"
+    },
+    {
+      "id": "s004",
+      "filename": "llvm213690_proceed.pdf",
+      "author": "김준영",
+      "article": "clamp-debugging",
+      "format": "PDF",
+      "sha256": "e1f662bc843b7846ef1103d32a86ec1d710fd7a68aea3cf720ddf3f28e72186e"
+    },
+    {
+      "id": "s005",
+      "filename": "llvm_issue_188035.pptx",
+      "author": "김준영",
+      "article": "fract-integer-test",
+      "format": "PPTX",
+      "sha256": "afb26106641fa7fab619ebd08e0abb4deaaf0c046df2b274880e60d672f8ec2a"
+    },
+    {
+      "id": "s006",
+      "filename": "llvm_issue_213189_ppt.pdf",
+      "author": "김준영",
+      "article": "clamp-nan",
+      "format": "PDF",
+      "sha256": "b428204b00c0e3a747e578314b6af579b4f8d6f0d1b51777ebe4a5b3d6ee4c24"
+    },
+    {
+      "id": "s007",
+      "filename": "llvm_issue_27_analysis.docx",
+      "author": "김준영",
+      "article": "clamp-nan",
+      "format": "DOCX",
+      "sha256": "975b62a99b1c928f891e1a4c9ae21f2eae73be248d68b9951fee5e679c3ed655"
+    },
+    {
+      "id": "s008",
+      "filename": "llvm_issue_27_analysis_edited.docx",
+      "author": "김준영",
+      "article": "clamp-nan",
+      "format": "DOCX",
+      "sha256": "d9ce644cb70fd6f41c157295776017171451dd499c56af75c674de64b680663e"
+    },
+    {
+      "id": "s009",
+      "filename": "llvm_issue_27_presentation.pdf",
+      "author": "김준영",
+      "article": "clamp-nan",
+      "format": "PDF",
+      "sha256": "0c0af0d03433aa23523d77e99ea518f47da83810274532b013e899633e65e532"
+    },
+    {
+      "id": "s010",
+      "filename": "Issue87624.pdf",
+      "author": "김지환",
+      "article": "bitcast-signbits",
+      "format": "PDF",
+      "sha256": "794522f61d6e004e3bbc3ccc4bc6e22a3d6f8a2aa06cf06f644698b10143c26b"
+    },
+    {
+      "id": "s011",
+      "filename": "Issue90000.pdf",
+      "author": "김지환",
+      "article": "zero-count-min",
+      "format": "PDF",
+      "sha256": "44d781b0ffa54625b6a5bbb7d66253c5ad0f995a09cdbcdaf1fd3f9b4a6e14f1"
+    },
+    {
+      "id": "s012",
+      "filename": "LLVM_Issue_121853.pdf",
+      "author": "라민우",
+      "article": "loop-remainder",
+      "format": "PDF",
+      "sha256": "7509a22cd6fde8b20e93e2a3cc5f582d670de144f866bd7ace60279b89844fc5"
+    },
+    {
+      "id": "s013",
+      "filename": "LLVM_Issue_49175.pdf",
+      "author": "라민우",
+      "article": "fcmp-ord-refinement",
+      "format": "PDF",
+      "sha256": "0797e4cf6ea256907c41cc12abae3dc8e831330ae306985b4a87db837b244f2a"
+    },
+    {
+      "id": "s014",
+      "filename": "LLVM-96765-review.pdf",
+      "author": "송효섭",
+      "article": "trunc-select",
+      "format": "PDF",
+      "sha256": "53a76b26cd45c29045b90c50d5b36855ec872c6c30b4671e55bdd1a9f50a7f43"
+    },
+    {
+      "id": "s015",
+      "filename": "llvm-instcombine-issue-51889-report.pdf",
+      "author": "오수영",
+      "article": "casted-shift",
+      "format": "PDF",
+      "sha256": "5ff29ef16e51b216a7e66bb5c0fd66234ffd32584e2cd153c16dca060054d059"
+    },
+    {
+      "id": "s016",
+      "filename": "index.html",
+      "author": "이하동",
+      "article": "urem-noexcept",
+      "format": "HTML",
+      "sha256": "1a91d197c2061319271ebe0c85821edb6539d39dacc994f53e19bd5a77f85ee7"
+    },
+    {
+      "id": "s017",
+      "filename": "instcombine-lowbit-presentation.html",
+      "author": "이하동",
+      "article": "lowbit-comparisons",
+      "format": "HTML",
+      "sha256": "8aedbb8653e67fffa830c99e687ebcb48daf8263f63aebea4ea047d8e53d3d6f"
+    },
+    {
+      "id": "s018",
+      "filename": "llvm_issue_84608_study.html",
+      "author": "이하동",
+      "article": "boolean-multiply",
+      "format": "HTML",
+      "sha256": "9b77c66b42cb6e95301e7d1672633325b7d0523010e23d4ad776a262a89031f6"
+    },
+    {
+      "id": "s019",
+      "filename": "LLVM_Issue_81288.pdf",
+      "author": "이호연",
+      "article": "shared-sext-mask",
+      "format": "PDF",
+      "sha256": "936288d6091c51d69111a763b5ce3e6db4ebca893c3a72ed96deace1eacb306b"
+    },
+    {
+      "id": "s020",
+      "filename": "reland-174176-slides.pdf",
+      "author": "임승현",
+      "article": "demanded-elts-reland",
+      "format": "PDF",
+      "sha256": "62ebb17f3a93f514b482c78e96d73e299dc30ee0b468fc386374bb5fa4859dab"
+    },
+    {
+      "id": "s021",
+      "filename": "LLVM-Issue98800-PR99245.pptx",
+      "author": "임예원",
+      "article": "symmetric-selects",
+      "format": "PPTX",
+      "sha256": "ae1b8706963d56ffc5adcbd26915ea3519b0d53048dac657cff2f02e1c9ce763"
+    },
+    {
+      "id": "s022",
+      "filename": "Issue85250_.pdf",
+      "author": "전의정",
+      "article": "floating-zero-compare",
+      "format": "PDF",
+      "sha256": "7b282baa91f843e8460970b217035fa4b1ab84bccca6328decff9b20b8f18259"
+    },
+    {
+      "id": "s023",
+      "filename": "LLVM_PR228359_PMADDUBSW_.pdf",
+      "author": "정지현",
+      "article": "pmaddubsw-combine",
+      "format": "PDF",
+      "sha256": "cbd83203356dc4bcf3c3a2964796d8cecbc4cb53f6d11b4a2e9dc000e47aad93"
+    },
+    {
+      "id": "s024",
+      "filename": "LLVM_fmemopen_.pdf",
+      "author": "정지현",
+      "article": "libc-fmemopen",
+      "format": "PDF",
+      "sha256": "8926560346a1e38b53774924df9476b21e03fc8360ee84c06f32bd9eeefb178b"
+    },
+    {
+      "id": "s025",
+      "filename": "223246.md",
+      "author": "정하람",
+      "article": "strlen-constant-selection",
+      "format": "MD",
+      "sha256": "31623a4a299e8bd29dbf824dfbea36a639f290dc32f9166c7c66ed589f6b2ce5"
+    },
+    {
+      "id": "s026",
+      "filename": "94170_.pdf",
+      "author": "정하람",
+      "article": "fabs-fneg",
+      "format": "PDF",
+      "sha256": "8afbd760ce2cdaa2cf0b37cb14ee038153cc7fac87069a37abb2391be64a760b"
+    },
+    {
+      "id": "s027",
+      "filename": "LLVM_PR223246__strlen.pptx",
+      "author": "정하람",
+      "article": "strlen-constant-selection",
+      "format": "PPTX",
+      "sha256": "2fe59951b45db036ff1d61c552d5ddf963ac18a0960b54b38c481786418a0732"
+    },
+    {
+      "id": "s028",
+      "filename": "LLVM_PR_.pptx",
+      "author": "정하람",
+      "article": "strlen-constant-selection",
+      "format": "PPTX",
+      "sha256": "6a219204a583fb659579d303b753ed2486f52b9852f5d8bcd34cb74942691922"
+    },
+    {
+      "id": "s029",
+      "filename": "llvm__1.pdf",
+      "author": "정하람",
+      "article": "range-compare",
+      "format": "PDF",
+      "sha256": "aeee12adb7d9b7038715f5b7ddce3b7824bae1eef41953e489128063cef85f37"
+    },
+    {
+      "id": "s030",
+      "filename": "llvm_strlen_pr_presentation.pptx",
+      "author": "정하람",
+      "article": "strlen-constant-selection",
+      "format": "PPTX",
+      "sha256": "9923ae6eea5b157deb996019cab888979384021e805f14e9ffc664602325561d"
+    },
+    {
+      "id": "s031",
+      "filename": "260906_-_found_LLVM_fold_in_ONNXRuntime_Kernel.pdf",
+      "author": "조영진",
+      "article": "onnx-widen-shuffle",
+      "format": "PDF",
+      "sha256": "45d41a725b2b546fe49ddbbfbefa588c270f61b2fe12d923aea5eb7beff2e865"
+    },
+    {
+      "id": "s032",
+      "filename": "LLVM_InstCombine_or_disjoint_zext_.pdf",
+      "author": "조영진",
+      "article": "or-disjoint-zext",
+      "format": "PDF",
+      "sha256": "c5deae307dace1f658d70854296b3834353525bb674c6d8394086b194f7a39cf"
+    },
+    {
+      "id": "s033",
+      "filename": "LLVM_Closed_Issue_Analysis__1_88348_v1.1.pdf",
+      "author": "최민우",
+      "article": "zext-nneg-sext",
+      "format": "PDF",
+      "sha256": "a2c6a7ce4a71eeb5b59cafb5f0b4f7767cc3188fe268b4502bc785d06b80eb68"
+    },
+    {
+      "id": "s034",
+      "filename": "LLVM_.pdf",
+      "author": "최진범",
+      "article": "vector-growth-nonzero",
+      "format": "PDF",
+      "sha256": "5f6ca9b8838cf850526f5a7426e49af193e0016af592b81b9ef69c424d4e4d35"
+    },
+    {
+      "id": "s035",
+      "filename": "LLVM_85251_.pdf",
+      "author": "최진범",
+      "article": "fneg-select",
+      "format": "PDF",
+      "sha256": "6e4c0ae203aa5e2d985d9409151cbf3d706a12eb2a54eae58fc31f8ab565d14e"
+    },
+    {
+      "id": "s036",
+      "filename": "issue_220759_.pdf",
+      "author": "최진범",
+      "article": "libc-umask",
+      "format": "PDF",
+      "sha256": "d80832efa2db59614bd72ac61be4d5b16050fb419a0af7d3a25fc014013d5838"
+    }
+  ],
+  "benchmarks": {
+    "page": "benchmarks.html",
+    "application_conditions": 42,
+    "application_charts": 47,
+    "pr_report": 19,
+    "backend_projects": 241,
+    "backend_pairs": 78742,
+    "reviewed": "2026-10-18",
+    "AB_pairs": 2480,
+    "AA_pairs": 60,
+    "raw_observations": 5080,
+    "mean_direction": {
+      "decrease": 12,
+      "increase": 12,
+      "mixed": 18
+    },
+    "linked_mentees": 4,
+    "linked_PRs": 7,
+    "additional_studies": [
+      {
+        "PR": 229086,
+        "page": "benchmarks/pr229086.html",
+        "published": "2026-10-22",
+        "model": "BlazeFace back W8A8",
+        "threads": 1,
+        "N60_series": 4,
+        "historical_N12_series": 4,
+        "samples": 576
+      }
+    ]
+  }
+}

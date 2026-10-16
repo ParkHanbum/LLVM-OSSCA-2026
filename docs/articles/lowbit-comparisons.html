@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="x &amp; -x를 0 또는 1과 비교하는 식을 입력의 0 여부와 최하위 비트 검사로 바꾼다."><meta name="theme-color" content="#fbfaf7"><title>가장 낮은 1비트의 비교를 단순화하기 · LLVM 멘티 기술 문서</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css?v=41429de5fd03"><script defer src="../assets/site.js?v=28009b539b2a"></script></head><body id="top"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../index.html" class="nav-articles active" aria-current="page">문서</a><a href="../results.html" class="nav-results">기여 결과</a><a href="../benchmarks.html" class="nav-benchmarks">벤치마크</a><a href="../sources/index.html" class="nav-sources">자료</a><a href="../glossary.html" class="nav-glossary">용어</a><a href="../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details><summary>라민우<span class="count">02</span></summary><ul><li><a href="../articles/loop-remainder.html">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details open><summary>이하동<span class="count">03</span></summary><ul><li><a href="../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../articles/lowbit-comparisons.html" aria-current="page">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main source-page article-main"><div class="breadcrumb"><a href="../index.html">문서</a><span>/</span>이하동</div><div class="article-layout"><article class="article"><header class="article-header"><div class="eyebrow">COMPLETE DOCUMENT / HTML</div><h1>가장 낮은 1비트의 비교를 단순화하기</h1><p class="article-lead">x &amp; -x를 0 또는 1과 비교하는 식을 입력의 0 여부와 최하위 비트 검사로 바꾼다.</p><div class="article-meta"><strong>자료 이하동</strong><span>기여 과정</span><span>HTML 원자료</span><span>전문 수록</span></div><div class="article-tools"><button type="button" data-font aria-pressed="false">글자 크게</button><button type="button" data-print><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V9h18v8h-4M7 14h10v7H7z"/></svg>인쇄 / PDF</button><a href="#source-materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 15 6-6M7 11l-3 3a4 4 0 0 0 6 6l3-3M11 7l3-3a4 4 0 0 1 6 6l-3 3"/></svg>다른 버전 보기</a></div></header><p class="complete-notice">instcombine-lowbit-presentation.html의 전체 내용입니다. 설명·코드·표·검증 기록을 생략하지 않고 옮겼습니다.</p><details class="mobile-toc"><summary>이 문서의 목차</summary><nav aria-label="이 문서의 목차"><a href="#s017-p1-heading-1">x &amp; -x  comparison folds</a><a href="#s017-p1-heading-2">1. Raw issue #25</a><a href="#s017-p1-heading-3">2. Existing fold</a><a href="#s017-p1-heading-4">x &amp; -x</a><a href="#s017-p1-heading-5">패치 이전에 처리하던 비교</a><a href="#s017-p1-heading-6">!= 1 과 one-use</a><a href="#s017-p1-heading-7">3. LLVM issue #213708</a><a href="#s017-p1-heading-8">4. PR #213709 — commits</a><a href="#s017-p1-heading-9">Commit 1 — tests</a><a href="#s017-p1-heading-10">FileCheck 생성</a><a href="#s017-p1-heading-11">Commit 2 — implementation</a><a href="#s017-p1-heading-12">5. Validation</a><a href="#s017-p1-heading-13">6. Review</a><a href="#s017-p1-heading-14">Review 1 —  neg  extra use</a><a href="#s017-p1-heading-15">Review 2 — variable name</a><a href="#s017-p1-heading-16">7. Merge</a><a href="#s017-p1-heading-17">Files</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav></details><section class="doc-section full-source-section" data-source="s017" data-page="1" id="page-1"><div class="reading-text"><div class="source-body"><div>
+      <header class="page-head">
+        <div class="eyebrow">LLVM / InstCombine</div>
+        <h2 id="s017-p1-heading-1"><code>x &amp; -x</code> comparison folds</h2>
+        <p class="subtitle">Raw issue #25부터 PR #213709 merge까지</p>
+        <div class="head-links">
+          <span class="merged">MERGED</span>
+          <a href="https://github.com/ParkHanbum/llvm-project-foss-26/issues/25" rel="noopener noreferrer">Raw #25 ↗</a>
+          <a href="https://github.com/llvm/llvm-project/issues/213708" rel="noopener noreferrer">Issue #213708 ↗</a>
+          <a href="https://github.com/llvm/llvm-project/pull/213709" rel="noopener noreferrer">PR #213709 ↗</a>
+        </div>
+      </header>
+
+      <section id="s017-p1-raw">
+        <h2 id="s017-p1-heading-2">1. Raw issue #25</h2>
+        <span class="label">initial request</span>
+        <p><a href="https://github.com/ParkHanbum/llvm-project-foss-26/issues/25" rel="noopener noreferrer">Missed optimization: fold strict lowbit predicates through one matcher</a></p>
+
+        <div class="meta-grid">
+          <div class="meta-item"><span class="label">type</span><strong>i64 scalar</strong></div>
+          <div class="meta-item"><span class="label">producer</span><strong><code>x &amp; -x</code></strong></div>
+          <div class="meta-item"><span class="label">use</span><strong>strict single-use</strong></div>
+        </div>
+
+        <div class="fold-table">
+          <div class="fold-row"><span>(x &amp; -x) == 0</span><span class="arrow">→</span><span class="result">x == 0</span></div>
+          <div class="fold-row"><span>(x &amp; -x) != 0</span><span class="arrow">→</span><span class="result">x != 0</span></div>
+          <div class="fold-row"><span>(x &amp; -x) == 1</span><span class="arrow">→</span><span class="result">trunc x to i1</span></div>
+        </div>
+
+        <ul class="plain-list">
+          <li><code>!= 1</code>, 다른 bit width, vector는 초기 범위 밖</li>
+          <li>corpus와 llvm-mca 자료 포함</li>
+          <li>LLVM patch와 test는 포함하지 않은 상태</li>
+        </ul>
+
+        <details>
+          <summary>Raw issue에 포함된 corpus / backend 자료</summary>
+          <div class="details-body">
+            <p><code>eq 0</code>: strict i64 1건, OpenJDK.</p>
+            <p><code>eq 1</code>: strict i64 269건, Hyperscan 7개 모듈.</p>
+            <p>x86-64-v4, AArch64 Neoverse V1, RV64 rocket-rv64 대상으로 llvm-mca 결과 포함.</p>
+          </div>
+        </details>
+      </section>
+
+      <section id="s017-p1-scope">
+        <h2 id="s017-p1-heading-3">2. Existing fold</h2>
+
+        <h3 id="s017-p1-heading-4"><code>x &amp; -x</code></h3>
+        <div class="two-col">
+          <div class="bits"> x   101<span class="hit">1</span>0000
+-x   010<span class="hit">1</span>0000
+ &amp;   000<span class="hit">1</span>0000</div>
+          <div>
+            <div class="note blue"><code>x &amp; -x</code> = <code>x</code>의 가장 낮은 set bit</div>
+            <ul class="plain-list">
+              <li>결과가 0이면 <code>x == 0</code></li>
+              <li>결과가 1이면 <code>x</code>의 최하위 비트가 1</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 id="s017-p1-heading-5">패치 이전에 처리하던 비교</h3>
+        <div class="fold-table">
+          <div class="fold-row"><span>(x &amp; -x) &lt;s 0</span><span class="arrow">→</span><span class="result">x == INT_MIN</span></div>
+          <div class="fold-row"><span>(x &amp; -x) &gt;s -1</span><span class="arrow">→</span><span class="result">x != INT_MIN</span></div>
+        </div>
+        <p><code>InstCombineCompares.cpp</code>의 <code>foldICmpAndConstant()</code>에 있던 코드:</p>
+        <div class="code-block">
+          <div class="code-head"><span>existing matcher</span><span>signed comparison</span></div>
+          <pre><span class="comment">// (X &amp; -X) &lt;  0 --&gt; X == MinSignedC</span>
+<span class="comment">// (X &amp; -X) &gt; -1 --&gt; X != MinSignedC</span>
+<span class="kw">if</span> (match(And, m_c_And(m_Neg(m_Value(X)), m_Deferred(X)))) {
+  Constant *MinSignedC = ...;
+  <span class="kw">return new</span> ICmpInst(NewPred, X, MinSignedC);
+}</pre>
+        </div>
+        <p><code>x &amp; -x</code> matcher는 이미 있었지만, 결과를 0 또는 1과 비교하는 경우는 처리하지 않았다.</p>
+
+        <h3 id="s017-p1-heading-6"><code>!= 1</code>과 one-use</h3>
+        <div class="two-col">
+          <div class="code-block">
+            <div class="code-head"><span>before</span><span>1 instruction after producer</span></div>
+            <pre>%r = <span class="kw">icmp ne</span> %lowbit, 1</pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span>after</span><span>2 instructions</span></div>
+            <pre>%lsb = <span class="kw">trunc</span> %x to i1
+%r = <span class="kw">xor</span> i1 %lsb, true</pre>
+          </div>
+        </div>
+        <div class="note"><code>and</code>가 남는 경우 명령 수 증가. <code>And-&gt;hasOneUse()</code>일 때만 적용.</div>
+      </section>
+
+      <section id="s017-p1-issue">
+        <h2 id="s017-p1-heading-7">3. LLVM issue #213708</h2>
+        <span class="label">2026-08-04 KST / self-assigned</span>
+        <p><a href="https://github.com/llvm/llvm-project/issues/213708" rel="noopener noreferrer">[InstCombine] Missed folds for equality comparisons of x &amp; -x ↗</a></p>
+
+        <div class="fold-table">
+          <div class="fold-row"><span>(x &amp; -x) == 0</span><span class="arrow">→</span><span class="result">x == 0</span></div>
+          <div class="fold-row"><span>(x &amp; -x) != 0</span><span class="arrow">→</span><span class="result">x != 0</span></div>
+          <div class="fold-row"><span>(x &amp; -x) == 1</span><span class="arrow">→</span><span class="result">trunc x to i1</span></div>
+          <div class="fold-row"><span>(x &amp; -x) != 1</span><span class="arrow">→</span><span class="result">xor (trunc x to i1), true</span></div>
+        </div>
+
+        <div class="two-col">
+          <div class="code-block">
+            <div class="code-head"><span>src_eq_zero</span><span>i8</span></div>
+            <pre>%neg = <span class="kw">sub</span> i8 0, %x
+%lowbit = <span class="kw">and</span> i8 %x, %neg
+%r = <span class="kw">icmp eq</span> i8 %lowbit, 0
+<span class="kw">ret</span> i1 %r</pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span>tgt_eq_zero</span><span>i8</span></div>
+            <pre>%r = <span class="kw">icmp eq</span> i8 %x, 0
+<span class="kw">ret</span> i1 %r</pre>
+          </div>
+        </div>
+
+        <div class="note blue">
+          Alive2: <a href="https://alive2.llvm.org/ce/z/Zwy2hW" rel="noopener noreferrer">alive2.llvm.org/ce/z/Zwy2hW ↗</a>
+        </div>
+      </section>
+
+      <section id="s017-p1-commits">
+        <h2 id="s017-p1-heading-8">4. PR #213709 — commits</h2>
+        <p><a href="https://github.com/llvm/llvm-project/pull/213709" rel="noopener noreferrer">[InstCombine] Fold comparisons of x &amp; -x with 0 and 1 ↗</a></p>
+
+        <div class="commit-list">
+          <article class="commit">
+            <div class="commit-id">34ea841dab77</div>
+            <h3 id="s017-p1-heading-9">Commit 1 — tests</h3>
+            <p><code>[InstCombine] Add tests for comparisons of x &amp; -x with 0 and 1</code></p>
+            <p>최적화 전 CHECK를 먼저 등록. 새 파일 <code>icmp-lowbit.ll</code>, 266 lines.</p>
+            <div class="tag-list">
+              <span class="tag">i2 / i8 / i32 / i64</span>
+              <span class="tag">fixed vector</span>
+              <span class="tag">scalable vector</span>
+              <span class="tag">commuted and</span>
+              <span class="tag">extra use</span>
+              <span class="tag">negative</span>
+            </div>
+            <h3 id="s017-p1-heading-10">FileCheck 생성</h3>
+            <p>테스트 함수와 <code>RUN</code> 라인을 작성한 뒤 LLVM의 스크립트로 <code>CHECK</code> 라인을 생성.</p>
+            <div class="command">python3 llvm/utils/update_test_checks.py --opt-binary=build-issue25/bin/opt llvm/test/Transforms/InstCombine/icmp-lowbit.ll</div>
+            <p>구현 전 한 번 실행해 기존 출력을 저장하고, 구현 후 다시 실행해 변경된 출력을 반영.</p>
+          </article>
+
+          <div class="two-col">
+            <div class="code-block">
+              <div class="code-head"><span>commit 1 CHECK</span><span>before implementation</span></div>
+              <pre><span class="removed">%neg = sub i2 0, %x</span>
+<span class="removed">%lowbit = and i2 %x, %neg</span>
+%r = icmp eq i2 <span class="removed">%lowbit</span>, 0</pre>
+            </div>
+            <div class="code-block">
+              <div class="code-head"><span>commit 2 CHECK</span><span>after implementation</span></div>
+              <pre>%r = icmp eq i2 <span class="added">%x</span>, 0</pre>
+            </div>
+          </div>
+
+          <article class="commit">
+            <div class="commit-id">d95dda30652e</div>
+            <h3 id="s017-p1-heading-11">Commit 2 — implementation</h3>
+            <p><code>[InstCombine] Fold comparisons of x &amp; -x with 0 and 1</code></p>
+            <p><code>foldICmpAndConstant()</code>에 25 lines 추가. 테스트 CHECK와 기존 영향 파일 갱신.</p>
+          </article>
+        </div>
+
+        <div class="code-block">
+          <div class="code-head"><span>InstCombineCompares.cpp</span><span>final code</span></div>
+          <pre>Value *<span class="value">MatchedX</span>;
+<span class="kw">if</span> (C.getBitWidth() &gt; 1 &amp;&amp; (C.isZero() || C.isOne()) &amp;&amp;
+    match(And, m_c_And(m_Neg(m_Value(<span class="value">MatchedX</span>)),
+                        m_Deferred(<span class="value">MatchedX</span>)))) {
+  <span class="kw">if</span> (C.isZero())
+    <span class="kw">return new</span> ICmpInst(Pred, <span class="value">MatchedX</span>, Cmp.getOperand(1));
+
+  <span class="kw">if</span> (Pred == CmpInst::ICMP_EQ)
+    <span class="kw">return new</span> TruncInst(<span class="value">MatchedX</span>, Cmp.getType());
+
+  <span class="kw">if</span> (And-&gt;hasOneUse()) {
+    Value *Trunc = Builder.CreateTrunc(<span class="value">MatchedX</span>, Cmp.getType());
+    <span class="kw">return</span> BinaryOperator::CreateNot(Trunc);
+  }
+}</pre>
+        </div>
+
+        <table>
+          <thead><tr><th>조건</th><th>생성 결과</th></tr></thead>
+          <tbody>
+            <tr><td><code>C.isZero()</code></td><td>같은 predicate로 <code>MatchedX</code>와 0 비교</td></tr>
+            <tr><td><code>C.isOne() &amp;&amp; EQ</code></td><td><code>trunc MatchedX to i1</code></td></tr>
+            <tr><td><code>C.isOne() &amp;&amp; NE</code></td><td>one-use 확인 후 <code>trunc + not</code></td></tr>
+          </tbody>
+        </table>
+
+        <details>
+          <summary>PR 등록 후 확인 항목</summary>
+          <div class="details-body">
+            <ul class="plain-list">
+              <li><code>Fixes #213708</code></li>
+              <li>Alive2 링크</li>
+              <li>AI 사용 표기와 first-contributor policy 확인</li>
+              <li>reviewer 요청</li>
+              <li>ParkHanbum의 benchmark corpus 자료 추가: OpenJDK 1건, Hyperscan 269건</li>
+            </ul>
+          </div>
+        </details>
+      </section>
+
+      <section id="s017-p1-validation">
+        <h2 id="s017-p1-heading-12">5. Validation</h2>
+        <div class="command-list">
+          <div class="command">ninja -C build-issue25 opt llvm-config llvm-dis FileCheck count not</div>
+          <div class="command">build-issue25/bin/llvm-lit -sv llvm/test/Transforms/InstCombine/icmp-lowbit.ll</div>
+          <div class="command">build-issue25/bin/llvm-lit -sv llvm/test/Transforms/InstCombine</div>
+          <div class="command">git diff --check upstream/main...HEAD</div>
+        </div>
+
+        <div class="check-grid">
+          <div class="check-item"><strong>PASS</strong><span>focused tests</span></div>
+          <div class="check-item"><strong>PASS</strong><span>full InstCombine</span></div>
+          <div class="check-item"><strong>PASS</strong><span>LLVM CI</span></div>
+        </div>
+      </section>
+
+      <section id="s017-p1-review">
+        <h2 id="s017-p1-heading-13">6. Review</h2>
+
+        <article class="review">
+          <div class="review-head">
+            <h3 id="s017-p1-heading-14">Review 1 — <code>neg</code> extra use</h3>
+            <a href="https://github.com/llvm/llvm-project/pull/213709#discussion_r3710614909" rel="noopener noreferrer">@ParkHanbum ↗</a>
+          </div>
+          <blockquote><p>It would be even better to add a test case showing that the <code>and</code> + <code>icmp</code> pattern is folded when <code>neg</code> has another use.</p></blockquote>
+
+          <div class="two-col">
+            <div class="code-block">
+              <div class="code-head"><span>input</span><span>neg: 2 uses</span></div>
+              <pre>%neg = sub i8 0, %x
+call void @use_i8(i8 %neg)
+%lowbit = and i8 %x, %neg
+%r = icmp eq i8 %lowbit, 0</pre>
+            </div>
+            <div class="code-block">
+              <div class="code-head"><span>output</span><span>and removed</span></div>
+              <pre>%neg = sub i8 0, %x
+call void @use_i8(i8 %neg)
+%r = <span class="added">icmp eq i8 %x, 0</span></pre>
+            </div>
+          </div>
+
+          <div class="change-line">790b1499b40a — Add test for lowbit fold with multi-use neg</div>
+        </article>
+
+        <article class="review">
+          <div class="review-head">
+            <h3 id="s017-p1-heading-15">Review 2 — variable name</h3>
+            <a href="https://github.com/llvm/llvm-project/pull/213709#discussion_r3730990161" rel="noopener noreferrer">@dtcxzyw ↗</a>
+          </div>
+          <blockquote><p>The naming is a bit confusing. <code>LowBitX</code> means <code>X &amp; -X</code> but it is actually <code>X</code> in the code.</p></blockquote>
+
+          <div class="code-block">
+            <div class="code-head"><span>rename</span><span>captured value = X</span></div>
+            <pre><span class="removed">- Value *LowBitX;</span>
+<span class="added">+ Value *MatchedX;</span></pre>
+          </div>
+
+          <div class="change-line">e713b5214e70 — Rename LowBitX to MatchedX</div>
+        </article>
+
+        <div class="note blue"><code>LGTM w/ nit</code> → rename 반영 → final approval</div>
+      </section>
+
+      <section id="s017-p1-merge">
+        <h2 id="s017-p1-heading-16">7. Merge</h2>
+        <div class="merge-box">
+          <div class="merge-row"><span>status</span><strong>MERGED</strong></div>
+          <div class="merge-row"><span>date</span><strong>2026-08-09 KST</strong></div>
+          <div class="merge-row"><span>pull request</span><strong><a href="https://github.com/llvm/llvm-project/pull/213709" rel="noopener noreferrer">#213709</a></strong></div>
+          <div class="merge-row"><span>commit</span><strong><a href="https://github.com/llvm/llvm-project/commit/51fc70599559b2f04bef0d7adc47ecf16343b44c" rel="noopener noreferrer">51fc70599559b2f04bef0d7adc47ecf16343b44c</a></strong></div>
+        </div>
+
+        <h3 id="s017-p1-heading-17">Files</h3>
+        <ul class="file-list">
+          <li>llvm/lib/Transforms/InstCombine/InstCombineCompares.cpp</li>
+          <li>llvm/test/Transforms/InstCombine/icmp-lowbit.ll</li>
+          <li>llvm/test/Transforms/InstCombine/and-or-icmps.ll</li>
+          <li>llvm/test/Transforms/InstCombine/ctpop-pow2.ll</li>
+        </ul>
+      </section>
+    </div>
+</div></div></section><section class="doc-section" id="editor-notes"><details class="editor-notes"><summary>핵심 원리와 편집 주석</summary><div><h3 id="pattern">lowbit의 의미</h3><p><code>x &amp; -x</code>는 x에서 가장 낮은 위치의 1비트만 남긴다. 비트 폭에 맞는 정수 연산을 전제로 다음 비교를 단순화할 수 있다.</p><div class="table-wrap"><table><thead><tr><th scope="col">원래 식</th><th scope="col">단순화</th></tr></thead><tbody><tr><td>(x &amp; -x) == 0</td><td>x == 0</td></tr><tr><td>(x &amp; -x) != 0</td><td>x != 0</td></tr><tr><td>(x &amp; -x) == 1</td><td>trunc x to i1</td></tr><tr><td>(x &amp; -x) != 1</td><td>not (trunc x to i1)</td></tr></tbody></table></div><h3 id="conditions">사용처와 비용 조건</h3><p>0 비교와 1 비교는 새로 만드는 명령어 수가 다르다. <code>!= 1</code>은 trunc와 NOT이 필요하므로 AND가 사라질 때만 적용하는 조건이 필요하다.</p><ul><li>비트 폭이 1보다 큰지 확인한다.</li><li>AND의 피연산자 순서를 바꾼 경우도 매칭한다.</li><li>0·1 이외의 비교 상수는 이 규칙에서 처리하지 않는다.</li><li><code>!= 1</code>에는 AND의 one-use 조건을 적용한다.</li><li>neg가 다른 곳에서도 쓰이는 경우와 AND가 다른 곳에서도 쓰이는 경우를 구분한다.</li></ul><h3 id="process">구현과 리뷰</h3><p>작성자는 초기 요청을 실제 이슈 #213708로 옮기고 PR #213709를 제출했다. 테스트를 먼저 추가한 커밋과 구현 커밋을 구분했다.</p><p>리뷰에서는 neg에 다른 사용처가 있는 테스트를 추가했다. 캡처하는 값이 lowbit 결과가 아니라 원래 X이므로 변수명도 <code>MatchedX</code>로 바꾸었다.</p><p>원자료는 focused 테스트, InstCombine 전체 테스트, CI 통과와 2026년 8월 9일 병합을 기록한다.</p><h3 id="evidence">근거의 역할</h3><p>스칼라와 vector, 비트 폭, 교환된 피연산자, 추가 사용처를 테스트했다. Alive2 링크도 제시했다.</p><aside class="note"><strong>읽을 때 확인할 점</strong>코퍼스와 backend 비용 자료에는 멘토가 제공한 근거가 포함된다. 이 문서는 그 자료를 멘티가 독립적으로 수집한 성과로 바꾸어 서술하지 않는다.</aside></div></details></section><section class="doc-section" id="source-materials"><h2>문서 전문과 버전</h2><ul class="source-list"><li><span class="format">HTML</span><div><a href="../sources/s017.html">HTML 원자료</a><small>instcombine-lowbit-presentation.html</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></section><section class="doc-section" id="references"><h2>관련 이슈와 PR</h2><ul class="reference-list"><li><a href="https://github.com/llvm/llvm-project/issues/213708" rel="noopener noreferrer">Issue #213708</a></li><li><a href="https://github.com/llvm/llvm-project/pull/213709" rel="noopener noreferrer">PR #213709</a></li><li><a href="https://alive2.llvm.org/ce/z/Zwy2hW" rel="noopener noreferrer">Alive2 검증</a></li></ul><p class="small-note">구현·병합 상태와 측정값은 해당 제출 자료의 작성 시점 기준입니다.</p></section></article><aside class="article-toc"><strong>이 문서에서</strong><nav aria-label="이 문서의 목차"><a href="#s017-p1-heading-1">x &amp; -x  comparison folds</a><a href="#s017-p1-heading-2">1. Raw issue #25</a><a href="#s017-p1-heading-3">2. Existing fold</a><a href="#s017-p1-heading-4">x &amp; -x</a><a href="#s017-p1-heading-5">패치 이전에 처리하던 비교</a><a href="#s017-p1-heading-6">!= 1 과 one-use</a><a href="#s017-p1-heading-7">3. LLVM issue #213708</a><a href="#s017-p1-heading-8">4. PR #213709 — commits</a><a href="#s017-p1-heading-9">Commit 1 — tests</a><a href="#s017-p1-heading-10">FileCheck 생성</a><a href="#s017-p1-heading-11">Commit 2 — implementation</a><a href="#s017-p1-heading-12">5. Validation</a><a href="#s017-p1-heading-13">6. Review</a><a href="#s017-p1-heading-14">Review 1 —  neg  extra use</a><a href="#s017-p1-heading-15">Review 2 — variable name</a><a href="#s017-p1-heading-16">7. Merge</a><a href="#s017-p1-heading-17">Files</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav><p class="small-note"><a href="../glossary.html">기술 용어 확인하기 ↗</a></p></aside></div><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../about.html">편집 기준과 출처</a><br><a href="../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>

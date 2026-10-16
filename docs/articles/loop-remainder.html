@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="2씩 빼는 루프의 짝홀성부터 시작해 demanded bits와 일반 나머지 패턴까지 추적한다."><meta name="theme-color" content="#fbfaf7"><title>반복 감산을 비트 연산과 나머지 식으로 이해하기 · LLVM 멘티 기술 문서</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css?v=41429de5fd03"><script defer src="../assets/site.js?v=28009b539b2a"></script></head><body id="top"><a class="skip" href="#content">본문으로 이동</a><header class="site-header"><button type="button" class="menu-toggle" data-menu aria-label="문서 탐색 메뉴" aria-controls="site-navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LLVM 멘티 기술 문서<small>MENTEE TECHNICAL NOTES / 2026</small></span></a><nav class="header-nav" aria-label="주 메뉴"><a href="../index.html" class="nav-articles active" aria-current="page">문서</a><a href="../results.html" class="nav-results">기여 결과</a><a href="../benchmarks.html" class="nav-benchmarks">벤치마크</a><a href="../sources/index.html" class="nav-sources">자료</a><a href="../glossary.html" class="nav-glossary">용어</a><a href="../about.html" class="nav-about">편집 기준</a></nav></header><aside class="site-sidebar" id="site-navigation" aria-label="문서 탐색"><a class="side-home" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1v15"/></svg>모든 기술 문서</a><div class="nav-label">작성자별 문서</div><nav class="author-nav"><details><summary>SeokHun<span class="count">01</span></summary><ul><li><a href="../articles/xor-complement.html">상보적인 XOR 식을 상수로 접기</a></li></ul></details><details><summary>김명석<span class="count">01</span></summary><ul><li><a href="../articles/hyperbolic-symmetry.html">쌍곡선 함수의 홀짝성을 최적화에 사용하기</a></li></ul></details><details><summary>김준영<span class="count">03</span></summary><ul><li><a href="../articles/clamp-nan.html">NaN 대체값을 보존하며 clamp를 정규화하기</a></li><li><a href="../articles/clamp-debugging.html">clamp 패치에서 발견한 크래시와 잘못된 가정</a></li><li><a href="../articles/fract-integer-test.html">fract 기반 정수 판정을 trunc 비교로 바꾸기</a></li></ul></details><details><summary>김지환<span class="count">02</span></summary><ul><li><a href="../articles/bitcast-signbits.html">bitcast 뒤의 sign bits 정보를 전달하기</a></li><li><a href="../articles/zero-count-min.html">zero count의 상한을 입력 비트에 반영하기</a></li></ul></details><details open><summary>라민우<span class="count">02</span></summary><ul><li><a href="../articles/loop-remainder.html" aria-current="page">반복 감산을 비트 연산과 나머지 식으로 이해하기</a></li><li><a href="../articles/fcmp-ord-refinement.html">fcmp ord 결합에서 freeze가 필요한 이유</a></li></ul></details><details><summary>송효섭<span class="count">01</span></summary><ul><li><a href="../articles/trunc-select.html">trunc의 no-wrap 조건으로 select 값을 고정하기</a></li></ul></details><details><summary>오수영<span class="count">01</span></summary><ul><li><a href="../articles/casted-shift.html">잘린 시프트의 0 비교를 범위 비교로 바꾸기</a></li></ul></details><details><summary>이하동<span class="count">03</span></summary><ul><li><a href="../articles/urem-noexcept.html">값의 관계 추론과 clang-tidy 크래시를 고치기</a></li><li><a href="../articles/lowbit-comparisons.html">가장 낮은 1비트의 비교를 단순화하기</a></li><li><a href="../articles/boolean-multiply.html">boolean sext와 곱셈을 select로 정규화하기</a></li></ul></details><details><summary>이호연<span class="count">01</span></summary><ul><li><a href="../articles/shared-sext-mask.html">공유된 boolean mask와 덧셈을 select로 연결하기</a></li></ul></details><details><summary>임승현<span class="count">01</span></summary><ul><li><a href="../articles/demanded-elts-reland.html">되돌려진 FP-class 패치의 크래시를 재현하고 수정하기</a></li></ul></details><details><summary>임예원<span class="count">01</span></summary><ul><li><a href="../articles/symmetric-selects.html">대칭적인 중첩 select를 XOR와 select로 바꾸기</a></li></ul></details><details><summary>전의정<span class="count">01</span></summary><ul><li><a href="../articles/floating-zero-compare.html">x와 -x 중 선택한 값의 0 비교를 줄이기</a></li></ul></details><details><summary>정지현<span class="count">02</span></summary><ul><li><a href="../articles/pmaddubsw-combine.html">PMADDUBSW 두 개와 덧셈을 하나로 결합하기</a></li><li><a href="../articles/libc-fmemopen.html">메모리 버퍼를 FILE 스트림으로 연결하기</a></li></ul></details><details><summary>정하람<span class="count">03</span></summary><ul><li><a href="../articles/strlen-constant-selection.html">문자열 주소 대신 상수 길이를 선택하기</a></li><li><a href="../articles/fabs-fneg.html">fabs 앞의 부호 반전을 제거하기</a></li><li><a href="../articles/range-compare.html">붙어 있는 정수 범위를 하나의 비교로 합치기</a></li></ul></details><details><summary>조영진<span class="count">02</span></summary><ul><li><a href="../articles/onnx-widen-shuffle.html">ONNX Runtime 커널의 확장·셔플 순서를 분석하기</a></li><li><a href="../articles/or-disjoint-zext.html">or disjoint와 zext 재결합을 일반화하기</a></li></ul></details><details><summary>최민우<span class="count">01</span></summary><ul><li><a href="../articles/zext-nneg-sext.html">zext nneg를 기존 sext fold에 연결하기</a></li></ul></details><details><summary>최진범<span class="count">03</span></summary><ul><li><a href="../articles/vector-growth-nonzero.html">vector 성장 경로에서 값이 0이 아님을 증명하기</a></li><li><a href="../articles/fneg-select.html">fneg와 select의 순서를 바꾸는 조건을 이해하기</a></li><li><a href="../articles/libc-umask.html">llvm-libc의 umask를 여러 계층에 연결하기</a></li></ul></details></nav><div class="side-footer">2026 오픈소스 컨트리뷰션 아카데미<br>LLVM 멘티 자료 · 29개 주제<br><a href="../about.html">문서의 구성과 편집 기준</a></div></aside><button type="button" class="nav-shade" data-close-menu aria-label="문서 탐색 메뉴 닫기"></button><main id="content" class="site-main source-page article-main"><div class="breadcrumb"><a href="../index.html">문서</a><span>/</span>라민우</div><div class="article-layout"><article class="article"><header class="article-header"><div class="eyebrow">COMPLETE DOCUMENT / PDF</div><h1>반복 감산을 비트 연산과 나머지 식으로 이해하기</h1><p class="article-lead">2씩 빼는 루프의 짝홀성부터 시작해 demanded bits와 일반 나머지 패턴까지 추적한다.</p><div class="article-meta"><strong>자료 라민우</strong><span>실험·제안</span><span>PDF 원자료 · 32쪽</span><span>전문 수록</span></div><div class="article-tools"><button type="button" data-font aria-pressed="false">글자 크게</button><button type="button" data-print><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H3V9h18v8h-4M7 14h10v7H7z"/></svg>인쇄 / PDF</button><a href="#source-materials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 15 6-6M7 11l-3 3a4 4 0 0 0 6 6l3-3M11 7l3-3a4 4 0 0 1 6 6l-3 3"/></svg>다른 버전 보기</a></div></header><p class="complete-notice">LLVM_Issue_121853.pdf의 전체 내용입니다. 설명·코드·표·검증 기록을 생략하지 않고 옮겼습니다. 그림 안의 문자 인식 결과에는 기호 오류가 있을 수 있어 이미지도 함께 제공합니다.</p><div class="reading-mode" role="group" aria-label="문서 읽기 방식"><span>읽기 방식</span><button type="button" data-reading="text" aria-pressed="true">본문과 그림</button><button type="button" data-reading="layout" aria-pressed="false">원래 페이지 배치</button><small>두 보기 모두 이 페이지에서 확인할 수 있습니다.</small></div><details class="mobile-toc"><summary>이 문서의 목차</summary><nav aria-label="이 문서의 목차"><a href="#page-1">01 · LLVM Issue 분석 (#121853) / Missed opt…</a><a href="#page-2">02 · Issue (1)</a><a href="#page-3">03 · Issue (2)</a><a href="#page-4">04 · Proposed InstCombine Fold(1) / 기존 LL…</a><a href="#page-5">05 · Proposed InstCombine Fold(2) / 정리하면……</a><a href="#page-6">06 · Proposed InstCombine Fold(3) / Good!</a><a href="#page-7">07 · Proposed InstCombine Fold + / 🤔</a><a href="#page-8">08 · Proposed InstCombine Fold + / len ==…</a><a href="#page-9">09 · Proposed InstCombine Fold +</a><a href="#page-10">10 · Proposed InstCombine Fold + / umax(A…</a><a href="#page-11">11 · Proposed InstCombine Fold + / D = De…</a><a href="#page-12">12 · Proposed InstCombine Fold + / 전 / %a…</a><a href="#page-13">13 · Proposed InstCombine Fold + / 전자 (x …</a><a href="#page-14">14 · Proposed InstCombine Fold + / Op0이 O…</a><a href="#page-15">15 · Proposed InstCombine Fold + / 790c29…</a><a href="#page-16">16 · Related GCC Missed-Optimization</a><a href="#page-17">17 · Related GCC Missed-Optimization / ma…</a><a href="#page-18">18 · Commit</a><a href="#page-19">19 · Commit / InstCombine이 LLVM IR의 모든 ad…</a><a href="#page-20">20 · Commit / not matched</a><a href="#page-21">21 · Commit / matched!!</a><a href="#page-22">22 · Commit / m_SpecificICmp(ICmpInst::IC…</a><a href="#page-23">23 · Commit / %icmp 의 user 는 sext 하나!</a><a href="#page-24">24 · Commit / sext line 매칭, sext 의 user 는…</a><a href="#page-25">25 · Commit / matched !!</a><a href="#page-26">26 · Post-Fix Variant Analysis / 🤔</a><a href="#page-27">27 · Post-Fix Variant Analysis -O2 -emit-…</a><a href="#page-28">28 · Post-Fix Variant Analysis</a><a href="#page-29">29 · Post-Fix Variant Analysis / %3 = tai…</a><a href="#page-30">30 · Post-Fix Variant Analysis / E = len …</a><a href="#page-31">31 · Patch Approach (code pattern) / 계속 바…</a><a href="#page-32">32 · Patch Approach (code pattern) / // (…</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav></details><section class="doc-section full-source-section" data-source="s012" data-page="1" id="page-1"><div class="page-marker"><span>PDF · 01 / 32</span></div><h2 class="page-title">LLVM Issue 분석 (#121853) / Missed optimization: while (len &gt; 1) len -= 2; / 라민우</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>LLVM Issue 분석 (#121853) Missed optimization: while (len &gt; 1) len -= 2;</p></div><div class="pdf-region"><p>라민우</p></div></div></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/001.webp" aria-label="LLVM_Issue_121853.pdf 1쪽 확대"><img src="../assets/pages/s012/001.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 1쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 1/32</span><a href="../assets/pages/s012/001.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="2" id="page-2"><div class="page-marker"><span>PDF · 02 / 32</span></div><h2 class="page-title">Issue (1)</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (1)</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-002-01.webp"><img src="../assets/figures/s012-002-01.webp" width="529" height="88" alt="라민우 자료 2쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>2쪽 · 그림 1 <a href="../assets/figures/s012-002-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Alcaro opened on Jan 7, 2025</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-002-02.webp"><img src="../assets/figures/s012-002-02.webp" width="1047" height="494" alt="라민우 자료 2쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>2쪽 · 그림 2 <a href="../assets/figures/s012-002-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Result:
+too(char*, unsigned int):
+mov
+eax; esi
+cmp
+esi, 1
+ecx, esi
+mov
+adc
+eCX, -1
+inc
+ecx
+ecx, -2
+and
+sub
+eax, ecx
+je
+.LBB0 2
+byte ptr [rdil, 42
+.LBB0_2:
+ret
+bar(char*, unsigned int):
+mov
+eax, esi
+and
+eax, 1
+je
+.LBB1 2
+mov
+byte ptr [rdi], 42
+.LBB1 2:
+net</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-002-03.webp"><img src="../assets/figures/s012-002-03.webp" width="632" height="656" alt="라민우 자료 2쪽의 코드·설명 그림 3" loading="lazy" decoding="async"></a><figcaption>2쪽 · 그림 3 <a href="../assets/figures/s012-002-03.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>unslgned foo(Char* but, unsigned len)
+while (len &gt; 1)
+len
+if (len)
+*buf = 42;
+return len;
+unsigned bar(char* buf, unsigned len)
+len %= 2;
+if (len)
+*buf = 42;
+return len;</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/002.webp" aria-label="LLVM_Issue_121853.pdf 2쪽 확대"><img src="../assets/pages/s012/002.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 2쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 2/32</span><a href="../assets/pages/s012/002.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="3" id="page-3"><div class="page-marker"><span>PDF · 03 / 32</span></div><h2 class="page-title">Issue (2)</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Issue (2)</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-003-01.webp"><img src="../assets/figures/s012-003-01.webp" width="1286" height="253" alt="라민우 자료 3쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>3쪽 · 그림 1 <a href="../assets/figures/s012-003-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Expected: Same for both
+Reduced from an implementation of this idea.
+All three major compilers get confused by that code. https://godbolt.org/z/1W1hroc67</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-003-02.webp"><img src="../assets/figures/s012-003-02.webp" width="1274" height="644" alt="라민우 자료 3쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>3쪽 · 그림 2 <a href="../assets/figures/s012-003-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>All three major compilers get confused by that code. https://godbolt.org/z/1W1hroc67
+Sponsors intel
+Share Policies
+JETBRAINS
+u*+ source m1 k
+x80-04 gCC 14.2 (Earor#1) &amp; X
+A- B Save/Load + Add new...- V Vim CCpplnsights- Quick-bench CCt+
+x86-64 gcc 14.2
+-std=c++20-02
+A-
+☆ Output... ~
+T Filter... -
+B Libraries
+&amp; Overrides + Add new...- / Add tool...&quot;
+len %= 2;
+foo(char*, unsigned int):
+if (len)
+eax, esi
+&quot;buf = 42;
+mov
+and
+eax, 1
+return len;
+cmp
+esi, 1
+cmovbe eax, esi
+test
+eax, eax
+je
+mov
+BYTE PTR [rdi], 42
+L1:
+x64 msvc v19.40 VS17.10 (Edltor #1) ~ X
+x64 msvc v19.40 VS17.1C
+Istd:ct+20 /02
+# Output...
+B librarios
+&amp; Overrides + Add new....•
+P Add top.
+# License: Msvc proprietary
+# The use of this compiler is only permitted for internal evaluation purposes and
+# see https://visualstudio.microsoft.com/1icense-terms/vs2022-Ba-community/
+but$ = 8
+.~
+len$ = 16
+unsigned int foo(char #,unsigned int) PROC
+: f00, COM
+edx, 1
+cmp
+ibe
+SHORT SLN3OfOO
+lea
+rsd, DMORD PTR [rdx-2]
+r8d, 1
+ind
+rgd
+bar(char*, unsigned int):
+티 Output (9/0) x86-64 acC 142
+xB6-64 clano 19.10 (Editor #1) ~ X
+x86-64 clang 19.1.0
+-std=ct+20 -02
+ㅿ•
+# Output...~
+a lib rios
+e oupridos
++ Add now.-
+foo(char*, unsigned int):
+eax, esi
+esi, 1
+ecx, esi
+ecx. -1
+Compiler #3
+and
+ecx, -2
+oax. ecx
+The use of this compiler is only per
+ie
+.LBB0 2
+byte ptr Trdil, 42
+intemal evaluation purposes
+.LBB0 2:
+and is otherwise aoverned bv the M</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/003.webp" aria-label="LLVM_Issue_121853.pdf 3쪽 확대"><img src="../assets/pages/s012/003.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 3쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 3/32</span><a href="../assets/pages/s012/003.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="4" id="page-4"><div class="page-marker"><span>PDF · 04 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold(1) / 기존 LLVM 은 다음을 수행할 수 있음. / &lt; %sub = umax(len, 1) &amp; -2</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p4-heading-1">Proposed InstCombine Fold(1)</h3></div><div class="pdf-region"><p>기존 LLVM 은 다음을 수행할 수 있음.</p></div><div class="pdf-region"><p>&lt; %sub = umax(len, 1) &amp; -2 %len 과 %sub 의 icmp. &gt;</p></div><div class="pdf-region"><p>&lt;-&gt; while 문이 하고자 하는 동작</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-004-01.webp"><img src="../assets/figures/s012-004-01.webp" width="435" height="69" alt="라민우 자료 4쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>4쪽 · 그림 1 <a href="../assets/figures/s012-004-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>dtcxzyw on Jan 7, 2025</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-004-02.webp"><img src="../assets/figures/s012-004-02.webp" width="501" height="766" alt="라민우 자료 4쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>4쪽 · 그림 2 <a href="../assets/figures/s012-004-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>detine 11 @src(132 %len) t
+entrv:
+%0 = add i32 %len, 1
+%1
+= icmp ne i32 %len, 0
+%umin.neg = sext i1 %1 to i32
+%2 = add 132 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq i32 %len, %3
+ret i1 %tobool.not
+define i1 @tgt(i32 %len) {
+%rem = and i32 %len, 1
+%tobool.not = icmp eq i32 %rem, 0
+15
+ret i1 %tobool.not
+18
+define i32 @src1(i32 %len) {
+1g
+entry:
+20
+%0 = add i32 %len, 1
+21
+%1 = icmp ne i32 %len, 0
+%umin.neg = sext i1 %1 to 132
+22
+23
+%2 = add i32 %0, %umin.neg
+24
+ret i32 %2
+25
+26
+27
+define i32 @tgt1(i32 %len) {
+28
+entry:
+%0 = call 132 @11vm. umax(132 %len, i32 1)
+7g
+3g
+70+ ‡37 %</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-004-03.webp"><img src="../assets/figures/s012-004-03.webp" width="369" height="193" alt="라민우 자료 4쪽의 코드·설명 그림 3" loading="lazy" decoding="async"></a><figcaption>4쪽 · 그림 3 <a href="../assets/figures/s012-004-03.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>%0 = add i32 %len, 1
+%1
+= icmp ne i32 %len, 0
+%umin.neg = sext i1 %1 to i32
+%2 = add 132 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq i32 %len, %3
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-004-04.webp"><img src="../assets/figures/s012-004-04.webp" width="603" height="323" alt="라민우 자료 4쪽의 코드·설명 그림 4" loading="lazy" decoding="async"></a><figcaption>4쪽 · 그림 4 <a href="../assets/figures/s012-004-04.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>unsigned foo(char* buf, unsigned len)
+{
+while (len &gt; 1)
+len -= 2;
+1f (len)
+*buf = 42;
+return len;</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-004-05.webp"><img src="../assets/figures/s012-004-05.webp" width="327" height="107" alt="라민우 자료 4쪽의 코드·설명 그림 5" loading="lazy" decoding="async"></a><figcaption>4쪽 · 그림 5 <a href="../assets/figures/s012-004-05.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>while (len &gt; 1)
+len -= 2;</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/004.webp" aria-label="LLVM_Issue_121853.pdf 4쪽 확대"><img src="../assets/pages/s012/004.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 4쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 4/32</span><a href="../assets/pages/s012/004.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="5" id="page-5"><div class="page-marker"><span>PDF · 05 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold(2) / 정리하면… c = max(len, 1u); / len = 0이면: c = 0 + 1 + 0 = 1</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p5-heading-1">Proposed InstCombine Fold(2)</h3></div><div class="pdf-region"><h3 id="s012-p5-heading-2">Missing fold</h3></div><div class="pdf-region"><p>최적화 핵심 로직</p></div><div class="pdf-region"><p>len = 0이면: c = 0 + 1 + 0  = 1 len &gt; 0이면:  c = len + 1 - 1 = len</p><pre><code>%2 = (len + 1) + ((len != 0) ? -1 : 0);</code></pre></div><div class="pdf-region"><p>and line 에서 0xﬀﬀﬀfe &amp; c 수행한 후(=짝수), 기존 %len 과 icmp 검사. equal? : 짝수 not equal ? :  홀수</p></div><div class="pdf-region"><p>변환 후 목표 IR</p></div><div class="pdf-region"><p>정리하면… c = max(len, 1u);</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-005-01.webp"><img src="../assets/figures/s012-005-01.webp" width="501" height="766" alt="라민우 자료 5쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>5쪽 · 그림 1 <a href="../assets/figures/s012-005-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>detine 11 @src(132 %len) t
+entry:
+%0 = add i32 %len, 1
+%1 = icmp ne i32 %len, 0
+%umin.neg = sext i1 %1 to i32
+%2 = add i32 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq i32 %len, %3
+ret i1 %tobool.not
+define in otet(i32 %len) t
+%rem = and i32 %len, 1
+%tobool.not = icmp eq i32 %rem, 0
+ret i1 %tobool.not
+define i32 @src1(132 %len) {
+19
+entrv:
+20
+%0 =
+add i32 %len, 1
+icmp ne i32 %len, 0
+%umin.neg = sext i1 %1 to 132
+%2 = add i32 %0, %umin.neg
+25
+Missing fold
+define i32 @tgt1(132 %len) {
+ng
+entry:
+%
+29
+call i32 01lvm. umax(132 %len, 132 1
+30
+rot 937 %0
+3^</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-005-02.webp"><img src="../assets/figures/s012-005-02.webp" width="318" height="120" alt="라민우 자료 5쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>5쪽 · 그림 2 <a href="../assets/figures/s012-005-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>entry:
+%0 = add i32 %len, 1
+%1 = icmp ne i32 %len, 0
+%umin.neg = sext i1 %1 to i32
+%2 = add i32 %0, %umin.neg
+%3 = and i32 %2, -2</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-005-03.webp"><img src="../assets/figures/s012-005-03.webp" width="373" height="103" alt="라민우 자료 5쪽의 코드·설명 그림 3" loading="lazy" decoding="async"></a><figcaption>5쪽 · 그림 3 <a href="../assets/figures/s012-005-03.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>%2 = add i32 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq i32 %len, %3
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-005-04.webp"><img src="../assets/figures/s012-005-04.webp" width="361" height="103" alt="라민우 자료 5쪽의 코드·설명 그림 4" loading="lazy" decoding="async"></a><figcaption>5쪽 · 그림 4 <a href="../assets/figures/s012-005-04.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define in otet(i32 %len) t
+%rem = and i32 %len, 1
+%tobool.not = icmp eq i32 %rem, 0
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-005-05.webp"><img src="../assets/figures/s012-005-05.webp" width="325" height="130" alt="라민우 자료 5쪽의 코드·설명 그림 5" loading="lazy" decoding="async"></a><figcaption>5쪽 · 그림 5 <a href="../assets/figures/s012-005-05.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>entrv:
+%0 =
+add i32 %len, 1
+icmp ne i32 %len, 0
+%umin.neg = sext i1 %1 to 132
+%2 = add i32 %0, %umin.neg</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/005.webp" aria-label="LLVM_Issue_121853.pdf 5쪽 확대"><img src="../assets/pages/s012/005.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 5쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 5/32</span><a href="../assets/pages/s012/005.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="6" id="page-6"><div class="page-marker"><span>PDF · 06 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold(3) / Good!</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Proposed InstCombine Fold(3)</p></div><div class="pdf-region"><p>Good!</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-006-01.webp"><img src="../assets/figures/s012-006-01.webp" width="1739" height="278" alt="라민우 자료 6쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>6쪽 · 그림 1 <a href="../assets/figures/s012-006-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>dtcxzyw on Jan 7, 2025
+Last edited by dtcxzyw
+Member
+Missing fold: https://afive2.im org/ce/:/8aAHD-
+After folding this pattern, InstCombine will combine the remaining expression into (1en &amp; 1) 1=@: https://godbolt.org/z/hGvonnvcd</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-006-02.webp"><img src="../assets/figures/s012-006-02.webp" width="1739" height="359" alt="라민우 자료 6쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>6쪽 · 그림 2 <a href="../assets/figures/s012-006-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>LLVM IR source #1 &amp;
+A~ B Save/Load + Add new...- V Vim
+define il @test(i32 %len) [
+entry:
+%0 = call i32 @llvm. umax(i32 %len, i32 1)
+%3 = and i32 %0, -2
+%tobool.not = icmp eq i32 %len, %3l
+ret i1 %tobool. not
+opt (assertions trunk) (Editor #1) 2 X
+-passes=instcombine
+t LLVM IR
+opt (assertions trunk)
+Aㅠ
+☆ Output.. -
+Filter... -
+E Libraries&amp; Overrides + Add new...~⑦ Add tool...
+define i1 atest(i32 %len) {
+entry:
+Rtdboolnot = 1cmp ed 132 %, 0 Good!
+%0 = and 132 %len, 1
+ret i1 %tobool.not
+•8 Mg5
+declare i32 @11vm. umax.i32(132, i32) #0
+attributes #o =「 nocallback nocreateundeforpoison nofree nosync nounvind speculatable</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/006.webp" aria-label="LLVM_Issue_121853.pdf 6쪽 확대"><img src="../assets/pages/s012/006.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 6쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 6/32</span><a href="../assets/pages/s012/006.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="7" id="page-7"><div class="page-marker"><span>PDF · 07 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold + / 🤔</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Proposed InstCombine Fold +</p></div><div class="pdf-region"><h3 id="s012-p7-heading-1">🤔</h3></div></div><figure class="source-figure"><a href="../assets/figures/s012-007-01.webp"><img src="../assets/figures/s012-007-01.webp" width="1701" height="272" alt="라민우 자료 7쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>7쪽 · 그림 1 <a href="../assets/figures/s012-007-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>dtcxzyw on Jan 7, 2025
+Last edited by dtcxzyw- ( Member
+...
+Missing fold: https://alive2.llvm.org/ce/z/8aAHD
+After folding this pattern, InstCombine will combine the remaining expression into (1en &amp; 1) 1- 6:htps://godbolt.org/z/hGvonnvcd</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/007.webp" aria-label="LLVM_Issue_121853.pdf 7쪽 확대"><img src="../assets/pages/s012/007.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 7쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 7/32</span><a href="../assets/pages/s012/007.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="8" id="page-8"><div class="page-marker"><span>PDF · 08 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold + / len == (max(len, 1) &amp; -2) / 핵심은 ?</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Proposed InstCombine Fold +</p></div><div class="pdf-region"><p>len == (max(len, 1) &amp; -2)</p></div><div class="pdf-region"><p>len != max(len,1) 인 경우는 len 이 0 인 경우 뿐. len 이 0 인 경우 =&gt; 여전히 len 과 동일.</p></div><div class="pdf-region"><p>len 이 짝수인 경우 ) len == (len &amp; -2) =&gt; 참</p></div><div class="pdf-region"><p>len 이 홀수인 경우 ) len == (len &amp; -2) =&gt; 거짓</p></div><div class="pdf-region"><p>핵심은 ?</p><pre><code>      %3 = and i32 %0, -2</code></pre><p>len 의 비트 0 을 지우는 것이 결정적. =&gt; (len &amp; 1) == 0 와 동일하다!</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-008-01.webp"><img src="../assets/figures/s012-008-01.webp" width="754" height="135" alt="라민우 자료 8쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>8쪽 · 그림 1 <a href="../assets/figures/s012-008-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>%0 = call i32 @1lvm. umax(i32 %len, 132 1
+%3 = and i32 %0,-2
+%tobool.not = icmp eq 132 %len, %3</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-008-02.webp"><img src="../assets/figures/s012-008-02.webp" width="823" height="135" alt="라민우 자료 8쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>8쪽 · 그림 2 <a href="../assets/figures/s012-008-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>%0 = and 132 %len, 1
+%tobool.not = icmp eq i32 %0, 0</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/008.webp" aria-label="LLVM_Issue_121853.pdf 8쪽 확대"><img src="../assets/pages/s012/008.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 8쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 8/32</span><a href="../assets/pages/s012/008.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="9" id="page-9"><div class="page-marker"><span>PDF · 09 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold +</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Proposed InstCombine Fold +</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-009-01.webp"><img src="../assets/figures/s012-009-01.webp" width="809" height="795" alt="라민우 자료 9쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>9쪽 · 그림 1 <a href="../assets/figures/s012-009-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>11vm/1ib/Transforms/InstCombine/InstCombinesimplifyDemanded.cpp cD7 ..
+831
+832
+case Intrinsic::umax: {
+833
+1/ UMax(A, C) == A 1f
+834
+1/ The lowest non-zero bit of DemandMask is higher than the highest
+835
+1/ non-zero bit of C.
+836
+const APInt *C;
+837
+unsigned CTZ = DemandedMask.countTrailingZeros();
+838
+if (match(II-&gt;getArgOperand(1), m_APInt(C)) &amp;&amp;
+839
+CTZ &gt;= C-&gt;getActiveBits())
+840
+return II-&gt;getArgOperand(0);
+841
+break;
+842
+843
+case Intrinsic::umin: {
+844
+1/ uin(A, C) -= A if...
+845
+// The lowest non-zero bit of DemandMask is higher than the highest
+846
+// non-one bit of C.
+8A7
+1/ This comes from using DeMorgans on the above umax example.
+&amp;g
+const APInt *C;
+849
+unsigned CTZ - DemandedMask.countTrailingZeros();
+if(match(II-&gt;getArgOperand(1), m_APInt(C)) &amp;&amp;
+850
+851
+CTZ &gt;= C-&gt;getBitmidth() - C-&gt;countLeadingones())
+852
+netunn II-&gt;getArgOperand(0);
+853
+break;
+85A</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-009-02.webp"><img src="../assets/figures/s012-009-02.webp" width="819" height="299" alt="라민우 자료 9쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>9쪽 · 그림 2 <a href="../assets/figures/s012-009-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Commit 790c29a
+Sanjay Patel committed on Aug 13, 2021
+[InstConbine] fold umax/umin intrinsics based on demanded bits
+This is a direct translation of the select folds added with
+D53033 / D53036 and another step towards canonicalization
+using the intrinsics (see D98152)•</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/009.webp" aria-label="LLVM_Issue_121853.pdf 9쪽 확대"><img src="../assets/pages/s012/009.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 9쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 9/32</span><a href="../assets/pages/s012/009.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="10" id="page-10"><div class="page-marker"><span>PDF · 10 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold + / umax(A, C) != A 인 경우, downstream에서 이미 필요 없는 낮은 비트 영역 / 안에 있는가?</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p10-heading-1">Proposed InstCombine Fold +</h3></div><div class="pdf-region"><p>umax(A, C) != A 인 경우, downstream에서 이미 필요 없는 낮은 비트 영역 안에 있는가?</p></div><div class="pdf-region"><p>D = DemandedMask d = CTZ = ctz(D) n = C.getActiveBits()</p></div><div class="pdf-region"><p>우측 코드의 의미 : d &gt;= n d = 필요한 비트 중 가장 낮은 비트 위치 n = C의 가장 높은 1비트 위치 + 1 =&gt; C의 모든 1비트는 d보다 같거나 낮은 위치에 있다. (C &lt;= 2^d 와 동일)</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-010-01.webp"><img src="../assets/figures/s012-010-01.webp" width="809" height="795" alt="라민우 자료 10쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>10쪽 · 그림 1 <a href="../assets/figures/s012-010-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>11vm/1ib/Transforms/InstCombine/InstcombinesimplifyDemanded.cpp
+831
+831
+832
+833
+834
+835
+836
+837
+838
+839
+840
+841
+842
+843
+844
+845
+846
+847
+848
+849
+850
+851
+852
+853
+854
+case Intrinsic::umax: {
+// UMax(A, C) a= A 1f
+1/ The lowest non-zero bit of DemandMask is higher than the highest
+1/ non-zero bit of C.
+const APInt *C;
+unsigned CTZ = DemandedMask.countTrailingZeros();
+if (match(II-&gt;getArgOperand(1), m_APInt(C)) &amp;&amp;
+CTZ &gt;= C-&gt;getActiveBits())
+return II-&gt;getArgOperand(0);
+break;
+}
+case Intrinsic::umin: {
+1/ uMin(A, C) -= A if ...
+// The lowest non-zero bit of DemandMask is higher than the highest
+I/ non-one bit of C.
+1/ This comes from using DeMorgans on the above umax example.
+const APInt *C;
+unsiened CTZ - DemandedMask.countTrailingZeros();
+if (match(II-&gt;getArgOperand(1), m_APInt(C)) &amp;&amp;
+CTZ &gt;- C-&gt;getBitwidth() -C-&gt;countLeadingOnes())
+return II-&gt;getArgOperand(0);
+break;</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/010.webp" aria-label="LLVM_Issue_121853.pdf 10쪽 확대"><img src="../assets/pages/s012/010.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 10쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 10/32</span><a href="../assets/pages/s012/010.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="11" id="page-11"><div class="page-marker"><span>PDF · 11 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold + / D = DemandedMask / d = CTZ = ctz(D)</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p11-heading-1">Proposed InstCombine Fold +</h3></div><div class="pdf-region"><p>D = DemandedMask d = CTZ = ctz(D) n = C.getActiveBits()</p></div><div class="pdf-region"><p>R = umax(A, C), C &lt;= 2^d</p></div><div class="pdf-region"><p class="source-bullet">1. A &gt;= C 인 경우</p><p>R = A =&gt; 문제 없음.</p></div><div class="pdf-region"><p class="source-bullet">2. A &lt; C 인 경우</p><p>R = C C &lt; 2^d &amp; A &lt; C이므로… =&gt;  A &lt; 2^d 도 성립. A와 C 둘 다 bit d 이상은 전부 0.</p></div><div class="pdf-region"><p>bit 위치:       ...  d+2 d+1 d | d-1 ... 0  (demand bit X) A:                 ...   0   0  0      | 낮은 비트 C:                 ...   0   0  0      | 낮은 비트 ↑ 서로 달라질 수 있는 영역</p></div><div class="pdf-region"><p>demanded bits of umax(A, C)  == demanded bits of A</p></div><div class="pdf-region"><p>결론 ) umax(A, C) = A</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-011-01.webp"><img src="../assets/figures/s012-011-01.webp" width="809" height="795" alt="라민우 자료 11쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>11쪽 · 그림 1 <a href="../assets/figures/s012-011-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>11vm/1ib/Transforms/InstCombine/InstcombinesimplifyDemanded.cpp
+831
+831
+832
+case Intrinsic: :umax: {
+833
+1/ UMax(A, C) == A 1f
+834
+// The lowest non-zero bit of DemandMask is higher than the highest
+835
+1/ non-zero bit of C.
+836
+const APInt *C;
+837
+unsigned CTZ = DemandedMask.countTrailingZeros();
+838
+if (match(II-&gt;getArgOperand(1), m_APInt(C)) 88
+839
+CTZ &gt;=C-&gt;getActiveBits())
+840
+return II-&gt;getArgOperand(0);
+841
+break;
+842
+}
+843
+case Intrinsic::umin: {
+844
+1/ uMin(A, C) -= A if ...
+845
+// The lowest non-zero bit of DemandMask is higher than the highest
+846
+1/ non-one bit of C.
+847
+1/ This comes from using DeMorgans on the above umax example.
+848
+const APInt *C;
+unsigned CTZ - DemandedMask.countTrailingZeros();
+849
+850
+if (match(II-&gt;getArgOperand(1), m_APInt(C)) &amp;&amp;
+851
+CIZ &gt;= C-&gt;getBitmidth() - C-&gt;countLeadingones())
+852
+return II-&gt;getArgoperand(0);
+853
+break;
+854</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/011.webp" aria-label="LLVM_Issue_121853.pdf 11쪽 확대"><img src="../assets/pages/s012/011.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 11쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 11/32</span><a href="../assets/pages/s012/011.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="12" id="page-12"><div class="page-marker"><span>PDF · 12 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold + / 전 / %a = and i32 %x, C</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p12-heading-1">Proposed InstCombine Fold +</h3></div><div class="pdf-region"><p>전</p><pre><code> %a = and i32 %x, C
+ %cmp = icmp eq i32 %a, %x</code></pre></div><div class="pdf-region"><p>후</p><pre><code> %a = and i32 %x, ~C
+ %cmp = icmp eq i32 %a, 0</code></pre></div><div class="pdf-region"><p>항상 single-use가 된다는 뜻은 X. %x 가 다른 곳에서도 쓰이면 여전히 multiple-use. 하지만 single-use 조건을 만족할 가능성을 높인다는 뜻.</p></div><div class="pdf-region"><p>LLVM에는 hasOneUse()를 조건으로 하는 최적화가 많기 때문에 실제 후속 fold 기회가 늘어날 수 있음.</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-012-01.webp"><img src="../assets/figures/s012-012-01.webp" width="848" height="377" alt="라민우 자료 12쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>12쪽 · 그림 1 <a href="../assets/figures/s012-012-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Commit 13f16f4
+goldsteinn committed on Jun 30, 2023
+[InstCombine] Canonicalize (icmp eq/ne (and x, C), x)
+ricmp eq/ne (and x, ~C), ⑧)
+This increases the likelyhood &#x27;x&#x27; is single-use and ks typically
+easien to analyze.
+Proofs: https://alive2.11vm.org/ce/z/8Zp52M
+Reviewed By: nikic
+Differential Revision: https://reviews.11vm.org/D154004</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/012.webp" aria-label="LLVM_Issue_121853.pdf 12쪽 확대"><img src="../assets/pages/s012/012.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 12쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 12/32</span><a href="../assets/pages/s012/012.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="13" id="page-13"><div class="page-marker"><span>PDF · 13 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold + / 전자 (x &amp; C) == x / C에서 0인 비트들의 위치에 대해 원래 x 도 전부 0 이었으므로, x가 변하지</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p13-heading-1">Proposed InstCombine Fold +</h3></div><div class="pdf-region"><p>전자 (x &amp; C) == x C에서 0인 비트들의 위치에 대해 원래 x 도 전부 0 이었으므로, x가 변하지 않았다. C 가 0 이면 x 도 반드시 0 이다.</p></div><div class="pdf-region"><p>후자 (x &amp; ~C) == 0 C가 0 인 위치에서 x는 전부 0 이다. C 가 0 이면 x 도 반드시 0 이다.</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-013-01.webp"><img src="../assets/figures/s012-013-01.webp" width="848" height="377" alt="라민우 자료 13쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>13쪽 · 그림 1 <a href="../assets/figures/s012-013-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Commit 13f16f4
+goldsteinn committed on Jun 30, 2023
+[Instcombine] Canonicalize (icmp eq/ne (and x, C), x) -&gt; (icmp eq/ne (and x, ~C), 0)
+This increases the likelyhood &#x27;x is single-use and is typically
+easien to anaLyze.
+Proofs: https://alive2.11vm.org/ce/z/8Zps2W
+Reviewed By: nikic
+Differential Revision: https://reviews.11vm.org/D154004</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/013.webp" aria-label="LLVM_Issue_121853.pdf 13쪽 확대"><img src="../assets/pages/s012/013.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 13쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 13/32</span><a href="../assets/pages/s012/013.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="14" id="page-14"><div class="page-marker"><span>PDF · 14 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold + / Op0이 Op1과 상수 C를 and한 결과인가? / Op1이 Op0과 상수 C를 and한 결과인가?</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Proposed InstCombine Fold +</p></div><div class="pdf-region"><p>Op0이 Op1과 상수 C를 and한 결과인가?</p></div><div class="pdf-region"><p>Op1이 Op0과 상수 C를 and한 결과인가?</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-014-01.webp"><img src="../assets/figures/s012-014-01.webp" width="769" height="600" alt="라민우 자료 14쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>14쪽 · 그림 1 <a href="../assets/figures/s012-014-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>11vm/11b/Transforms/InstCombine/InstCombinecompares.cpp D .
+4875
+4875
+4876
+4877
+4878
+4879
+4880
+4881
+4882
+4883
+4884
+4885
+4886
+4887
+4888
+4889
+4890
+4891
+4892
+4878
+4893
+4879
+4894
+4880
+4895
+8Q-4875,6 +4875,21 e@ Instruction *InstCombinerImpl: :foldIcmpEquality(ICmpInst &amp;I) t
+1/ canoncalize:
+1/ (icmp eq/ne (and X, C), X)
+-&gt; (icmp eq/ne (and X, ~C), 0)
+~
+Constant *CMask;
+A - nullptr;
+if (match(Op8, m_OneUse(m_And(m_Specific(Op1), m_ImmConstant(CMask)))))
+A - Op1;
+else if (match(Op1, m_OneUse(m_And(m_Specific(Op0), m_ImmConstant(CMask)))))
+A - 0p0;
+if (A)
+return new Icmpinst(Pred, Bulider.CreateAnd(A, Builder-CreateNot(CMask)),
+Constant: :getNu11Value(A-&gt;getType()));
+1+ (match(0p1, m Xor(m Value(A), m Value(B))) &amp;&amp; (A -- Op8 || B -- Op0)) {
+1/ A=(AB) -&gt; B=0
+Value *otherVal = A == 0p0 2 B : A:</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-014-02.webp"><img src="../assets/figures/s012-014-02.webp" width="783" height="146" alt="라민우 자료 14쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>14쪽 · 그림 2 <a href="../assets/figures/s012-014-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>실제 icmp
+Op0 (왼쪽)
+0p1 (오른쪽)
+매칭후 A
+icmp Cand X, C), X
+and X, C
+icmp X, Cand X, C)
+X
+X
+0p1
+and X, C
+Op0</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/014.webp" aria-label="LLVM_Issue_121853.pdf 14쪽 확대"><img src="../assets/pages/s012/014.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 14쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 14/32</span><a href="../assets/pages/s012/014.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="15" id="page-15"><div class="page-marker"><span>PDF · 15 / 32</span></div><h2 class="page-title">Proposed InstCombine Fold + / 790c29a: demanded mask는 ...1110 / umax(len, 1) =&gt; len</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p15-heading-1">Proposed InstCombine Fold +</h3></div><div class="pdf-region"><p>790c29a: demanded mask는 ...1110 umax(len, 1) =&gt; len dead instruction 제거 후 =&gt;</p><pre><code>      %3 = and i32 %len, -2
+      %tobool.not = icmp eq i32 %len, %3</code></pre></div><div class="pdf-region"><pre><code>13f16f4:</code></pre><p>icmp eq i32 %len, (and i32 %len, -2) 는 곧 icmp eq/ne X, (and X, C) !! (canonicalization 규칙의 두 번째 형태, %3은 이 icmp 에서만 쓰이므로 m_OneUse(...)도 만족)</p></div><div class="pdf-region"><pre><code>결론:</code></pre><p>전)</p><pre><code>       %3 = and i32 %len, -2
+       %tobool.not = icmp eq i32 %len, %3</code></pre><p>후)</p><pre><code>       %new = and i32 %len, 1
+       %tobool.not = icmp eq i32 %new, 0</code></pre></div></div><figure class="source-figure"><a href="../assets/figures/s012-015-01.webp"><img src="../assets/figures/s012-015-01.webp" width="754" height="135" alt="라민우 자료 15쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>15쪽 · 그림 1 <a href="../assets/figures/s012-015-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>%0 = call i32 @1lvm. umax(i32 %len, i32 1)
+%3 = and 132 %0, -2
+%tobool.not = icmp eq i32 %len, %3</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-015-02.webp"><img src="../assets/figures/s012-015-02.webp" width="823" height="135" alt="라민우 자료 15쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>15쪽 · 그림 2 <a href="../assets/figures/s012-015-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>%0 = and i32 %len, 1
+%tobool.not = icmp eq 132 %0, 0</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/015.webp" aria-label="LLVM_Issue_121853.pdf 15쪽 확대"><img src="../assets/pages/s012/015.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 15쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 15/32</span><a href="../assets/pages/s012/015.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="16" id="page-16"><div class="page-marker"><span>PDF · 16 / 32</span></div><h2 class="page-title">Related GCC Missed-Optimization</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Related GCC Missed-Optimization</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-016-01.webp"><img src="../assets/figures/s012-016-01.webp" width="1740" height="293" alt="라민우 자료 16쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>16쪽 · 그림 1 <a href="../assets/figures/s012-016-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>pinskia on Jan 7, 2025
+Note GCC misses the original code (while loop) optimization, that is filed as https://gcc.gnu.org/PR118316 but it also misses what LLVM misses
+for the LLVM code too: https://gcc.gnu.org/PR118317
+Drea Pinski 2025-01-06 23:33:21 UTC
+Description
+Take:</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-016-02.webp"><img src="../assets/figures/s012-016-02.webp" width="944" height="473" alt="라민우 자료 16쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>16쪽 · 그림 2 <a href="../assets/figures/s012-016-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Drea Pinski 2025-01-06 23:33:21 UTC
+Description
+Take:
+uns igned bar(uns igned len)
+{
+uns igned t = len - (len != 0) + 1;
+return t;
+}
+uns igned bar1(uns igned Ien)
+f{
+return len == 0? 1 : len;
+?.
+These 2 should produce the same code.
+For uns igned, MAX_EXPR could be used.
+Not iced while looking at PR 118316 on what LLVM was doing for the 1oop.</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/016.webp" aria-label="LLVM_Issue_121853.pdf 16쪽 확대"><img src="../assets/pages/s012/016.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 16쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 16/32</span><a href="../assets/pages/s012/016.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="17" id="page-17"><div class="page-marker"><span>PDF · 17 / 32</span></div><h2 class="page-title">Related GCC Missed-Optimization / max(len, 1)!!</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Related GCC Missed-Optimization</p></div><div class="pdf-region"><p>max(len, 1)!!</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-017-01.webp"><img src="../assets/figures/s012-017-01.webp" width="1740" height="293" alt="라민우 자료 17쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>17쪽 · 그림 1 <a href="../assets/figures/s012-017-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>pinskia on Jan 7, 2025
+Note GCC misses the original code (while loop) optinization, that is filed as htps://gcc.gnu.org/PR118316 but it also misses what LLVM misses
+for the LLVM code too: https://gcc.gnu.org/PR118317
+Drea Pinski 2025-01-06 23:33:21 UTC
+Description
+Take:</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-017-02.webp"><img src="../assets/figures/s012-017-02.webp" width="944" height="473" alt="라민우 자료 17쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>17쪽 · 그림 2 <a href="../assets/figures/s012-017-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>Drea Pinski 2025-01-06 23:33:21 UTC
+Description
+Take:
+uns igned bar(uns igned len)
+{
+uns igned t = len - (len != 0) + 1;
+return t;
+}
+uns igned bar1(uns igned Ien)
+max(len, 2)!!
+{
+return len == 0 ? 1: len;
+?..
+These 2 should produce the same code.
+For uns igned, MAX_EXPR could be used.
+Not iced while look ing at PR 118316 on what LLVm was doing for the loop.</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/017.webp" aria-label="LLVM_Issue_121853.pdf 17쪽 확대"><img src="../assets/pages/s012/017.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 17쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 17/32</span><a href="../assets/pages/s012/017.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="18" id="page-18"><div class="page-marker"><span>PDF · 18 / 32</span></div><h2 class="page-title">Commit</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Commit</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-018-01.webp"><img src="../assets/figures/s012-018-01.webp" width="1740" height="559" alt="라민우 자료 18쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>18쪽 · 그림 1 <a href="../assets/figures/s012-018-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>[InstCombinel Fold (add (add A, 1), (sext (icmp ne A, O))) to call umax(A, 1)
+#122491
+8 Merged
+nikic merged 2 commits into 11vm:main from Ruhung: combine-dev C on Jan 13, 2025
+N Conversation 11
+• Commits
+E Checks o t Files changed 2
+2
+• Commits on Jan 12, 2025
+[InstCombine] Pre-commit tests
+M Ruhung committed on Jan 12, 2025
+[InstCombinel Fold (add (add A, 1), (sext (icmp ne A, O))) to call umax(A, 1)
+• Ruhung committed on Jan 12, 2025
+Code ~
++148 .....
+61f0cse ¢7 &lt;&gt;
+4a4e38 &lt;&gt;</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/018.webp" aria-label="LLVM_Issue_121853.pdf 18쪽 확대"><img src="../assets/pages/s012/018.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 18쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 18/32</span><a href="../assets/pages/s012/018.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="19" id="page-19"><div class="page-marker"><span>PDF · 19 / 32</span></div><h2 class="page-title">Commit / InstCombine이 LLVM IR의 모든 add를 하나씩 볼 때 실행!</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p19-heading-1">Commit</h3></div><div class="pdf-region"><p>InstCombine이 LLVM IR의 모든 add를 하나씩 볼 때 실행!</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-019-01.webp"><img src="../assets/figures/s012-019-01.webp" width="1048" height="680" alt="라민우 자료 19쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>19쪽 · 그림 1 <a href="../assets/figures/s012-019-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>✓ ① 11vm/lib/Transforms/InstCombine/InstCombineAddSub.cpp
+00 -1775,6 +1775,15 Q@ Instruction *InstCombinerImp1::visitAdd(BinaryOperator &amp;I)
+1775
+1775
+1776
+1776
+}
+InstCombine이 LLVM IR의 모든 add를 하나씩 볼 때 실행!
+1777
+1777
+1778
+// (add (add A, 1), (sext (1cmp ne A, 0))) =&gt; call umax(A, 1)
+1779
+if (match(LHS, m_Add(m_Value(A), m_One())) &amp;&amp;
+1780
+match(RHS, m_OneUse(m_SExt(m_OneUse(m_SpecificICmp(
++
+1781
+ICmpInst::ICMP_NE, m_Specific(A), m_ZeroInt())))))) {
+Value *OneConst - ConstantInt::get(A-&gt;getType(), 1);
+1782
++
+1783
++
+Value *UMax = Builder.CreateBinaryIntrinsic(Intrinsic::umax, A, OneConst);
+1784
+return replaceInstUseswith(I, UMax);
+1785
+1786
+1778
+1787
+if (Instruction *Ashr = foldAddToAshr(I))
+1779
+1788
+peturn Ashr;
+1780
+1789</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-019-02.webp"><img src="../assets/figures/s012-019-02.webp" width="489" height="305" alt="라민우 자료 19쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>19쪽 · 그림 2 <a href="../assets/figures/s012-019-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>llvm
+lib/Transforms/InstCombine
+t InstCombineAddSub.cpp
+itest/Transforms/InstCombine
+t add-sext-icmp.ll</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/019.webp" aria-label="LLVM_Issue_121853.pdf 19쪽 확대"><img src="../assets/pages/s012/019.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 19쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 19/32</span><a href="../assets/pages/s012/019.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="20" id="page-20"><div class="page-marker"><span>PDF · 20 / 32</span></div><h2 class="page-title">Commit / not matched</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Commit</p></div><div class="pdf-region"><p>not matched</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-020-01.webp"><img src="../assets/figures/s012-020-01.webp" width="1048" height="680" alt="라민우 자료 20쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>20쪽 · 그림 1 <a href="../assets/figures/s012-020-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>T 11vm/1ib/Transforms/InstCombine/InstCombineaddsub.cppD
+00 -1775,6 +1775,15 a@ Instruction *InstCombinerImpl::visitAdd(BinaryOperator &amp;I) f
+1775
+1775
+1776
+not matched
+1776
+1777
+1777
+1778
+// (add (add A, 1), (sext (icmp ne A, 0))) =&gt; call um
+1779
+(match(LHS, m_Add(m_Value(A), m_One())) 8&amp;
+1780
+match(RHS, m_OneUse(m_SExt(m_OneUse(m_SpecificICmp(
+1781
+ICmpInst: : ICMP_NE, n_Specific(A), m_Zeroint())))))) {
+1782
+Value *0neConst = ConstantInt::get(A-&gt;getType(), 1);
+1783
+Value *UMax = Builder.CreateBinaryIntrinsic(Intrinsic::umax, A, OneConst);
+1784
++
+return replaceInstUseswith(I, UMax);
+1785
+1786
+1778
+1787
+if (Instruction *Ashr= foldAddToAshr(I))
+1779
+1788
+peturn Ashr;
+1780
+1789</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-020-02.webp"><img src="../assets/figures/s012-020-02.webp" width="548" height="378" alt="라민우 자료 20쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>20쪽 · 그림 2 <a href="../assets/figures/s012-020-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(132 %len) {
+entry:
+%0 = add i32 %len, 1
+%1 = icmp ne i32 %len, 0
+%umin.neg = Sext i1 %1 to 132
+%2 = add 132 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq 132 %len, %3
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/020.webp" aria-label="LLVM_Issue_121853.pdf 20쪽 확대"><img src="../assets/pages/s012/020.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 20쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 20/32</span><a href="../assets/pages/s012/020.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="21" id="page-21"><div class="page-marker"><span>PDF · 21 / 32</span></div><h2 class="page-title">Commit / matched!!</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Commit</p></div><div class="pdf-region"><p>matched!!</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-021-01.webp"><img src="../assets/figures/s012-021-01.webp" width="1048" height="680" alt="라민우 자료 21쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>21쪽 · 그림 1 <a href="../assets/figures/s012-021-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>1 11vm/11b/Transforms/InstCombine/InstCombineAddsub.cppC .
+00 -1775,6 +1775,15 a@ Instruction *InstCombinerImpl::visitAdd(BinaryOperator &amp;I) t
+1775
+1775
+1776
+1776
+matched!!
+1777
+1777
+1778
+// (add (add A, 1), (sext (icmp ne A, 0))) =&gt; call umax(A, 1)
+1779
+(match(LHS, m_Add(m_Value(A), m_One())) oca
+1780
+match(RHS, m_OneUse(m_SExt(m_OneUse(m_SpecificICmp(
+1781
+ICmpInst: : ICMP_NE, n_Specific(A), m_Zeroint())))))) {
+1782
+Value *OneConst = ConstantInt::get(A-&gt;getType(), 1);
+1783
+Value *UMax = Builder.CreateBinaryIntrinsic(Intrinsic::umax, A, OneConst);
+1784
++
+return replaceInstUseswith(I, UMax);
+1785
+1786
+1778
+1787
+if(Instruction *Ashr= foldAddToAshr(I))
+1779
+1788
+peturn Ashr;
+1780
+1789</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-021-02.webp"><img src="../assets/figures/s012-021-02.webp" width="548" height="378" alt="라민우 자료 21쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>21쪽 · 그림 2 <a href="../assets/figures/s012-021-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(132 %len) {
+entry:
+= add i32 %len,
+nl = lcmp ne 132 hien, 0
+%umin.neg = sext i1 %1 to i32
+%2 = add i32 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq 132 %len, %3
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-021-03.webp"><img src="../assets/figures/s012-021-03.webp" width="335" height="68" alt="라민우 자료 21쪽의 코드·설명 그림 3" loading="lazy" decoding="async"></a><figcaption>21쪽 · 그림 3 <a href="../assets/figures/s012-021-03.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>= add i32 %len,</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/021.webp" aria-label="LLVM_Issue_121853.pdf 21쪽 확대"><img src="../assets/pages/s012/021.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 21쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 21/32</span><a href="../assets/pages/s012/021.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="22" id="page-22"><div class="page-marker"><span>PDF · 22 / 32</span></div><h2 class="page-title">Commit / m_SpecificICmp(ICmpInst::ICMP_NE, / m_Specific(A), m_ZeroInt())</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p22-heading-1">Commit</h3></div><div class="pdf-region"><p>m_SpeciﬁcICmp(ICmpInst::ICMP_NE, m_Speciﬁc(A), m_ZeroInt())</p></div><div class="pdf-region"><pre><code>%icmp = icmp ne i32 %A, 0</code></pre></div></div><figure class="source-figure"><a href="../assets/figures/s012-022-01.webp"><img src="../assets/figures/s012-022-01.webp" width="1048" height="680" alt="라민우 자료 22쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>22쪽 · 그림 1 <a href="../assets/figures/s012-022-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>T 11vm/1ib/Transforms/InstCombine/InstCombineaddsub.cppD
+00 -1775,6 +1775,15 a@ Instruction *InstCombinerImpl::visitAdd(BinaryOperator &amp;I) t
+1775
+1775
+1776
+1776
+1777
+1777
+// (add (add A, 1), (sext (icmp ne A, 0))) =&gt; call umax(A, 1)
+1778
+1779
+if (match(LHS, m_Add(m_Value(A),m_One())) 88
+1780
+match(RHS, m_OneUse(m_SExt(m_OneUse(m_SpecificICmp(
+1781
+ICmpInst: : ICMP_NE, n_Specific(A), m_Zeroint())))))) {
+1782
+Value *OneConst - ConstantInt::get(A-&gt;getType(), 1);
+1783
+Value *UMax = Builder.CreateBinaryIntrinsic(Intrinsic::umax, A, OneConst);
+1784
++
+return replaceInstUseswith(I, UMax);
+1785
+1786
+1778
+1787
+if (Instruction *Ashr= foldAddToAshr(I))
+1779
+1788
+peturn Ashr;
+1780
+1789</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-022-02.webp"><img src="../assets/figures/s012-022-02.webp" width="548" height="378" alt="라민우 자료 22쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>22쪽 · 그림 2 <a href="../assets/figures/s012-022-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(132 %len) {
+entry:
+%0 = add i32 %len, 1
+%1 = icmp ne i32 %len, 0
+%umin.neg = Sext i1 %1 to 132
+%2 = add 132 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq 132 %len, %3
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/022.webp" aria-label="LLVM_Issue_121853.pdf 22쪽 확대"><img src="../assets/pages/s012/022.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 22쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 22/32</span><a href="../assets/pages/s012/022.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="23" id="page-23"><div class="page-marker"><span>PDF · 23 / 32</span></div><h2 class="page-title">Commit / %icmp 의 user 는 sext 하나!</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p23-heading-1">Commit</h3></div><div class="pdf-region"><p>%icmp 의 user 는 sext 하나!</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-023-01.webp"><img src="../assets/figures/s012-023-01.webp" width="1048" height="680" alt="라민우 자료 23쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>23쪽 · 그림 1 <a href="../assets/figures/s012-023-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>T 1lvm/1ib/Transforms/InstCombine/InstCombineaddsub.cppD ...
+00 -1775,6 +1775,15 a@ Instruction *InstCombinerImpl::visitAdd(BinaryOperator &amp;I) t
+1775
+1775
+1776
+1776
+1777
+1777
+// (add (add A, 1), (sext (icmp ne A, 0))) =&gt; call umax(A, 1)
+1778
+1779
+if (match(LHS, m_Add(m_Value(A),m_One())) 88
+1780
+match(RHS, m_OneUse(m_SExt(m_OneUse(m_SpecificICmp(
+1781
+ICmpInst: : ICMP_NE, n_Speciric(A). mZeroint())))))) {
+1782
+Value *OneConst = ConstantInt: :get(A-&gt;getType(), 1);
+1783
+Value *UMax = Builder.CreateBinaryIntrinsic(Intrinsic::umax, A, OneConst);
+1784
++
+return replaceInstUseswith(I, UMax);
+1785
+1786
+1778
+1787
+if (Instruction *Ashr = foldAddToAshr(I))
+1779
+1788
+peturn Ashr;
+1780
+1789</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-023-02.webp"><img src="../assets/figures/s012-023-02.webp" width="548" height="378" alt="라민우 자료 23쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>23쪽 · 그림 2 <a href="../assets/figures/s012-023-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(132 %len) {
+entry:
+%0 = add i32 %len, 1
+%1 = icmp ne 132 %len, 0
+%umin.neg = Sext i1 %1 to 132
+%2 = add 132 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq 132 %len, %3
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/023.webp" aria-label="LLVM_Issue_121853.pdf 23쪽 확대"><img src="../assets/pages/s012/023.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 23쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 23/32</span><a href="../assets/pages/s012/023.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="24" id="page-24"><div class="page-marker"><span>PDF · 24 / 32</span></div><h2 class="page-title">Commit / sext line 매칭, sext 의 user 는 add 하나!!</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p24-heading-1">Commit</h3></div><div class="pdf-region"><p>sext line 매칭, sext 의 user 는 add 하나!!</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-024-01.webp"><img src="../assets/figures/s012-024-01.webp" width="1048" height="680" alt="라민우 자료 24쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>24쪽 · 그림 1 <a href="../assets/figures/s012-024-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>T 11vm/1ib/Transforms/InstCombine/InstCombineaddsub.cppD
+00 -1775,6 +1775,15 a@ Instruction *InstCombinerImpl::visitAdd(BinaryOperator &amp;I) t
+1775
+1775
+1776
+1776
+1777
+1777
+// (add (add A, 1), (sext (icmp ne A, 0))) =&gt; call umax(A, 1)
+1778
+1779
+if (match(LHS, m_Add(m_Value(A), m_One())) 8&amp;
+1780
+match(RHS, m OneUse(m SExt(m_OneUse(m_SpecificICmp(
+1781
+ICmpInst: : ICMP_NE, I_:
+iporific(A), m_Zeroint())))))) {
+1782
+Value *OneConst = ConstantInt: :get(A-&gt;getType(), 1);
+1783
+Value *UMax - Builder.CreateBinaryIntrinsic(Intrinsic::umax, A, Onec
+1784
++
+return replaceInstUseswith(I, UMax);
+1785
+1786
+1787
+if (Instruction *Ashr = foldAddToAshr(I))
+1778
+1779
+1788
+return Ashr;
+1780
+1789</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-024-02.webp"><img src="../assets/figures/s012-024-02.webp" width="548" height="378" alt="라민우 자료 24쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>24쪽 · 그림 2 <a href="../assets/figures/s012-024-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(132 %len) {
+entry:
+%0 = add i32 %len, 1
+%1 = icmp ne i32 %len, 0
+%umin.neg = Sext i1 %1 to 132
+%2 = add 132 %0, %umin.neg
+%3 = and i32 %2,-2
+%tobool.not = icmp eq 132 %len, %3
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/024.webp" aria-label="LLVM_Issue_121853.pdf 24쪽 확대"><img src="../assets/pages/s012/024.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 24쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 24/32</span><a href="../assets/pages/s012/024.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="25" id="page-25"><div class="page-marker"><span>PDF · 25 / 32</span></div><h2 class="page-title">Commit / matched !!</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Commit</p></div><div class="pdf-region"><p>matched !!</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-025-01.webp"><img src="../assets/figures/s012-025-01.webp" width="1048" height="680" alt="라민우 자료 25쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>25쪽 · 그림 1 <a href="../assets/figures/s012-025-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>T 11vm/1ib/Transforms/InstCombine/InstCombineaddsub.cppD
+1775
+1775
+1776
+1776
+1777
+1777
+1778
+1779
+1780
+1781
+1782
+1783
+1784
+1785
+1786
+1778
+1787
+1779
+1788
+1780
+1789
+00 -1775,6 +1775,15 a@ Instruction *InstCombinerImpl::visitAdd(BinaryOperator &amp;I) t
+// (add (add A, 1), (sext (icmp ne A, 0))) =&gt; call umax(A, 1)
+if (match(LHS, m_Add(m_Value(A),m_One())) 88
+match(RHS, m_OneUse(m SExt(n Onelse(m SpecificICmp(
+ICmpInst: :ICMP NE, m Specific(A), m_ZeroInt())))))) {
+Value *OneConst = ConstantInt: :get(A-&gt;getType(), 1);
+Value *UMax - Builder.CreateBinaryIntrinsic(Intrinsic::umax, A, OneConst);
+return replaceInstUseswith(I, UMax);
+if (Instruction *Ashr =foldAddToAshr(I))
+peturn Ashr;</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-025-02.webp"><img src="../assets/figures/s012-025-02.webp" width="548" height="378" alt="라민우 자료 25쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>25쪽 · 그림 2 <a href="../assets/figures/s012-025-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define i1 @src(132 %len) {
+entry:
+%0 = add i32 %len, 1
+%1 = icmp_ne 132 %len, 0
+%umin.neg
+= sext i1 %1 to i32
+%2 = add 132 %0, %umin.neg
+%3 = and i32 %2, -2
+%tobool.not = icmp eq 132 %len, %3
+ret i1 %tobool.not</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-025-03.webp"><img src="../assets/figures/s012-025-03.webp" width="186" height="69" alt="라민우 자료 25쪽의 코드·설명 그림 3" loading="lazy" decoding="async"></a><figcaption>25쪽 · 그림 3 <a href="../assets/figures/s012-025-03.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>%umin.neg</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/025.webp" aria-label="LLVM_Issue_121853.pdf 25쪽 확대"><img src="../assets/pages/s012/025.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 25쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 25/32</span><a href="../assets/pages/s012/025.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="26" id="page-26"><div class="page-marker"><span>PDF · 26 / 32</span></div><h2 class="page-title">Post-Fix Variant Analysis / 🤔</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Post-Fix Variant Analysis</p></div><div class="pdf-region"><h3 id="s012-p26-heading-1">🤔</h3></div></div><figure class="source-figure"><a href="../assets/figures/s012-026-01.webp"><img src="../assets/figures/s012-026-01.webp" width="1740" height="313" alt="라민우 자료 26쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>26쪽 · 그림 1 <a href="../assets/figures/s012-026-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>v01dXYZ on Jan 16, 2025
+Contributor
+It seems when we replace 2 by another power of two this was compiled as expected. Maybe 2 was a very special case.
+When replacing by not a power of 2 (ie 3) with irem generated with a imu instead of bitvise-and, some useless instructions remain.s</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/026.webp" aria-label="LLVM_Issue_121853.pdf 26쪽 확대"><img src="../assets/pages/s012/026.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 26쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 26/32</span><a href="../assets/pages/s012/026.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="27" id="page-27"><div class="page-marker"><span>PDF · 27 / 32</span></div><h2 class="page-title">Post-Fix Variant Analysis -O2 -emit-llvm -g0</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>-O2 -emit-llvm -g0 Post-Fix Variant Analysis</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-027-01.webp"><img src="../assets/figures/s012-027-01.webp" width="1900" height="722" alt="라민우 자료 27쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>27쪽 · 그림 1 <a href="../assets/figures/s012-027-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>• COMPILER
+Add...* More - Templates
+Chat on our welcoming Discord X
+Sponsors intel
+JETBRAINS
+Share- Policies
+Other
+C++ source #1 0
+X86-64 clang (trunk) (Editor #1) 2 X
+a Save/Load + Add new...~ V Vim
+C Cpplnsights Quick-bench
+C++
+x86-64 clang (trunk)
+-02 -emit-llvm -go
+unsigned foo(char* buf, unsigned len)
+☆ Output... *
+7 Filter... •
+B Libraries
+| overrides + Add new...-
+Add tool...~
+dso local
+noundef range(132 0, 2) i32 @foo(char*, unsigned int)(ptr nofiree
+while (len &gt; 1)
+len -= 2;
+= and 132 %1, 1
+1cmp eg 132 %3
+if (len)
+Dr 11 %4, label %6, labe1 %5
+*buf = 42;
+08Vg5
+return len;
+5;
+야68
+}
+store i8 42, ptr %0, align 1
+unsigned bar(char* buf, unsigned len)
+br label %6
+{
+11
+1en %= 2;
+12
+if (Ien)
+6;
+13
+*buf = 42;
+ret 132 %3
+14
+return len;
+았타다
+define dso_local noundef range(132 Q, 2) 132 @bar(char*, unsigned int)(ptr nofree
+%3 = and i32 %1, 1
+%4 = icmp eq i32 %3, 0
+unsigned foo(char* buf, unsigned len)
+B Libraries
+Ar
+☆ Output... ~
+T Filter...
+define dso local noundef_range(i32 0,
+while (len &gt; 3)
+2
+%3 = and i32 %1, 3
+len -= 4:
+%4 = icmp eq i32 %3, 0</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-027-02.webp"><img src="../assets/figures/s012-027-02.webp" width="244" height="74" alt="라민우 자료 27쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>27쪽 · 그림 2 <a href="../assets/figures/s012-027-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>dso local
+= and 132 %1, 1
+1cmp eg 132 %3
+Dr 11 %4, label %6, labe1 %5</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-027-03.webp"><img src="../assets/figures/s012-027-03.webp" width="1791" height="260" alt="라민우 자료 27쪽의 코드·설명 그림 3" loading="lazy" decoding="async"></a><figcaption>27쪽 · 그림 3 <a href="../assets/figures/s012-027-03.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>unsigned foo(char* buf, unsigned len)
+while (len &gt; 3)
+len -= 4:
+if (len)
+*buf = 42;
+return len;
+B Libraries
+Ar
+☆ Output... ~
+T Filter...
+define dso local noundef_range(i32 0,
+2
+%3 = and i32 %1, 3
+%4 = icmp eq i32 %3, 0
+br 11 %4, label %6, label %5
+5
+5:</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-027-04.webp"><img src="../assets/figures/s012-027-04.webp" width="343" height="99" alt="라민우 자료 27쪽의 코드·설명 그림 4" loading="lazy" decoding="async"></a><figcaption>27쪽 · 그림 4 <a href="../assets/figures/s012-027-04.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>%3 = and i32 %1, 3
+%4 = icmp eq i32 %3, 0
+br 11 %4, label %6, label %5</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/027.webp" aria-label="LLVM_Issue_121853.pdf 27쪽 확대"><img src="../assets/pages/s012/027.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 27쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 27/32</span><a href="../assets/pages/s012/027.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="28" id="page-28"><div class="page-marker"><span>PDF · 28 / 32</span></div><h2 class="page-title">Post-Fix Variant Analysis</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Post-Fix Variant Analysis</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-028-01.webp"><img src="../assets/figures/s012-028-01.webp" width="1740" height="557" alt="라민우 자료 28쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>28쪽 · 그림 1 <a href="../assets/figures/s012-028-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>unsigned foo(char* buf, unsigned len)
+{
+While (len &gt; 2)
+Ien -= 3;
+if (len)
+*buf = 42;
+return len;
+}
+unsigned bar(char* buf, unsigned len)
+{
+len %= 3;
+if (len)
+M M 5
+*buf = 42;
+return len;
+}
+후 Output..
+Filter...
+크 Libraries
+P overrides + Add new...-
+• Add tool...
+define dso
+_local noundef range(132 Q, 3) i32 @foo(char*, unsigned int)(ptr nofree
+%3 = tail call i32 @llvm umax.i32(i32 %1, i32 2)
+%4 = urem i32 %3, 3
+%5 = Sub i32 %4, %3
+%6 = add i32 %5, %1
+%7 = icmp eq i32 %6,0
+br i1 %7, label %9, label %8
+8:
+10
+store i8 42, ptr %, align 1
+br 1abel %9
+13
+9:
+14
+ret i32 %6
+15
+}
+16
+17
+define dso local noundef range(i32 0, 3) i32 @bar(char*, unsigned int)(ptr nofree
+18
+%3 = urem i32 %1, 3
+19
+br i1 %4, label %6, label %5
+5;</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/028.webp" aria-label="LLVM_Issue_121853.pdf 28쪽 확대"><img src="../assets/pages/s012/028.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 28쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 28/32</span><a href="../assets/pages/s012/028.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="29" id="page-29"><div class="page-marker"><span>PDF · 29 / 32</span></div><h2 class="page-title">Post-Fix Variant Analysis / %3 = tail call i32 @llvm.umax.i32(i32 %1, i32 2) / =&gt; line1: %3 = max(len, 2u)</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Post-Fix Variant Analysis</p></div><div class="pdf-region"><pre><code>%3 = tail call i32 @llvm.umax.i32(i32 %1, i32 2)</code></pre><p>=&gt; line1: %3 = max(len, 2u) line2: %4 = .. line3: %5 = .. line4: %6 = (max(len, 2u) % 3) - max(len, 2u)+ %1 …</p><pre><code>%1 = len 이라면,</code></pre><p>(len - max(len, 2) + (max(len, 2) % 3)) == 0</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-029-01.webp"><img src="../assets/figures/s012-029-01.webp" width="1740" height="557" alt="라민우 자료 29쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>29쪽 · 그림 1 <a href="../assets/figures/s012-029-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>unsigned foo(char* buf, unsigned len)
+☆ Output..
+Filter... -
+E Libraries &amp; Overrides + Add new...
+/ Add tool...
+{
+define dso local noundef nange(i32 0, 3) 132 @foo(char*, unsigned int)(ptr nofree
+while (len &gt; 2)
+tail call 132 @11vm.umax.132(132 %1, 132 2)
+len -= 3;
+%4
+= urem i32 %3, 3
+if (len)
+%5
+= sub i32 %4, %3
+*buf = 42;
+%6
+- 1Clp e이 133 30, 0
+add i32
+return len;
+}
+unsigned bar(char* buf, unsigned len)
+{
+len %= 3;
+%3 = tail call i32 @llvm.umax.i32(132 %1, 132 2)
+ptr %0, align 1
+i+ (len)
+=&gt; line1: %3 = max(len, 2u)
+*buf = 42
+return len;
+line2: %4 = ..
+line3: %5 = ..
+line4: %6 =(max(len, 2u) % 3) - max(len, 2u)+ %1
+al noundef range(i32 0, 3) i32 @bar(char#, unsigned int)(ptr nofree
+2 %1, 3
+1i32 %3, 0
+bel %6, label %5
+%1 = len 이라면,
+(len- max(len, 2) + (max(len, 2)% 3)) == 0
+%021£8≤1</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-029-02.webp"><img src="../assets/figures/s012-029-02.webp" width="492" height="151" alt="라민우 자료 29쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>29쪽 · 그림 2 <a href="../assets/figures/s012-029-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define dso local noundef nange(i32 0, 3) 132 @foo(char*, unsigned int)(ptr nofree
+tail call 132 @11vm.umax.132(132 %1, 132 2)
+%4
+= urem i32 %3, 3
+%5
+= sub i32 %4, %3
+%6
+- 1Clp e이 133 30, 0
+add i32</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/029.webp" aria-label="LLVM_Issue_121853.pdf 29쪽 확대"><img src="../assets/pages/s012/029.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 29쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 29/32</span><a href="../assets/pages/s012/029.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="30" id="page-30"><div class="page-marker"><span>PDF · 30 / 32</span></div><h2 class="page-title">Post-Fix Variant Analysis / E = len - max(len, 2) + (max(len, 2) % 3) 라고 할 위와 같은 패턴을 갖는 경우 / 때… N = 3, 5, 6, 7</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Post-Fix Variant Analysis</p></div><div class="pdf-region"><p>E = len - max(len, 2) + (max(len, 2) % 3) 라고 할 때…</p></div><div class="pdf-region"><p>len 이 0 또는 1인 경우) E = len - 2 + 2 = len len &gt;= 2 인 경우) E = len - len + (len%3) = len % 3</p></div><div class="pdf-region"><p>모든 len 에 대해 E = len % 3 ! =&gt; bar 와 동일!</p></div><div class="pdf-region"><p>-&gt; #121853 은 일반화된 패치를 제시하지 못함.</p></div><div class="pdf-region"><p>위와 같은 패턴을 갖는 경우 N = 3, 5, 6, 7, 9, …</p></div><div class="pdf-region"><p>N ∈ ℕ, N ≥ 2, N ∉ { 2ᵏ | k ∈ ℕ }</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-030-01.webp"><img src="../assets/figures/s012-030-01.webp" width="1740" height="557" alt="라민우 자료 30쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>30쪽 · 그림 1 <a href="../assets/figures/s012-030-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>unsigned foo(char* buf, unsigned len)
+{
+while (len &gt; 2)
+len -= 3;
+if (len)
+*buf = 42;
+return len;
+E =len - max(len, 2) + (max(len, 2) % 3) 라고 할
+때 ...
+len 이 0 또는 1인 경우)
+E = len - 2+2 =len
+len &gt;= 2 인 경우)
+E= len - len + (len%3) = len % 3
+A™
+후 Output...
+Filter...&quot;
+B LibrariesY Overrides+ Add new....-
+/ Add tool...
+define dso local noundef nange(i32 0, 3) 132 @foo(char*, unsigned int)(ptr nofree
+tall Call 132 @llvm. umax.132(132 %1, 132 2
+%4
+urem i32 %3, 3
+%5
+sub i32 %4, %3
+%6
+add 132 %5, %1
+= icmp eq 132 %6, 0
+위와 같은 패턴을 갖는 경우
+N = 3, 5, 6,7, 9, ...
+NE N, N22,N4{2KIKEN}
+17
+define dso_local noundef range(i32 0, 3) i32 @bar(char*, unsigned int)(ptr nofree
+18
+%3 = urem i32 %1, 3
+%4 = icmp eq i32 %3, 0
+19
+20
+br i1 %4, label %6, label %5
+21
+5:
+%0_21월8 1</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-030-02.webp"><img src="../assets/figures/s012-030-02.webp" width="492" height="151" alt="라민우 자료 30쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>30쪽 · 그림 2 <a href="../assets/figures/s012-030-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>define dso local noundef nange(i32 0, 3) 132 @foo(char*, unsigned int)(ptr nofree
+tall Call 132 @llvm. umax.132(132 %1, 132 2
+%4
+urem i32 %3, 3
+%5
+sub i32 %4, %3
+%6
+add 132 %5, %1
+= icmp eq 132 %6, 0</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/030.webp" aria-label="LLVM_Issue_121853.pdf 30쪽 확대"><img src="../assets/pages/s012/030.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 30쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 30/32</span><a href="../assets/pages/s012/030.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="31" id="page-31"><div class="page-marker"><span>PDF · 31 / 32</span></div><h2 class="page-title">Patch Approach (code pattern) / 계속 바뀌는 값</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><p>Patch Approach (code pattern)</p></div><div class="pdf-region"><p>계속 바뀌는 값</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-031-01.webp"><img src="../assets/figures/s012-031-01.webp" width="1740" height="220" alt="라민우 자료 31쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>31쪽 · 그림 1 <a href="../assets/figures/s012-031-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>unsigned foo(char* buf, unsigned len)
+{
+while (len &gt; 6)
+len -= 7;
+if (len)
+*buf = 42;
+return len;
+A~ ☆ Output...•
+Filter...
+E Libraries
+P Overrides + Add n
+naindaf panoe/i22 0. 7) i32 nfoolchar*
+da final
+2
+%3=
+call
+20 a11vm.umax.132(132 %1,
+%4 =
+urem-132
+%5=
+sub 132
+%6 = add i32 %5
+6
+%7 = 1cmp eq 132 %</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-031-02.webp"><img src="../assets/figures/s012-031-02.webp" width="585" height="144" alt="라민우 자료 31쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>31쪽 · 그림 2 <a href="../assets/figures/s012-031-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>naindaf panoe/i22 0. 7) i32 nfoolchar*
+da final
+%3=
+call
+20 a11vm.umax.132(132 %1,
+%4 =
+urem-132
+%5=
+sub 132
+%6 = add i32 %5
+%7 = 1cmp eq 132 %</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/031.webp" aria-label="LLVM_Issue_121853.pdf 31쪽 확대"><img src="../assets/pages/s012/031.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 31쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 31/32</span><a href="../assets/pages/s012/031.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section full-source-section" data-source="s012" data-page="32" id="page-32"><div class="page-marker"><span>PDF · 32 / 32</span></div><h2 class="page-title">Patch Approach (code pattern) / // (A - umax(A, K-1) + urem(umax(A, K-1), K)) → urem(A, / K)</h2><div class="reading-text"><div class="source-body"><div class="pdf-region"><h3 id="s012-p32-heading-1">Patch Approach (code pattern)</h3></div><div class="pdf-region"><p>// (A - umax(A, K-1) + urem(umax(A, K-1), K)) → urem(A, K) Value *M, *Rem;</p><pre><code> const APInt *KMinusOne, *K;</code></pre></div><div class="pdf-region"><pre><code> if (match(LHS, m_Sub(m_Value(Rem), m_Value(M))) &amp;&amp;</code></pre><p>match(Rem, m_URem(m_Specific(M), m_APInt(K))) &amp;&amp; match(M, m_UMax(m_Specific(RHS), m_APInt(KMinusOne))) &amp;&amp; *K == *KMinusOne + 1) {</p><pre><code>  return replaceInstUsesWith(</code></pre><p>I, Builder.CreateURem( RHS, ConstantInt::get(RHS-&gt;getType(), *K))); }</p></div><div class="pdf-region"><p>계속 바뀌는 값</p></div></div><figure class="source-figure"><a href="../assets/figures/s012-032-01.webp"><img src="../assets/figures/s012-032-01.webp" width="1740" height="220" alt="라민우 자료 32쪽의 코드·설명 그림 1" loading="lazy" decoding="async"></a><figcaption>32쪽 · 그림 1 <a href="../assets/figures/s012-032-01.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>1/(A- umax(A, K-1) + urem(umax(A, K-1), K)) -&gt; urem(A,
+K)
+Value *M, *Rem;
+const APInt *KMinusOne, *K;
+A~ ☆ Output...•
+( Filter... *
+트 Libraries
+P Overrides + Add n
+nauindef Dange(i32요, z) i32 afoolchar*
+2
+call
+32 011vm. umax.i32(132 %1,
+3
+%4=
+urem- 132
+%5
+Sub 132
+%6 =add i32 %5
+5
+%7
+1cmp eq 132 %</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure><figure class="source-figure"><a href="../assets/figures/s012-032-02.webp"><img src="../assets/figures/s012-032-02.webp" width="585" height="144" alt="라민우 자료 32쪽의 코드·설명 그림 2" loading="lazy" decoding="async"></a><figcaption>32쪽 · 그림 2 <a href="../assets/figures/s012-032-02.webp">확대해서 보기 ↗</a></figcaption><details class="figure-transcript" open><summary>그림 안의 텍스트 · 문자 인식</summary><pre>nauindef Dange(i32요, z) i32 afoolchar*
+call
+32 011vm. umax.i32(132 %1,
+%4=
+urem- 132
+%5
+Sub 132
+%6 =add i32 %5
+%7
+1cmp eq 132 %</pre><p class="recognition-note">이미지에서 읽은 문자입니다. 코드 기호는 그림에서 확인하세요.</p></details></figure></div><details class="page-layout" data-original-open="false"><summary>페이지 배치·기호·도식 확인하기</summary><figure class="source-facsimile"><a href="../assets/pages/s012/032.webp" aria-label="LLVM_Issue_121853.pdf 32쪽 확대"><img src="../assets/pages/s012/032.webp" alt="반복 감산을 비트 연산과 나머지 식으로 이해하기 · 32쪽 전체 페이지" loading="lazy" decoding="async" width="1440" height="810"></a><figcaption><span>LLVM_Issue_121853.pdf · 32/32</span><a href="../assets/pages/s012/032.webp">확대해서 보기 ↗</a></figcaption></figure></details></section><section class="doc-section" id="editor-notes"><details class="editor-notes"><summary>핵심 원리와 편집 주석</summary><div><h3 id="problem">처음 문제</h3><p>대상 루프는 <code>while (len &gt; 1) len -= 2;</code>다. 부호 없는 len이라면 최종 결과는 짝수에서 0, 홀수에서 1이다.</p><p>LLVM이 만든 중간 표현에는 <code>umax(len, 1)</code>과 하위 비트를 지우는 AND가 남았다. 작성자는 이 표현이 왜 원래 값의 짝홀성과 같은지 분석했다.</p><div class="code-wrap"><div class="code-label">TEXT</div><pre><code>len == (max(len, 1) &amp; -2)
+              ↓
+       (len &amp; 1) == 0</code></pre></div><h3 id="demanded">필요한 비트만 보기</h3><p><code>umax(A, C)</code>가 A와 다른 부분이 결과에서 사용하지 않는 낮은 비트에만 있으면 상한 처리를 제거할 수 있다.</p><p>필요한 비트 중 가장 낮은 위치를 d라 하자. <code>C.getActiveBits() &lt;= d</code>이면 C는 <code>2^d</code>보다 작다. A가 C보다 작은 경우에도 두 값의 bit d 이상은 모두 0이다.</p><aside class="note"><strong>읽을 때 확인할 점</strong>원자료에는 이 경계를 <code>C &lt;= 2^d</code>로 쓴 부분이 있다. active-bits 조건의 정확한 해석은 <code>C &lt; 2^d</code>다. 이 편집본은 경계를 분명히 적고 원자료를 함께 제공한다.</aside><h3 id="canonical">비교 정규화와 사용처</h3><div class="code-wrap"><div class="code-label">TEXT</div><pre><code>(X &amp; C) == X  →  (X &amp; ~C) == 0</code></pre></div><p>위 정규화는 필요한 비트를 직접 비교하는 형태를 만든다. 새 모양은 후속 fold의 조건을 만족할 기회를 늘릴 수 있다.</p><p>정규화했다고 언제나 single-use가 되는 것은 아니다. 다른 사용처가 남는지 별도로 확인해야 한다.</p><h3 id="generalize">3 이상으로 확장한 탐구</h3><p>작성자는 3씩 빼는 경우를 추가로 관찰하고 umax와 urem이 섞인 식을 분석했다.</p><div class="code-wrap"><div class="code-label">TEXT</div><pre><code>A - umax(A, K-1) + urem(umax(A, K-1), K)
+                      ↓
+                  urem(A, K)</code></pre></div><p>K와 A의 범위, 비트 폭, 정수 넘침, 0 나눗셈 조건을 함께 검증해야 한다. 자료의 코드 조각은 이 일반화에 대한 패치 접근안이다.</p><aside class="note"><strong>읽을 때 확인할 점</strong>제안한 matcher가 업스트림에 반영되었거나 모든 정수 조건에서 검증되었다는 결론은 자료만으로 확인할 수 없다.</aside></div></details></section><section class="doc-section" id="source-materials"><h2>문서 전문과 버전</h2><ul class="source-list"><li><span class="format">PDF</span><div><a href="../sources/s012.html">PDF 원자료 · 32쪽</a><small>LLVM_Issue_121853.pdf</small></div></li></ul><p class="source-caption">각 자료는 별도의 버전입니다. 같은 주제라도 구현 상태·설명 범위·수치가 다를 수 있습니다.</p></section><section class="doc-section" id="references"><h2>관련 이슈와 PR</h2><ul class="reference-list"><li><a href="https://github.com/llvm/llvm-project/issues/121853" rel="noopener noreferrer">Issue #121853</a></li></ul><p class="small-note">구현·병합 상태와 측정값은 해당 제출 자료의 작성 시점 기준입니다.</p></section></article><aside class="article-toc"><strong>이 문서에서</strong><nav aria-label="이 문서의 목차"><a href="#page-1">01 · LLVM Issue 분석 (#121853) / Missed opt…</a><a href="#page-2">02 · Issue (1)</a><a href="#page-3">03 · Issue (2)</a><a href="#page-4">04 · Proposed InstCombine Fold(1) / 기존 LL…</a><a href="#page-5">05 · Proposed InstCombine Fold(2) / 정리하면……</a><a href="#page-6">06 · Proposed InstCombine Fold(3) / Good!</a><a href="#page-7">07 · Proposed InstCombine Fold + / 🤔</a><a href="#page-8">08 · Proposed InstCombine Fold + / len ==…</a><a href="#page-9">09 · Proposed InstCombine Fold +</a><a href="#page-10">10 · Proposed InstCombine Fold + / umax(A…</a><a href="#page-11">11 · Proposed InstCombine Fold + / D = De…</a><a href="#page-12">12 · Proposed InstCombine Fold + / 전 / %a…</a><a href="#page-13">13 · Proposed InstCombine Fold + / 전자 (x …</a><a href="#page-14">14 · Proposed InstCombine Fold + / Op0이 O…</a><a href="#page-15">15 · Proposed InstCombine Fold + / 790c29…</a><a href="#page-16">16 · Related GCC Missed-Optimization</a><a href="#page-17">17 · Related GCC Missed-Optimization / ma…</a><a href="#page-18">18 · Commit</a><a href="#page-19">19 · Commit / InstCombine이 LLVM IR의 모든 ad…</a><a href="#page-20">20 · Commit / not matched</a><a href="#page-21">21 · Commit / matched!!</a><a href="#page-22">22 · Commit / m_SpecificICmp(ICmpInst::IC…</a><a href="#page-23">23 · Commit / %icmp 의 user 는 sext 하나!</a><a href="#page-24">24 · Commit / sext line 매칭, sext 의 user 는…</a><a href="#page-25">25 · Commit / matched !!</a><a href="#page-26">26 · Post-Fix Variant Analysis / 🤔</a><a href="#page-27">27 · Post-Fix Variant Analysis -O2 -emit-…</a><a href="#page-28">28 · Post-Fix Variant Analysis</a><a href="#page-29">29 · Post-Fix Variant Analysis / %3 = tai…</a><a href="#page-30">30 · Post-Fix Variant Analysis / E = len …</a><a href="#page-31">31 · Patch Approach (code pattern) / 계속 바…</a><a href="#page-32">32 · Patch Approach (code pattern) / // (…</a><a href="#source-materials">문서 전문과 버전</a><a href="#references">관련 이슈와 PR</a></nav><p class="small-note"><a href="../glossary.html">기술 용어 확인하기 ↗</a></p></aside></div><footer class="site-footer"><span>LLVM 멘티 자료를 바탕으로 정리한 한국어 기술 문서<br>문서 편집일 2026-10-16 · 성과와 검증 수치는 각 원자료 작성 시점 기준</span><span><a href="../about.html">편집 기준과 출처</a><br><a href="../sources/index.html">원자료 36개 보기</a></span></footer></main><a class="back-top" href="#top" aria-label="맨 위로">↑</a></body></html>
